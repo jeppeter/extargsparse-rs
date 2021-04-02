@@ -1,8 +1,16 @@
 use serde_json::{Value};
+use std::collections::HashMap;
 
+#[allow(dead_code)]
 enum Nargs {	
-	String,
-	i32,
+	Argtype(String),
+	Argnum(i32),
+	None,
+}
+
+struct KeyAttr {
+	__splitchar :char,
+	__obj :HashMap<String,Value>,
 }
 
 pub struct Key {
@@ -12,4 +20,15 @@ pub struct Key {
 	__helpinfo :String,
 	__shortflag :String,
 	__nargs :Nargs,
+	__varname :String,
+	__cmdname :String,
+	__function :String,
+	__origkey :String,
+	__iscmd :bool,
+	__isflag :bool,
+	__type :String,
+	__attr :KeyAttr,
+	__nochange :bool,
+	__longprefix :String,
+	__shortprefix :String,
 }
