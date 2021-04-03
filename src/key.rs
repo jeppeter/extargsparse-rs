@@ -15,13 +15,30 @@ struct KeyAttr {
 
 impl KeyAttr {
 	fn new(_attr :&str) -> KeyAttr {
-		let kattr = KeyAttr {
+		let mut kattr = KeyAttr {
 			__splitchar  : ';',
 			__obj : HashMap::new(),
 		};
 
 		if _attr.len() > 0 {
-			
+			if _attr.starts_with("split=") && _attr.len() >= 7 {
+				let c = _attr.as_bytes()[6] as char;
+				if c == '.' {
+					kattr.__splitchar = '.';
+				} else if c == '\\' {
+					kattr.__splitchar = '\\';
+				} else if c == '/' {
+					kattr.__splitchar = '/';
+				} else if c == ':' {
+					kattr.__splitchar = ':';
+				} else if c == '@' {
+					kattr.__splitchar = '@';
+				} else if c == '+' {
+					kattr.__splitchar = '+';
+				} else {
+					panic!("not support char [{}]", c);
+				}
+			}
 		}
 		return kattr;
 	}
