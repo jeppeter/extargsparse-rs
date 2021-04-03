@@ -63,6 +63,29 @@ impl KeyAttr {
 		return kattr;
 	}
 
+	fn string(&self) -> String {
+		let mut retstr :String;
+		let mut v:Vec<_> = (&(self.__obj)).into_iter().collect();
+		let mut i:usize;
+		v.sort_by(|x,y|x.0.cmp(&y.0));
+
+		retstr = String::from("{");
+		i = 0 ;
+		while i < v.len() {
+			retstr.push_str(&(format!("{}={}", v[i].0,v[i].1)[..]));
+			i = i + 1;
+		}
+		retstr.push_str("}");
+		return retstr;
+	}
+
+	fn get_attr(&self,name :&str) -> String {
+		match self.__obj.get(name) {
+			Some(v) => { return v.to_string();},
+			None => {return String::from("");}
+		}
+	}
+
 }
 
 pub struct Key {
