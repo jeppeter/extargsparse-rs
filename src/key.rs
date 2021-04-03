@@ -13,6 +13,21 @@ struct KeyAttr {
 	__obj :HashMap<String,Value>,
 }
 
+impl KeyAttr {
+	fn new(_attr :&str) -> KeyAttr {
+		let kattr = KeyAttr {
+			__splitchar  : ';',
+			__obj : HashMap::new(),
+		};
+
+		if _attr.len() > 0 {
+			
+		}
+		return kattr;
+	}
+
+}
+
 pub struct Key {
 	__value :Value,
 	__prefix :String,
