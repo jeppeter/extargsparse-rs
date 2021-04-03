@@ -1,5 +1,7 @@
 use serde_json::{Value};
 use std::collections::HashMap;
+use regex::Regex;
+
 
 #[allow(dead_code)]
 enum Nargs {	
@@ -10,7 +12,7 @@ enum Nargs {
 
 struct KeyAttr {
 	__splitchar :char,
-	__obj :HashMap<String,Value>,
+	__obj :HashMap<String,String>,
 }
 
 impl KeyAttr {
@@ -38,6 +40,22 @@ impl KeyAttr {
 				} else {
 					panic!("not support char [{}]", c);
 				}
+			}
+			let mut i :usize;
+			let sarr :Vec<&str>;
+			let mut carr :Vec<&str>;
+			let re ;
+			let rec ;
+			re = Regex::new(&(format!("{}",kattr.__splitchar)[..])).unwrap();
+			rec = Regex::new("=").unwrap();
+			sarr = re.split(_attr).into_iter().collect();
+			i = 0;
+			while i < sarr.len() {
+				carr = rec.split(sarr[i]).into_iter().collect();
+				if carr.len()  > 1 {
+					kattr.__obj.insert(format!("{}",carr[0]),format!("{}",carr[1]));
+				}
+				i = i + 1;
 			}
 		}
 		return kattr;
