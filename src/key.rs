@@ -1,4 +1,4 @@
-use serde_json::{Value};
+use serde_json::Value;
 use std::collections::HashMap;
 use regex::Regex;
 
@@ -15,6 +15,7 @@ struct KeyAttr {
 	__obj :HashMap<String,String>,
 }
 
+#[allow(dead_code)]
 impl KeyAttr {
 	fn new(_attr :&str) -> KeyAttr {
 		let mut kattr = KeyAttr {
@@ -84,6 +85,40 @@ impl KeyAttr {
 			Some(v) => { return v.to_string();},
 			None => {return String::from("");}
 		}
+	}
+}
+
+struct TypeClass {
+	typeval : String,
+}
+
+#[allow(dead_code)]
+impl TypeClass {
+	fn new(v :&Value) -> TypeClass {
+		let tv :String;
+		match v {
+			Value::String(_)  => {tv = String::from("string");},
+			Value::Object(_) => {tv = String::from("dict");},
+			Value::Array(_) => { tv = String::from("list");},
+			Value::Bool(_) => {tv = String::from("bool");},
+			Value::Number(n) => {
+				if n.is_i64() || n.is_u64() {
+					tv = String::from("int");
+				} else {
+					tv = String::from("float");
+				}
+			},
+			Value::Null => {tv = String::from("string");},
+		}
+		return TypeClass{typeval : tv,};
+	}
+
+	fn get_type(&self) -> String {
+		return format!("{}",self.typeval);
+	}
+
+	fn string(&self) -> String {
+		return format!("{}",self.typeval);
 	}
 
 }
