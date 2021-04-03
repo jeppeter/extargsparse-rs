@@ -53,7 +53,9 @@ impl KeyAttr {
 			while i < sarr.len() {
 				carr = rec.split(sarr[i]).into_iter().collect();
 				if carr.len()  > 1 {
-					kattr.__obj.insert(format!("{}",carr[0]),format!("{}",carr[1]));
+					if carr[0] != "split" {
+						kattr.__obj.insert(format!("{}",carr[0]),format!("{}",carr[1]));	
+					}					
 				}
 				i = i + 1;
 			}
