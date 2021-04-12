@@ -10,6 +10,12 @@ enum Nargs {
 	None,
 }
 
+#[allow(dead_code)]
+enum BoolNone {
+	BoolVal(bool),
+	None,
+}
+
 struct KeyAttr {
 	__splitchar :char,
 	__obj :HashMap<String,String>,
@@ -148,11 +154,34 @@ pub struct Key {
 	__cmdname :String,
 	__function :String,
 	__origkey :String,
-	__iscmd :bool,
-	__isflag :bool,
+	__iscmd :BoolNone,
+	__isflag :BoolNone,
 	__type :String,
 	__attr :KeyAttr,
 	__nochange :bool,
 	__longprefix :String,
 	__shortprefix :String,
+}
+
+impl Key {
+	fn __reset(&mut self) {
+		self.__value = Value::Null;
+		self.__prefix = String::from("");
+		self.__flagname = String::from("");
+		self.__helpinfo = String::from("");
+		self.__shortflag = String::from("");
+		self.__nargs = Nargs::None;
+		self.__varname = String::from("");
+		self.__cmdname = String::from("");
+		self.__function = String::from("");
+		self.__origkey = String::from("");
+		self.__iscmd = BoolNone::None;
+		self.__isflag = BoolNone::None; 
+		self.__type = String::from("");
+		self.__attr = KeyAttr::new("");
+		self.__nochange = false;
+		self.__longprefix = String::from("");
+		self.__shortprefix = String::from("");
+		return;
+	}
 }
