@@ -123,6 +123,20 @@ impl TypeClass {
 
 }
 
+
+#[allow(dead_code)]
+const FLAGSPECIAL : &'static [&'static str] = &["value","prefix"];
+#[allow(dead_code)]
+const FLAGWORDS :&'static [&'static str] = &["flagname","helpinfo","shortflag","nargs","varname"];
+#[allow(dead_code)]
+const CMDWORDS :&'static [&'static str] = &["cmdname","function","helpinfo"];
+#[allow(dead_code)]
+const OTHERWORDS :&'static [&'static str] = &["origkey","iscmd","isflag","type","attr","longprefix","shortprefix"];
+#[allow(dead_code)]
+const FORMWORDS :&'static [&'static str] = &["longopt","shortopt","optdest","needarg"];
+
+
+
 pub struct Key {
 	__value :Value,
 	__prefix :String,
