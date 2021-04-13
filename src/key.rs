@@ -7,7 +7,6 @@ use regex::Regex;
 enum Nargs {	
 	Argtype(String),
 	Argnum(i32),
-	None,
 }
 
 #[allow(dead_code)]
@@ -129,21 +128,66 @@ impl TypeClass {
 
 }
 
+const KEYWORD_VALUE :&str = "value";
+const KEYWORD_PREFIX :&str = "prefix";
+const KEYWORD_FLAGNAME :&str = "flagname";
+const KEYWORD_HELPINFO :&str = "helpinfo";
+const KEYWORD_SHORTFLAG :&str = "shortflag";
+const KEYWORD_NARGS :&str = "nargs";
+const KEYWORD_VARNAME :&str = "varname";
+const KEYWORD_CMDNAME :&str = "cmdname";
+const KEYWORD_FUNCTION :&str = "function";
+const KEYWORD_ORIGKEY :&str = "origkey";
+const KEYWORD_ISCMD :&str = "iscmd";
+const KEYWORD_ISFLAG :&str = "isflag";
+const KEYWORD_TYPE :&str = "type";
+const KEYWORD_ATTR :&str = "attr";
+const KEYWORD_LONGPREFIX :&str = "longprefix";
+const KEYWORD_SHORTPREFIX :&str = "shortprefix";
+const KEYWORD_LONGOPT :&str = "longopt";
+const KEYWORD_SHORTOPT :&str = "shortopt";
+const KEYWORD_OPTDEST :&str = "optdest";
+const KEYWORD_NEEDARG :&str = "needarg";
+
 
 #[allow(dead_code)]
-const FLAGSPECIAL : &'static [&'static str] = &["value","prefix"];
+const FLAGSPECIAL : &'static [&'static str] = &[KEYWORD_VALUE,KEYWORD_PREFIX];
 #[allow(dead_code)]
-const FLAGWORDS :&'static [&'static str] = &["flagname","helpinfo","shortflag","nargs","varname"];
+const FLAGWORDS :&'static [&'static str] = &[KEYWORD_FLAGNAME,KEYWORD_HELPINFO,KEYWORD_SHORTFLAG,KEYWORD_NARGS,KEYWORD_VARNAME];
 #[allow(dead_code)]
-const CMDWORDS :&'static [&'static str] = &["cmdname","function","helpinfo"];
+const CMDWORDS :&'static [&'static str] = &[KEYWORD_CMDNAME,KEYWORD_FUNCTION,KEYWORD_HELPINFO];
 #[allow(dead_code)]
-const OTHERWORDS :&'static [&'static str] = &["origkey","iscmd","isflag","type","attr","longprefix","shortprefix"];
+const OTHERWORDS :&'static [&'static str] = &[KEYWORD_ORIGKEY,KEYWORD_ISCMD,KEYWORD_ISFLAG,KEYWORD_TYPE,KEYWORD_ATTR,KEYWORD_LONGPREFIX,KEYWORD_SHORTPREFIX];
 #[allow(dead_code)]
-const FORMWORDS :&'static [&'static str] = &["longopt","shortopt","optdest","needarg"];
+const FORMWORDS :&'static [&'static str] = &[KEYWORD_LONGOPT,KEYWORD_SHORTOPT,KEYWORD_OPTDEST,KEYWORD_NEEDARG];
 
+
+pub enum KeyVal {
+	StrVal(Option<String>),
+	BoolVal(Option<bool>),
+	JsonVal(Option<Value>),
+}
+
+struct KeyData {
+	data :HashMap<String,KeyVal>,
+}
+
+impl KeyData {
+
+	pub fn reset(&mut self) {
+		return;
+	}
+
+	pub fn new() -> KeyData {
+		let mut retval = KeyData{ data : HashMap::new() };
+		retval.reset();
+		return retval;
+	}
+}
 
 
 pub struct Key {
+
 	__value :Value,
 	__prefix :String,
 	__flagname :String,
@@ -170,7 +214,7 @@ impl Key {
 		self.__flagname = String::from("");
 		self.__helpinfo = String::from("");
 		self.__shortflag = String::from("");
-		self.__nargs = Nargs::None;
+		//self.__nargs = Nargs::None;
 		self.__varname = String::from("");
 		self.__cmdname = String::from("");
 		self.__function = String::from("");
