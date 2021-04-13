@@ -9,6 +9,7 @@ pub enum Nargs {
 	Argnum(i32),
 }
 
+
 #[allow(dead_code)]
 enum BoolNone {
 	BoolVal(bool),
@@ -199,6 +200,48 @@ impl KeyData {
 		self.data.insert(String::from(KEYWORD_SHORTPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
 		return;
 	}
+
+	pub fn set_string(&mut self,key :&str, val :&str) -> bool {
+		let mut retval :bool = true;
+		let ks :String = String::from(key);
+		let vs :String = String::from(val);
+		if self.data.contains_key(&ks) {
+			retval = false;
+			self.data.remove(&ks);
+		}
+		self.data.insert(ks,KeyVal::StrVal(Some(vs)));
+		
+		return retval;
+	}
+
+	pub fn set_bool(&mut self, key :&str, val :&bool) -> bool {
+		let mut retval :bool = true;
+		let ks :String = String::from(key);
+		let vb :bool = *val;
+
+		if self.data.contains_key(&ks) {
+			retval = false;
+			self.data.remove(&ks);
+		}
+		self.data.insert(ks,KeyVal::BoolVal(Some(vb)));
+		
+		return retval;		
+	}
+
+	pub fn set_nargs(&mut self, key :&str, val :&Nargs) -> bool {
+		let mut retval :bool = true;
+		let ks :String = String::from(key);
+		let vb :Nargs = *val;
+
+		if self.data.contains_key(&ks) {
+			retval = false;
+			self.data.remove(&ks);
+		}
+		self.data.insert(ks,KeyVal::NArgVal(Some(vb)));
+		
+		return retval;		
+	}
+
 
 	pub fn new() -> KeyData {
 		let mut retval = KeyData{ data : HashMap::new() };
