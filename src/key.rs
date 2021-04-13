@@ -4,7 +4,7 @@ use regex::Regex;
 
 
 #[allow(dead_code)]
-enum Nargs {	
+pub enum Nargs {	
 	Argtype(String),
 	Argnum(i32),
 }
@@ -15,7 +15,7 @@ enum BoolNone {
 	None,
 }
 
-struct KeyAttr {
+pub struct KeyAttr {
 	__splitchar :char,
 	__obj :HashMap<String,String>,
 }
@@ -148,7 +148,9 @@ const KEYWORD_LONGOPT :&str = "longopt";
 const KEYWORD_SHORTOPT :&str = "shortopt";
 const KEYWORD_OPTDEST :&str = "optdest";
 const KEYWORD_NEEDARG :&str = "needarg";
+const KEYWORD_BLANK :&str  = "";
 
+const KEYWORD_NOCHANGE :&str  = "nochange";
 
 #[allow(dead_code)]
 const FLAGSPECIAL : &'static [&'static str] = &[KEYWORD_VALUE,KEYWORD_PREFIX];
@@ -166,15 +168,35 @@ pub enum KeyVal {
 	StrVal(Option<String>),
 	BoolVal(Option<bool>),
 	JsonVal(Option<Value>),
+	KeyAttrVal(Option<KeyAttr>),
+	NArgVal(Option<Nargs>),
 }
 
-struct KeyData {
+pub struct KeyData {
 	data :HashMap<String,KeyVal>,
 }
 
 impl KeyData {
 
 	pub fn reset(&mut self) {
+		self.data.clear();
+		self.data.insert(String::from(KEYWORD_VALUE),KeyVal::JsonVal(None));
+		self.data.insert(String::from(KEYWORD_PREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_FLAGNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_HELPINFO),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_SHORTFLAG),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_NARGS),KeyVal::NArgVal(None));
+		self.data.insert(String::from(KEYWORD_VARNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_CMDNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_FUNCTION),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_ORIGKEY),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_ISCMD),KeyVal::BoolVal(None));
+		self.data.insert(String::from(KEYWORD_ISFLAG),KeyVal::BoolVal(None));
+		self.data.insert(String::from(KEYWORD_TYPE),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_ATTR),KeyVal::KeyAttrVal(None));
+		self.data.insert(String::from(KEYWORD_NOCHANGE),KeyVal::BoolVal(Some(false)));
+		self.data.insert(String::from(KEYWORD_LONGPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_SHORTPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
 		return;
 	}
 
