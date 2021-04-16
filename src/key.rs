@@ -182,6 +182,16 @@ impl Clone for KeyAttr {
 	}
 }
 
+const KEYWORD_STRING :&str = "string";
+const KEYWORD_DICT :&str = "dict";
+const KEYWORD_LIST :&str = "list";
+const KEYWORD_BOOL :&str = "bool";
+const KEYWORD_INT :&str = "int";
+const KEYWORD_FLOAT :&str = "float";
+const KEYWORD_LONG :&str = "long";
+const KEYWORD_ARGS :&str = "args";
+const KEYWORD_JSONFILE :&str = "jsonfile";
+
 
 struct TypeClass {
 	typeval : String,
@@ -192,20 +202,25 @@ impl TypeClass {
 	fn new(v :&Value) -> TypeClass {
 		let tv :String;
 		match v {
-			Value::String(_)  => {tv = String::from("string");},
-			Value::Object(_) => {tv = String::from("dict");},
-			Value::Array(_) => { tv = String::from("list");},
-			Value::Bool(_) => {tv = String::from("bool");},
+			Value::String(_)  => {tv = String::from(KEYWORD_STRING);},
+			Value::Object(_) => {tv = String::from(KEYWORD_DICT);},
+			Value::Array(_) => { tv = String::from(KEYWORD_LIST);},
+			Value::Bool(_) => {tv = String::from(KEYWORD_BOOL);},
 			Value::Number(n) => {
 				if n.is_i64() || n.is_u64() {
-					tv = String::from("int");
+					tv = String::from(KEYWORD_INT);
 				} else {
-					tv = String::from("float");
+					tv = String::from(KEYWORD_FLOAT);
 				}
 			},
-			Value::Null => {tv = String::from("string");},
+			Value::Null => {tv = String::from(KEYWORD_STRING);},
 		}
 		return TypeClass{typeval : tv,};
+	}
+
+	fn set_type(&mut self,val :&str) {
+		self.typeval = String::from(val);
+		return;
 	}
 
 	fn get_type(&self) -> String {
@@ -503,6 +518,105 @@ impl Key {
 		return;
 	}
 
+	fn __form_word_num(&self,key :&str) -> i32 {
+		let bval :bool;
+		let bopt :Option<bool>;
+		let sval :String;
+		let sopt :Option<String>;
+		let mut retval :i32 = 0; 
+		if key == KEYWORD_NEEDARG {
+			bopt = self.keydata.get_bool(KEYWORD_ISFLAG);
+			match bopt {
+				None => {
+					return retval;
+				},
+				Some(v) => {
+					bval = v;
+				},
+			}
+
+			if !bval {
+				return retval;
+			}
+
+			sopt = self.keydata.get_string(KEYWORD_TYPE);
+			match sopt {
+				None => {
+					return retval;
+				},
+				Some(v) => {
+					sval = v;
+				},
+			}
+
+			if sval == KEYWORD_INT || sval == KEYWORD_LIST || 
+			  sval == KEYWORD_LONG || sval == KEYWORD_FLOAT ||
+			  sval == KEYWORD_STRING || sval == KEYWORD_JSONFILE {
+			  	retval = 1;
+			}
+		}
+		return retval;
+	}
+
+	fn __form_word_str(&self,key :&str) -> String {
+		let mut sopt :Option<String>;
+		let mut sval :String;
+		let mut s2opt :Option<String>;
+		let mut s2val :String;
+		let mut bopt :Option<bool>;
+		let mut bval :boo;
+		let mut retval :String;
+		if key == KEYWORD_OPTDEST {
+			bopt = self.keydata.get_bool(KEYWORD_ISFLAG);
+			match bopt {
+				None => {
+					bval = false;
+				},
+				Some(v) => {
+					bval = v;
+				},
+			}
+
+			sopt = self.keydata.get_string(KEYWORD_FLAGNAME);
+			match sopt {
+				None => {
+					sval = KEYWORD_BLANK;
+				},
+				Some(v) => {
+					sval = v;
+				},
+			}
+
+			s2opt = self.keydata.get_string(KEYWORD_TYPE);
+			match s2opt {
+				None => {
+					s2val = KEYWORD_BLANK;
+				},
+				Some(v) => {
+					s2val = v;
+				},
+			}
+
+			if !bval || s2val == KEYWORD_BLANK || 
+				sval == KEYWORD_ARGS {
+					s2opt = self.keydata.get_string(KEYWORD_ORIGKEY);
+					match s2opt {
+						None => {
+							s2val = KEYWORD_BLANK;
+						},
+						Some(v) => {
+							s2val = v;
+						}
+					}
+					panic!("can not set ({}) longopt",s2val);
+			 }
+			 if s2val == KEYWORD_BOOL {
+
+			 }
+
+		}
+	}
+
 	fn __eq_name__(&self,other :&Key,name :&str) -> bool {
 		let mut ret :bool = false;
 		let sjval  :Value;
@@ -555,7 +669,7 @@ impl Key {
 			name == KEYWORD_FUNCTION || name == KEYWORD_ORIGKEY || 
 			name == KEYWORD_TYPE || name == KEYWORD_LONGPREFIX ||
 			name == KEYWORD_SHORTPREFIX || name == KEYWORD_LONGOPT || 
-			name == KEYWORD_SHORTOPT {
+			name == KEYWORD_SHORTOPT || name == KEYWORD_OPTDEST {
 			ssopt = self.keydata.get_string(name);
 			osopt = other.keydata.get_string(name);
 			match ssopt {
