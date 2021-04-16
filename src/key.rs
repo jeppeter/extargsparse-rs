@@ -64,6 +64,7 @@ pub struct KeyAttr {
 	__obj :HashMap<String,String>,
 }
 
+
 #[allow(dead_code)]
 impl KeyAttr {
 	fn new(_attr :&str) -> KeyAttr {
@@ -113,6 +114,14 @@ impl KeyAttr {
 		return kattr;
 	}
 
+	fn get_keys(&self) -> Vec<String> {
+		let mut retvec :Vec<String> = Vec::new();
+		for (k,_) in &(self.__obj) {
+			retvec.push(String::from(k));
+		}
+		return retvec;
+	}
+
 	fn string(&self) -> String {
 		let mut retstr :String;
 		let mut v:Vec<_> = (&(self.__obj)).into_iter().collect();
@@ -136,6 +145,43 @@ impl KeyAttr {
 		}
 	}
 }
+
+impl PartialEq for KeyAttr {
+	fn eq(&self,other :&Self) -> bool {
+		let mut retval :bool = true;
+		let sks :Vec<String> = self.get_keys();
+		let oks :Vec<String> = other.get_keys();
+		let mut sv :String;
+		let mut ov :String;
+		for v in sks {
+			sv = self.get_attr(&v);
+			ov = other.get_attr(&v);
+			if sv != ov {
+				retval = false;
+			}
+		}
+		for v in oks {
+			sv = self.get_attr(&v);
+			ov = other.get_attr(&v);
+			if sv != ov {
+				retval = false;
+			}			
+		}
+
+		return retval;
+	}
+}
+
+impl Clone for KeyAttr {
+	fn clone(&self) -> KeyAttr {
+		let mut retattr :KeyAttr = KeyAttr{__splitchar : self.__splitchar, __obj : HashMap::new(),};
+		for (k,v) in &(self.__obj) {
+			retattr.__obj.insert(String::from(k),String::from(v));
+		}
+		return retattr;
+	}
+}
+
 
 struct TypeClass {
 	typeval : String,
@@ -399,6 +445,45 @@ impl KeyData {
 	}
 
 
+	pub fn set_keyattr(&mut self,key :&str,val :&KeyAttr)  -> bool {
+		let mut retval :bool = true;
+		let ks :String = String::from(key);
+
+
+		if self.data.contains_key(&ks) {
+			retval = false;
+			self.data.remove(&ks);
+		}
+		self.data.insert(ks,KeyVal::KeyAttrVal(Some(val.clone())));
+		
+		return retval;
+	}
+
+	pub fn get_keyattr(&self,key :&str) -> Option<KeyAttr> {
+		let ks :String = String::from(key);
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::KeyAttrVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								return Some(kv3.clone());
+							},
+							_ => {
+								return None;
+							}
+						}						
+					},
+					_ => {return None;},
+				}
+			},
+			_ =>  {
+				return None;
+			}
+		}
+	}
+
 	pub fn new() -> KeyData {
 		let mut retval = KeyData{ data : HashMap::new() };
 		retval.reset();
@@ -432,6 +517,14 @@ impl Key {
 		let onval :Nargs;
 		let snopt :Option<Nargs>;
 		let onopt :Option<Nargs>;
+		let sbval :bool;
+		let obval :bool;
+		let sbopt :Option<bool>;
+		let obopt :Option<bool>;
+		let skval :KeyAttr;
+		let okval :KeyAttr;
+		let skopt :Option<KeyAttr>;
+		let okopt :Option<KeyAttr>;
 		if name == KEYWORD_VALUE {
 			sjopt = self.keydata.get_jsonval(name);
 			ojopt = other.keydata.get_jsonval(name);
@@ -457,7 +550,10 @@ impl Key {
 				ret = true;
 			}
 		} else if name == KEYWORD_PREFIX || name == KEYWORD_FLAGNAME || 
-			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG{
+			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG || 
+			name == KEYWORD_VARNAME || name == KEYWORD_CMDNAME ||
+			name == KEYWORD_FUNCTION || name == KEYWORD_ORIGKEY || 
+			name == KEYWORD_TYPE {
 			ssopt = self.keydata.get_string(name);
 			osopt = other.keydata.get_string(name);
 			match ssopt {
@@ -504,6 +600,54 @@ impl Key {
 			}
 
 			if onval == snval {
+				ret = true;
+			}
+		}  else if name == KEYWORD_ISCMD || name == KEYWORD_ISFLAG {
+			sbopt = self.keydata.get_bool(name);
+			obopt = other.keydata.get_bool(name);
+			match sbopt {
+				Some(v) => {sbval = v;},
+				None => {
+					match obopt {
+						None => {  return true; },
+						_ => {
+							return false;
+						}
+					}
+				}
+			}
+			match obopt {
+				Some(v) => {obval = v;},
+				_ => {
+					return false;
+				}
+			}
+
+			if obval == sbval {
+				ret = true;
+			}
+		} else if name == KEYWORD_ATTR {
+			skopt = self.keydata.get_keyattr(name);
+			okopt = other.keydata.get_keyattr(name);
+			match skopt {
+				Some(v) => {skval = v;},
+				None => {
+					match okopt {
+						None => {  return true; },
+						_ => {
+							return false;
+						}
+					}
+				}
+			}
+			match okopt {
+				Some(v) => {okval = v;},
+				_ => {
+					return false;
+				}
+			}
+
+			if okval == skval {
 				ret = true;
 			}
 		}
