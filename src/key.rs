@@ -9,6 +9,36 @@ pub enum Nargs {
 	Argnum(i32),
 }
 
+impl PartialEq for Nargs {
+	fn eq (&self, other :&Self) -> bool {
+		let mut retval :bool = false;
+		match self {
+			Nargs::Argtype(s) => {
+				match other {
+					Nargs::Argtype(os) => {
+						if s == os {
+							retval = true;
+						}
+					},
+					_ => {},
+				}
+			},
+			Nargs::Argnum(i) => {
+				match other {
+					Nargs::Argnum(oi) => {
+						if i == oi {
+							retval = true;
+						}
+					},
+					_ => {},
+				}
+			}
+		}
+		return retval;
+	}
+}
+
+
 impl Clone for Nargs {
 	fn clone(&self) -> Nargs {
 		match self {
@@ -377,46 +407,107 @@ impl KeyData {
 }
 
 
+#[allow(dead_code)]
 pub struct Key {
-
-	__value :Value,
-	__prefix :String,
-	__flagname :String,
-	__helpinfo :String,
-	__shortflag :String,
-	__nargs :Nargs,
-	__varname :String,
-	__cmdname :String,
-	__function :String,
-	__origkey :String,
-	__iscmd :BoolNone,
-	__isflag :BoolNone,
-	__type :String,
-	__attr :KeyAttr,
-	__nochange :bool,
-	__longprefix :String,
-	__shortprefix :String,
+	keydata : KeyData,
 }
 
 impl Key {
 	fn __reset(&mut self) {
-		self.__value = Value::Null;
-		self.__prefix = String::from("");
-		self.__flagname = String::from("");
-		self.__helpinfo = String::from("");
-		self.__shortflag = String::from("");
-		//self.__nargs = Nargs::None;
-		self.__varname = String::from("");
-		self.__cmdname = String::from("");
-		self.__function = String::from("");
-		self.__origkey = String::from("");
-		self.__iscmd = BoolNone::None;
-		self.__isflag = BoolNone::None; 
-		self.__type = String::from("");
-		self.__attr = KeyAttr::new("");
-		self.__nochange = false;
-		self.__longprefix = String::from("");
-		self.__shortprefix = String::from("");
+		self.keydata = KeyData::new();
 		return;
+	}
+
+	fn __eq_name__(&self,other :&Key,name :&str) -> bool {
+		let mut ret :bool = false;
+		let sjval  :Value;
+		let ojval :Value;
+		let sjopt :Option<Value>;
+		let ojopt :Option<Value>;
+		let ssval :String;
+		let osval :String;
+		let ssopt :Option<String>;
+		let osopt :Option<String>;
+		let snval :Nargs;
+		let onval :Nargs;
+		let snopt :Option<Nargs>;
+		let onopt :Option<Nargs>;
+		if name == KEYWORD_VALUE {
+			sjopt = self.keydata.get_jsonval(name);
+			ojopt = other.keydata.get_jsonval(name);
+			match sjopt {
+				Some(v) => {sjval = v;},
+				None => {
+					match ojopt {
+						None => {  return true; },
+						_ => {
+							return false;
+						}
+					}
+				}
+			}
+			match ojopt {
+				Some(v) => {ojval = v;},
+				_ => {
+					return false;
+				}
+			}
+
+			if ojval == sjval {
+				ret = true;
+			}
+		} else if name == KEYWORD_PREFIX || name == KEYWORD_FLAGNAME || 
+			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG{
+			ssopt = self.keydata.get_string(name);
+			osopt = other.keydata.get_string(name);
+			match ssopt {
+				Some(v) => {ssval = v;},
+				None => {
+					match osopt {
+						None => {  return true; },
+						_ => {
+							return false;
+						}
+					}
+				}
+			}
+			match osopt {
+				Some(v) => {osval = v;},
+				_ => {
+					return false;
+				}
+			}
+
+			if osval == ssval {
+				ret = true;
+			}
+
+		} else if name == KEYWORD_NARGS {
+			snopt = self.keydata.get_nargs(name);
+			onopt = other.keydata.get_nargs(name);
+			match snopt {
+				Some(v) => {snval = v;},
+				None => {
+					match onopt {
+						None => {  return true; },
+						_ => {
+							return false;
+						}
+					}
+				}
+			}
+			match onopt {
+				Some(v) => {onval = v;},
+				_ => {
+					return false;
+				}
+			}
+
+			if onval == snval {
+				ret = true;
+			}
+		}
+
+		return ret;
 	}
 }
