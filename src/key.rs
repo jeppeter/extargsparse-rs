@@ -229,9 +229,6 @@ impl KeyData {
 
 	pub fn get_string(&self, key :&str) -> Option<String> {
 		let ks :String = String::from(key);
-		if !self.data.contains_key(&ks) {
-			return None;
-		}
 
 		match self.data.get(&ks) {
 			Some(v) => {
@@ -270,10 +267,6 @@ impl KeyData {
 
 	pub fn get_bool(&self, key :&str) -> Option<bool> {
 		let ks :String = String::from(key);
-		if !self.data.contains_key(&ks) {
-			return None;
-		}
-
 		match self.data.get(&ks) {
 			Some(v) => {
 				match v {
@@ -317,10 +310,6 @@ impl KeyData {
 
 	pub fn get_nargs(&self, key :&str) -> Option<Nargs> {
 		let ks :String = String::from(key);
-		if !self.data.contains_key(&ks) {
-			return None;
-		}
-
 		match self.data.get(&ks) {
 			Some(v) => {
 				match v {
@@ -357,10 +346,6 @@ impl KeyData {
 
 	pub fn get_jsonval(&self, key :&str) -> Option<Value> {
 		let ks :String = String::from(key);
-		if !self.data.contains_key(&ks) {
-			return None;
-		}
-
 		match self.data.get(&ks) {
 			Some(v) => {
 				match v {
