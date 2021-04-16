@@ -231,7 +231,12 @@ impl KeyData {
 	pub fn set_nargs(&mut self, key :&str, val :&Nargs) -> bool {
 		let mut retval :bool = true;
 		let ks :String = String::from(key);
-		let vb :Nargs = *val;
+		let vb :Nargs;
+
+		match val {
+			Nargs::Argtype(s) => {vb = Nargs::Argtype(s.clone());},
+			Nargs::Argnum(v) => {vb = Nargs::Argnum(*v);},
+		}
 
 		if self.data.contains_key(&ks) {
 			retval = false;
