@@ -247,6 +247,18 @@ impl KeyData {
 		return retval;		
 	}
 
+	pub fn set_jsonval(&mut self, key :&str,val :&Value) -> bool {
+		let mut retval :bool = true;
+		let ks :String = String::from(key);
+		let vb :Value = val.clone();
+		if self.data.contains_key(&ks) {
+			retval = false;
+			self.data.remove(&ks);
+		}
+		self.data.insert(ks,KeyVal::JsonVal(Some(vb)));
+		return retval;
+	}
+
 
 	pub fn new() -> KeyData {
 		let mut retval = KeyData{ data : HashMap::new() };
