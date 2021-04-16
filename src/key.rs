@@ -553,7 +553,9 @@ impl Key {
 			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG || 
 			name == KEYWORD_VARNAME || name == KEYWORD_CMDNAME ||
 			name == KEYWORD_FUNCTION || name == KEYWORD_ORIGKEY || 
-			name == KEYWORD_TYPE {
+			name == KEYWORD_TYPE || name == KEYWORD_LONGPREFIX ||
+			name == KEYWORD_SHORTPREFIX || name == KEYWORD_LONGOPT || 
+			name == KEYWORD_SHORTOPT {
 			ssopt = self.keydata.get_string(name);
 			osopt = other.keydata.get_string(name);
 			match ssopt {
