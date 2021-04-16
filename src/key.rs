@@ -9,6 +9,19 @@ pub enum Nargs {
 	Argnum(i32),
 }
 
+impl Clone for Nargs {
+	fn clone(&self) -> Nargs {
+		match self {
+			Nargs::Argtype(s) => {
+				return Nargs::Argtype(s.clone());
+			},
+			Nargs::Argnum(iv) => {
+				return Nargs::Argnum(*iv);
+			}
+		}
+	}
+}
+
 
 #[allow(dead_code)]
 enum BoolNone {
@@ -214,6 +227,33 @@ impl KeyData {
 		return retval;
 	}
 
+	pub fn get_string(&self, key :&str) -> Option<String> {
+		let ks :String = String::from(key);
+		if !self.data.contains_key(&ks) {
+			return None;
+		}
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::StrVal(kv2) => {
+						match kv2 {
+							Some(sv) => {
+								return Some(sv.clone());
+							},
+							_ => {return None;},
+						}						
+						
+					},
+					_ => {return None;},
+				}
+			},
+			_ =>  {
+				return None;
+			}
+		}		
+	}	
+
 	pub fn set_bool(&mut self, key :&str, val :&bool) -> bool {
 		let mut retval :bool = true;
 		let ks :String = String::from(key);
@@ -227,6 +267,34 @@ impl KeyData {
 		
 		return retval;		
 	}
+
+	pub fn get_bool(&self, key :&str) -> Option<bool> {
+		let ks :String = String::from(key);
+		if !self.data.contains_key(&ks) {
+			return None;
+		}
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::BoolVal(kv2) => {
+						match kv2 {
+							Some(sv) => {
+								return Some(*sv);
+							},
+							_ => {return None;},
+						}						
+						
+					},
+					_ => {return None;},
+				}
+			},
+			_ =>  {
+				return None;
+			}
+		}		
+	}
+
 
 	pub fn set_nargs(&mut self, key :&str, val :&Nargs) -> bool {
 		let mut retval :bool = true;
@@ -247,6 +315,34 @@ impl KeyData {
 		return retval;		
 	}
 
+	pub fn get_nargs(&self, key :&str) -> Option<Nargs> {
+		let ks :String = String::from(key);
+		if !self.data.contains_key(&ks) {
+			return None;
+		}
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::NArgVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								return Some(kv3.clone());
+							},
+							_ => {
+								return None;
+							}
+						}						
+					},
+					_ => {return None;},
+				}
+			},
+			_ =>  {
+				return None;
+			}
+		}		
+	}
+
 	pub fn set_jsonval(&mut self, key :&str,val :&Value) -> bool {
 		let mut retval :bool = true;
 		let ks :String = String::from(key);
@@ -257,6 +353,34 @@ impl KeyData {
 		}
 		self.data.insert(ks,KeyVal::JsonVal(Some(vb)));
 		return retval;
+	}
+
+	pub fn get_jsonval(&self, key :&str) -> Option<Value> {
+		let ks :String = String::from(key);
+		if !self.data.contains_key(&ks) {
+			return None;
+		}
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::JsonVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								return Some(kv3.clone());
+							},
+							_ => {
+								return None;
+							}
+						}						
+					},
+					_ => {return None;},
+				}
+			},
+			_ =>  {
+				return None;
+			}
+		}
 	}
 
 
