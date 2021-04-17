@@ -9,6 +9,22 @@ pub enum Nargs {
 	Argnum(i32),
 }
 
+impl Nargs {
+	fn string(&self) -> String {
+		let mut retstr:String = String::from("");
+		match self {
+			Nargs::Argtype(s) => {
+				retstr = format!("{}",s);
+			},
+			Nargs::Argnum(i) => {
+				retstr = format!("{}", i);
+			},
+		}
+
+		return retstr;
+	}
+}
+
 impl PartialEq for Nargs {
 	fn eq (&self, other :&Self) -> bool {
 		let mut retval :bool = false;
@@ -896,5 +912,86 @@ impl Key {
 		}
 
 		return ret;
+	}
+
+	pub fn string(&self) -> String {
+		let mut retstr :String;
+		let mut s :String;
+		retstr = String::from("{");
+		retstr.push_str(&(format!("<{}:{}>",KEYWORD_TYPE, self.keydata.get_string_value(KEYWORD_TYPE))[..]));
+		retstr.push_str(&(format!("<{}:{}>",KEYWORD_ORIGKEY,self.keydata.get_string_value(KEYWORD_ORIGKEY))[..]));
+		if self.keydata.get_bool_value(KEYWORD_ISCMD) {
+			retstr.push_str(&(format!("<cmdname:{}>",self.keydata.get_string_value(KEYWORD_CMDNAME))[..]));
+			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>",KEYWORD_FUNCTION,s)[..]));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_HELPINFO);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_HELPINFO,s)[..]));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_PREFIX);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
+			}
+		}
+
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
+			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_FLAGNAME,s)[..]));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>",KEYWORD_SHORTFLAG,s)[..]));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_PREFIX);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
+			}
+
+			match self.keydata.get_nargs(KEYWORD_NARGS) {
+				Some(v) => {
+					retstr.push_str(&(format!("{}", v.string())[..]));
+				},
+				_ => {
+
+				},
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_VARNAME);
+			if s.len() > 0 {
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_VARNAME,s)[..]));
+			}
+
+			match self.keydata.get_jsonval(KEYWORD_VALUE) {
+				Some(v) => {
+					retstr.push_str(&(format!("<{}:{:?}>", KEYWORD_VALUE,v)[..]));
+				},
+				_ => {
+
+				},
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_LONGPREFIX);
+			retstr.push_str(&(format!("<{}:{}>", KEYWORD_LONGPREFIX,s)[..]));
+			s = self.keydata.get_string_value(KEYWORD_SHORTPREFIX);
+			retstr.push_str(&(format!("<{}:{}>", KEYWORD_SHORTPREFIX,s)[..]));
+		}
+
+		match self.keydata.get_keyattr(KEYWORD_ATTR) {
+			Some(v) => {
+				retstr.push_str(&(format!("<{}:{}>",KEYWORD_ATTR,v.string())[..]));
+			},
+			_ => {
+
+			},
+		}
+
+		return retstr;
 	}
 }
