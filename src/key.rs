@@ -190,6 +190,7 @@ const KEYWORD_INT :&str = "int";
 const KEYWORD_FLOAT :&str = "float";
 const KEYWORD_LONG :&str = "long";
 const KEYWORD_ARGS :&str = "args";
+const KEYWORD_HELP :&str = "help";
 const KEYWORD_JSONFILE :&str = "jsonfile";
 
 
@@ -342,6 +343,32 @@ impl KeyData {
 		}		
 	}	
 
+	pub fn get_string_value(&self, key :&str) -> String {
+		let ks :String = String::from(key);
+		let mut rets :String = String::from("");
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::StrVal(kv2) => {
+						match kv2 {
+							Some(sv) => {
+								rets = sv.clone();
+							},
+							_ => {
+
+							},
+						}						
+						
+					},
+					_ => {},
+				}
+			},
+			_ =>  {
+			}
+		}
+		return rets;		
+	}
 	pub fn set_bool(&mut self, key :&str, val :&bool) -> bool {
 		let mut retval :bool = true;
 		let ks :String = String::from(key);
@@ -377,6 +404,30 @@ impl KeyData {
 				return None;
 			}
 		}		
+	}
+
+	pub fn get_bool_value(&self, key :&str) -> bool {
+		let ks :String = String::from(key);
+		let mut retb :bool = false;
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::BoolVal(kv2) => {
+						match kv2 {
+							Some(sv) => {
+								retb = *sv;
+							},
+							_ => {},
+						}						
+						
+					},
+					_ => {},
+				}
+			},
+			_ =>  {
+			}
+		}		
+		return retb;
 	}
 
 
@@ -422,6 +473,29 @@ impl KeyData {
 			}
 		}		
 	}
+	pub fn get_nargs_value(&self, key :&str) -> Nargs {
+		let ks :String = String::from(key);
+		let mut retargs :Nargs = Nargs::Argnum(0);
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::NArgVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								retargs = kv3.clone();
+							},
+							_ => {
+							}
+						}						
+					},
+					_ => {},
+				}
+			},
+			_ =>  {
+			}
+		}
+		return retargs;
+	}
 
 	pub fn set_jsonval(&mut self, key :&str,val :&Value) -> bool {
 		let mut retval :bool = true;
@@ -459,6 +533,29 @@ impl KeyData {
 		}
 	}
 
+	pub fn get_jsonval_value(&self, key :&str) -> Value {
+		let ks :String = String::from(key);
+		let mut retv :Value = Value::Null;
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::JsonVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								retv = kv3.clone();
+							},
+							_ => {
+							}
+						}						
+					},
+					_ => {},
+				}
+			},
+			_ =>  {
+			}
+		}
+		return retv;
+	}
 
 	pub fn set_keyattr(&mut self,key :&str,val :&KeyAttr)  -> bool {
 		let mut retval :bool = true;
@@ -497,6 +594,31 @@ impl KeyData {
 				return None;
 			}
 		}
+	}
+
+	pub fn get_keyattr_value(&self,key :&str) -> KeyAttr {
+		let ks :String = String::from(key);
+		let mut retattr :KeyAttr = KeyAttr::new(KEYWORD_BLANK);
+
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::KeyAttrVal(kv2) => {
+						match kv2 {
+							Some(kv3) => {
+								retattr = kv3.clone();
+							},
+							_ => {
+							}
+						}						
+					},
+					_ => {},
+				}
+			},
+			_ =>  {
+			}
+		}
+		return retattr;
 	}
 
 	pub fn new() -> KeyData {
@@ -559,62 +681,67 @@ impl Key {
 	}
 
 	fn __form_word_str(&self,key :&str) -> String {
-		let mut sopt :Option<String>;
-		let mut sval :String;
-		let mut s2opt :Option<String>;
-		let mut s2val :String;
-		let mut bopt :Option<bool>;
-		let mut bval :boo;
-		let mut retval :String;
-		if key == KEYWORD_OPTDEST {
-			bopt = self.keydata.get_bool(KEYWORD_ISFLAG);
-			match bopt {
-				None => {
-					bval = false;
-				},
-				Some(v) => {
-					bval = v;
-				},
-			}
+		let bval :bool;
+		let sval :String;
+		let mut retval :String = String::from("");
 
-			sopt = self.keydata.get_string(KEYWORD_FLAGNAME);
-			match sopt {
-				None => {
-					sval = KEYWORD_BLANK;
-				},
-				Some(v) => {
-					sval = v;
-				},
+		if key == KEYWORD_LONGOPT {
+			if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
+			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
+			    self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_ARGS	{
+				panic!("can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY));
 			}
-
-			s2opt = self.keydata.get_string(KEYWORD_TYPE);
-			match s2opt {
-				None => {
-					s2val = KEYWORD_BLANK;
-				},
-				Some(v) => {
-					s2val = v;
-				},
-			}
-
-			if !bval || s2val == KEYWORD_BLANK || 
-				sval == KEYWORD_ARGS {
-					s2opt = self.keydata.get_string(KEYWORD_ORIGKEY);
-					match s2opt {
-						None => {
-							s2val = KEYWORD_BLANK;
-						},
-						Some(v) => {
-							s2val = v;
-						}
+			retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
+			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_BOOL {
+				match self.keydata.get_jsonval_value(KEYWORD_VALUE){
+					Value::Bool(v) => {
+						bval = v;
+					},
+					_ => {
+						bval = false;
 					}
-					panic!("can not set ({}) longopt",s2val);
-			 }
-			 if s2val == KEYWORD_BOOL {
+				}
+				if bval {
+					retval.push_str("no-");
+				}				
+			}
 
-			 }
-
+			sval = self.keydata.get_string_value(KEYWORD_PREFIX);
+			if sval.len() > 0 && 
+				self.keydata.get_string_value(KEYWORD_TYPE) != KEYWORD_HELP {
+				retval.push_str(&(format!("{}_",sval)[..]));
+			}
+			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
+			if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
+				retval = retval.to_lowercase();
+				retval = retval.replace("-","_");
+			}
+		} else if key == KEYWORD_SHORTOPT {
+			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
+			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
+			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
+			    panic!("can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY));	
+			}
+			if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
+				retval = format!("{}{}",self.keydata.get_string_value(KEYWORD_SHORTPREFIX),
+					self.keydata.get_string_value(KEYWORD_SHORTFLAG));
+			}
+		} else if key == KEYWORD_OPTDEST {
+			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
+			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
+			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
+			    panic!("can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY));	
+			}
+			if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
+				retval.push_str(&(format!("{}_",self.keydata.get_string_value(KEYWORD_PREFIX))[..]));
+			}
+			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
+			if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
+				retval = retval.to_lowercase();
+			}
+			retval = retval.replace("-","_");
 		}
+		return retval;
 	}
 
 	fn __eq_name__(&self,other :&Key,name :&str) -> bool {
