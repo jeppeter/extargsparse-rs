@@ -1043,6 +1043,23 @@ impl Key {
 					panic!("({}) can not set shortflag for args",origkey);
 				}
 			}
+
+			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+			if s.len() > 1 {
+				panic!("({}) can not accept ({}) for shortflag",origkey,s);
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			if s == KEYWORD_BOOL {
+				match self.keydata.get_nargs_value(KEYWORD_NARGS) {
+					Nargs::Argnum(iv) => {
+						if iv != 0 {
+							panic!("bool type ({}) can not accept not 0 nargs",origkey);
+						}
+					},
+					_ => {},
+				}
+			}
 		} else {
 
 		}
