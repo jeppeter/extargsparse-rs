@@ -209,6 +209,7 @@ const KEYWORD_ARGS :&str = "args";
 const KEYWORD_HELP :&str = "help";
 const KEYWORD_JSONFILE :&str = "jsonfile";
 const KEYWORD_COUNT :&str = "count";
+const KEYWORD_DOLLAR_SIGN :&str = "$";
 
 
 struct TypeClass {
@@ -1034,6 +1035,12 @@ impl Key {
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
 					panic!("({}) should not set shortflag",origkey);
+				}
+			} else if s == KEYWORD_DOLLAR_SIGN {
+				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_ARGS);
+				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+				if s.len() > 0 {
+					panic!("({}) can not set shortflag for args",origkey);
 				}
 			}
 		} else {
