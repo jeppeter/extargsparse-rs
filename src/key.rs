@@ -208,6 +208,7 @@ const KEYWORD_LONG :&str = "long";
 const KEYWORD_ARGS :&str = "args";
 const KEYWORD_HELP :&str = "help";
 const KEYWORD_JSONFILE :&str = "jsonfile";
+const KEYWORD_COUNT :&str = "count";
 
 
 struct TypeClass {
@@ -993,5 +994,32 @@ impl Key {
 		}
 
 		return retstr;
+	}
+
+	fn __validate(&self) {
+		let mut s:String;
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
+			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
+			if s.len() > 0 {
+				panic!("({}) can not accept function", self.keydata.get_string_value(KEYWORD_ORIGKEY));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
+				panic!("({}) flag can not accept dict",self.keydata.get_string_value(KEYWORD_ORIGKEY));
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
+				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
+				s != KEYWORD_HELP && s != KEYWORD_JSONFILE {
+				panic!("({}) value ({:?}) not match type ({})",self.keydata.get_string_value(KEYWORD_ORIGKEY),
+						self.keydata.get_jsonval_value(KEYWORD_VALUE),s);
+			}
+		} else {
+
+		}
+
+
 	}
 }
