@@ -11,7 +11,7 @@ pub enum Nargs {
 
 impl Nargs {
 	fn string(&self) -> String {
-		let mut retstr:String = String::from("");
+		let retstr:String ;
 		match self {
 			Nargs::Argtype(s) => {
 				retstr = format!("{}",s);
@@ -996,25 +996,45 @@ impl Key {
 		return retstr;
 	}
 
-	fn __validate(&self) {
+	fn __validate(&mut self) {
 		let mut s:String;
+		let origkey :String = self.keydata.get_string_value(KEYWORD_ORIGKEY);
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
 			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
 			if s.len() > 0 {
-				panic!("({}) can not accept function", self.keydata.get_string_value(KEYWORD_ORIGKEY));
+				panic!("({}) can not accept function", origkey);
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
 			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
-				panic!("({}) flag can not accept dict",self.keydata.get_string_value(KEYWORD_ORIGKEY));
+				panic!("({}) flag can not accept dict",origkey);
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_TYPE);
 			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
 				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
 				s != KEYWORD_HELP && s != KEYWORD_JSONFILE {
-				panic!("({}) value ({:?}) not match type ({})",self.keydata.get_string_value(KEYWORD_ORIGKEY),
-						self.keydata.get_jsonval_value(KEYWORD_VALUE),s);
+				panic!("({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s);
+			}
+			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+			if s.len() == 0 {
+				s = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s.len() == 0{
+					panic!("({}) should at least for prefix", origkey);
+				}
+				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_PREFIX);
+				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+					Value::Object(_v) => {},
+					_ => {panic!("({}) should used dict to make prefix",origkey);},
+				}
+				s = self.keydata.get_string_value(KEYWORD_HELPINFO);
+				if s.len() > 0 {
+					panic!("({}) should not have help info",origkey);
+				}
+				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+				if s.len() > 0 {
+					panic!("({}) should not set shortflag",origkey);
+				}
 			}
 		} else {
 
