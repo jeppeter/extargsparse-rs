@@ -3,6 +3,17 @@ use std::collections::HashMap;
 use regex::Regex;
 
 
+use std::fmt;
+use std::error::Error;
+use std::boxed::Box;
+
+#[macro_use]
+use super::errors;
+
+
+
+errors::error_class!{KeyError}
+
 #[allow(dead_code)]
 pub enum Nargs {	
 	Argtype(String),
