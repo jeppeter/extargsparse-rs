@@ -7,12 +7,13 @@ use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 
-#[macro_use]
-use super::errors;
+//#[macro_use]
+use super::{error_class,new_error};
 
 
 
-errors::error_class!{KeyError}
+error_class!{KeyAttrError}
+error_class!{KeyError}
 
 #[allow(dead_code)]
 pub enum Nargs {	
@@ -94,7 +95,7 @@ pub struct KeyAttr {
 
 #[allow(dead_code)]
 impl KeyAttr {
-	fn new(_attr :&str) -> KeyAttr {
+	fn new(_attr :&str) -> Result<KeyAttr,Box<dyn Error>> {
 		let mut kattr = KeyAttr {
 			__splitchar  : ';',
 			__obj : HashMap::new(),
@@ -116,7 +117,7 @@ impl KeyAttr {
 				} else if c == '+' {
 					kattr.__splitchar = '+';
 				} else {
-					panic!("not support char [{}]", c);
+					new_error!{KeyAttrError,"not support char [{}]", c}
 				}
 			}
 			let mut i :usize;
@@ -138,7 +139,7 @@ impl KeyAttr {
 				i = i + 1;
 			}
 		}
-		return kattr;
+		return Ok(kattr);
 	}
 
 	fn get_keys(&self) -> Vec<String> {
@@ -221,14 +222,20 @@ const KEYWORD_HELP :&str = "help";
 const KEYWORD_JSONFILE :&str = "jsonfile";
 const KEYWORD_COUNT :&str = "count";
 const KEYWORD_DOLLAR_SIGN :&str = "$";
+const KEYWORD_SUBNARGS :&str = "subnargs";
 
 
-struct TypeClass {
+pub struct TypeClass {
 	typeval : String,
 }
 
 #[allow(dead_code)]
 impl TypeClass {
+	fn new2(s :&str) -> TypeClass {
+		let tv2 :String;
+		tv2 = format!("{}",s);
+		return TypeClass{typeval : tv2,};		
+	}
 	fn new(v :&Value) -> TypeClass {
 		let tv :String;
 		match v {
@@ -246,6 +253,10 @@ impl TypeClass {
 			Value::Null => {tv = String::from(KEYWORD_STRING);},
 		}
 		return TypeClass{typeval : tv,};
+	}
+
+	fn clone(&self) -> TypeClass {
+		TypeClass{typeval : format!("{}",self.typeval)}
 	}
 
 	fn set_type(&mut self,val :&str) {
@@ -305,6 +316,7 @@ pub enum KeyVal {
 	JsonVal(Option<Value>),
 	KeyAttrVal(Option<KeyAttr>),
 	NArgVal(Option<Nargs>),
+	TypeVal(Option<TypeClass>),
 }
 
 pub struct KeyData {
@@ -346,6 +358,38 @@ impl KeyData {
 		self.data.insert(ks,KeyVal::StrVal(Some(vs)));
 		
 		return retval;
+	}
+
+	pub fn set_mute_type(&self,v :&mut TypeClass, c:&str) {
+		v.set_type(c);
+	}
+
+	pub fn set_type(&mut self,key :&str,c :&str)  {
+		let ks :String = String::from(key);
+
+		match self.data.get_mut(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::TypeVal(v2) => {
+						match v2 {
+							Some(v3) => {
+								v3.set_type(c)
+							},
+							_ => {
+								
+							}
+						}
+					},
+					_ => {
+						
+					},
+				}
+			},
+			_ => {
+				
+			},
+		}
+		return;		
 	}
 
 	pub fn get_string(&self, key :&str) -> Option<String> {
@@ -625,9 +669,9 @@ impl KeyData {
 		}
 	}
 
-	pub fn get_keyattr_value(&self,key :&str) -> KeyAttr {
+	pub fn get_keyattr_value(&self,key :&str) -> Result<KeyAttr,Box<dyn Error>> {
 		let ks :String = String::from(key);
-		let mut retattr :KeyAttr = KeyAttr::new(KEYWORD_BLANK);
+		let mut retattr :KeyAttr = KeyAttr::new(KEYWORD_BLANK)?;
 
 		match self.data.get(&ks) {
 			Some(v) => {
@@ -647,7 +691,7 @@ impl KeyData {
 			_ =>  {
 			}
 		}
-		return retattr;
+		return Ok(retattr);
 	}
 
 	pub fn new() -> KeyData {
@@ -709,7 +753,7 @@ impl Key {
 		return retval;
 	}
 
-	fn __form_word_str(&self,key :&str) -> String {
+	fn __form_word_str(&self,key :&str) -> Result<String,Box<dyn Error>> {
 		let bval :bool;
 		let sval :String;
 		let mut retval :String = String::from("");
@@ -718,7 +762,7 @@ impl Key {
 			if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
 			    self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_ARGS	{
-				panic!("can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY));
+			    new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
 			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_BOOL {
@@ -749,7 +793,7 @@ impl Key {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
 			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    panic!("can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY));	
+			    new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
 				retval = format!("{}{}",self.keydata.get_string_value(KEYWORD_SHORTPREFIX),
@@ -759,7 +803,7 @@ impl Key {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
 			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    panic!("can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY));	
+			    new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
 				retval.push_str(&(format!("{}_",self.keydata.get_string_value(KEYWORD_PREFIX))[..]));
@@ -770,7 +814,7 @@ impl Key {
 			}
 			retval = retval.replace("-","_");
 		}
-		return retval;
+		return Ok(retval);
 	}
 
 	fn __eq_name__(&self,other :&Key,name :&str) -> bool {
@@ -1008,56 +1052,59 @@ impl Key {
 		return retstr;
 	}
 
-	fn __validate(&mut self) {
+	fn __validate(&mut self) -> Result<bool,Box<dyn Error>>{
 		let mut s:String;
+		let mut s2 :String;
 		let origkey :String = self.keydata.get_string_value(KEYWORD_ORIGKEY);
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
 			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
 			if s.len() > 0 {
-				panic!("({}) can not accept function", origkey);
+				new_error!{KeyError,"({}) can not accept function", origkey}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
 			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
-				panic!("({}) flag can not accept dict",origkey);
+				new_error!{KeyError,"({}) flag can not accept dict",origkey}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_TYPE);
 			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
 				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
 				s != KEYWORD_HELP && s != KEYWORD_JSONFILE {
-				panic!("({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s);
+				new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
 			}
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
 			if s.len() == 0 {
 				s = self.keydata.get_string_value(KEYWORD_PREFIX);
 				if s.len() == 0{
-					panic!("({}) should at least for prefix", origkey);
+					new_error!{KeyError,"({}) should at least for prefix", origkey}
 				}
 				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_PREFIX);
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::Object(_v) => {},
-					_ => {panic!("({}) should used dict to make prefix",origkey);},
+					_ => {
+						new_error!{KeyError,"({}) should used dict to make prefix",origkey}
+					},
 				}
 				s = self.keydata.get_string_value(KEYWORD_HELPINFO);
 				if s.len() > 0 {
-					panic!("({}) should not have help info",origkey);
+					new_error!{KeyError,"({}) should not have help info",origkey}
 				}
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
-					panic!("({}) should not set shortflag",origkey);
+					new_error!{KeyError,"({}) should not set shortflag",origkey}
 				}
 			} else if s == KEYWORD_DOLLAR_SIGN {
 				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_ARGS);
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
-					panic!("({}) can not set shortflag for args",origkey);
+					new_error!{KeyError,"({}) can not set shortflag for args",origkey}
 				}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 			if s.len() > 1 {
-				panic!("({}) can not accept ({}) for shortflag",origkey,s);
+				new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_TYPE);
@@ -1065,16 +1112,66 @@ impl Key {
 				match self.keydata.get_nargs_value(KEYWORD_NARGS) {
 					Nargs::Argnum(iv) => {
 						if iv != 0 {
-							panic!("bool type ({}) can not accept not 0 nargs",origkey);
+							new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
 						}
 					},
 					_ => {},
 				}
 			}
 		} else {
+			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
+			if s.len() == 0 {
+				new_error!{KeyError,"({}) not set cmdname",origkey}
+			}
 
+			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+			if s.len() > 0 {
+				new_error!{KeyError,"({}) has shortflag ({})",origkey,s}
+			}
+
+			match self.keydata.get_nargs(KEYWORD_NARGS) {
+				None => {},
+				Some(e) => {
+					new_error!{KeyError,"({}) has nargs ({})",origkey,e.string()}
+				},
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			if s != KEYWORD_DICT {
+				new_error!{KeyError,"({}) command must be dict",origkey}
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_PREFIX);
+			if s.len() == 0 {
+				self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
+			}
+
+			s = self.keydata.get_string_value(KEYWORD_PREFIX);
+			if s.len() == 0 {
+				s.push_str(self.keydata.get_string_value(KEYWORD_CMDNAME).as_str());
+				self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
+			}
+			
+			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_CMDNAME);
 		}
 
+		s = self.keydata.get_string_value(KEYWORD_VARNAME);
+		s2 = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && s.len() == 0 && 
+			s2.len() > 0 {
+			if s2 != KEYWORD_DOLLAR_SIGN {
+				s2 = self.keydata.get_string_value(KEYWORD_OPTDEST);
+				self.keydata.set_string(KEYWORD_VARNAME,s2.as_str());
+			} else {
+				s2 = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s2.len() > 0 {
+					self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_SUBNARGS);
+				} else {
+					self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_ARGS);
+				}
+			}
+		}
 
+		return Ok(true);
 	}
 }

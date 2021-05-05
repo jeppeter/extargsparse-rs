@@ -1,8 +1,4 @@
 
-use std::fmt;
-use std::error::Error;
-use std::boxed::Box;
-
 
 #[macro_export]
 macro_rules! error_class {
@@ -13,7 +9,7 @@ macro_rules! error_class {
 	}
 
 	impl $type {
-		fn new(c :&str) -> $type {
+		fn create(c :&str) -> $type {
 			$type {msg : format!("{}",c)}
 		}
 	}
@@ -33,8 +29,8 @@ macro_rules! new_error {
 	($type:ty,$($a:expr),*) => {
 		{
 		let mut c :String= format!("[{}:{}][{}]",file!(),line!(),stringify!($type));
-		c.push_str(&(format!($($a)*)[..]));
-		Err(Box::new(<$type>::new(c.as_str())))
+		c.push_str(&(format!($($a),*)[..]));
+		return Err(Box::new(<$type>::create(c.as_str())));
 	  }
 	};
 }
