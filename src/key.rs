@@ -702,7 +702,6 @@ impl KeyData {
 }
 
 
-#[allow(dead_code)]
 pub struct Key {
 	keydata : KeyData,
 }
@@ -1173,5 +1172,55 @@ impl Key {
 		}
 
 		return Ok(true);
+	}
+
+	fn __set_flag(&mut self, prefix :&str, key :&str,value :&Value) -> Result<bool,Box<dyn Error>> {
+		Ok(true)
+	}
+
+	pub fn new(prefix :&str, key :&str,
+		value :&Value,isflag :bool,
+		ishelp :bool,isjsonfile :bool,
+		longprefix :&str,shortprefix :&str,
+		nochange :bool) -> Result<Key,Box<dyn Error>> {
+		let mut key :Key;
+		key = Key{ keydata : KeyData::new(),};
+
+		Ok(key)
+	}
+}
+
+impl PartialEq for Key {
+	fn eq(&self, other :&Self) -> bool {
+		if !self.__eq_name__(other,KEYWORD_TYPE) {
+			return false;
+		}
+		if !self.__eq_name__(other,KEYWORD_ORIGKEY) {
+			return false;
+		}
+		if !self.__eq_name__(other,KEYWORD_PREFIX) {
+			return false;
+		}
+
+		if !self.__eq_name__(other,KEYWORD_VALUE) {
+			return false;
+		}
+
+		if !self.__eq_name__(other,KEYWORD_ATTR) {
+			return false;
+		}
+
+		if !self.__eq_name__(other,KEYWORD_LONGPREFIX) {
+			return false;
+		}
+
+		if !self.__eq_name__(other,KEYWORD_SHORTPREFIX) {
+			return false;
+		}
+		return true;
+	}
+
+	fn ne(&self,other :&Self) -> bool {
+		return ! self.eq(other);
 	}
 }
