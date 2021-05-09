@@ -1204,13 +1204,14 @@ impl Key {
 		let mut flags :String;
 		let mut s :String;
 		let mut idx :usize;
+			let mut sv ;
 		flagmode = false;
 		cmdmode = false;
 		flags = format!("{}",KEYWORD_BLANK);
 		self.keydata.set_string(KEYWORD_ORIGKEY,origkey);
 		s = self.keydata.get_string_value(KEYWORD_ORIGKEY);
+		sv = s.chars().as_str().bytes();
 		if s.contains("$") {
-			let mut sv = s.chars().as_str().bytes();
 			match sv.nth(0) {
 				None => {
 					new_error!{KeyError,"{} not get $",origkey}
@@ -1234,6 +1235,54 @@ impl Key {
 					}
 				}
 				idx += 1;
+			}
+		}
+
+		if isflag || ishelp || isjsonfile {
+			match self.__flagexpr.captures(origkey) {
+				None => {
+					flags = format!("");
+				},
+				Some(v) => {
+					if v.len() > 1 {
+						flags = format!("{}",v.get(1).map_or("", |m| m.as_str()));
+					} else {
+						flags = format!("");
+					}
+				},
+			}
+
+			if flags.len() == 0 {
+				match self.__mustflagexpr.captures(origkey) {
+					None => {
+						flags = format!("");
+					},
+					Some(v) => {
+						if v.len() > 1 {
+							flags = format!("{}",v.get(1).map_or("", |m| m.as_str()));
+						} else {
+							flags = format!("");
+						}
+					}
+				}
+			}
+
+			if flags.len() == 0  {
+				match sv.nth(0) {
+					None => {
+
+					},
+					Some(v) => {
+						if v == ('$' as u8) {							
+							self.keydata.set_string(KEYWORD_FLAGNAME,KEYWORD_ARGS);
+							flagmode = true;
+						}
+					}
+				}
+			}
+
+			if flags.len() > 0 {
+				
 			}
 		}
 
