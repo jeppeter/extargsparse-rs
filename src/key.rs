@@ -1197,8 +1197,46 @@ impl Key {
 		Ok(true)
 	}
 
-	fn __parse(&mut self,prefix :&str, key :&str, value :&Value, isflag :bool,
+	fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
 			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
+		let mut flagmode : bool;
+		let mut cmdmode : bool;
+		let mut flags :String;
+		let mut s :String;
+		let mut idx :usize;
+		flagmode = false;
+		cmdmode = false;
+		flags = format!("{}",KEYWORD_BLANK);
+		self.keydata.set_string(KEYWORD_ORIGKEY,origkey);
+		s = self.keydata.get_string_value(KEYWORD_ORIGKEY);
+		if s.contains("$") {
+			let mut sv = s.chars().as_str().bytes();
+			match sv.nth(0) {
+				None => {
+					new_error!{KeyError,"{} not get $",origkey}
+				},
+				Some(v) => {
+					if v != ('$' as u8) {
+						new_error!(KeyError,"({}) not right format for ($)",origkey)		
+					}
+				},
+			}
+			idx = 1;
+			while idx < sv.len() {
+				match sv.nth(idx) {
+					None => {
+						new_error!{KeyError,"{} can not get [{}]", origkey,idx}
+					},
+					Some(v) => {
+						if v == ('$' as u8) {
+							new_error!{KeyError,"({}) has ($) more than one",origkey}
+						}
+					}
+				}
+				idx += 1;
+			}
+		}
+
 		Ok(true)
 	}
 
