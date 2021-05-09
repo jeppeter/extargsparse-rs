@@ -704,6 +704,25 @@ impl KeyData {
 
 pub struct Key {
 	keydata : KeyData,
+	__helpexpr :Regex,
+	__cmdexpr : Regex,
+	__prefixexpr : Regex,
+	__funcexpr : Regex,
+	__flagexpr : Regex,
+	__mustflagexpr : Regex,
+	__attrexpr : Regex,
+}
+
+fn compile_regex(expr :&str) -> Result<Regex,Box<dyn Error>> {
+	match Regex::new(expr) {
+		Err(e) => {
+			new_error!(KeyError,"compile [{}] error[{:?}]",expr,e)
+		},
+		Ok(v) => {
+			Ok(v)
+		},
+	}
+
 }
 
 impl Key {
@@ -1178,13 +1197,29 @@ impl Key {
 		Ok(true)
 	}
 
-	pub fn new(prefix :&str, key :&str,
+
+	pub fn new(prefix :&str, key1 :&str,
 		value :&Value,isflag :bool,
 		ishelp :bool,isjsonfile :bool,
 		longprefix :&str,shortprefix :&str,
 		nochange :bool) -> Result<Key,Box<dyn Error>> {
 		let mut key :Key;
-		key = Key{ keydata : KeyData::new(),};
+		key = Key {
+			 keydata : KeyData::new(),
+			 __helpexpr : compile_regex("##([^#]+)##$")?,
+			 __cmdexpr : compile_regex("^([^#<>\\+\\$!]+)")?,
+			 __prefixexpr : compile_regex("\\+([a-zA-Z]+[a-zA-Z0-9]*)")?,
+			 __funcexpr : compile_regex("<([^<>\\$| \t!\\+]+)>")?,
+			 __flagexpr : compile_regex("^([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
+			 __mustflagexpr : compile_regex("^\\$([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
+			 __attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
+		};
+
+		key.__reset();
+		key.keydata.set_string(KEYWORD_ORIGKEY,key1);
+		key.keydata.set_string(KEYWORD_LONGPREFIX,longprefix);
+		key.keydata.set_string(KEYWORD_SHORTPREFIX,shortprefix);
+		key.keydata.set_bool(KEYWORD_NOCHANGE,&nochange);
 
 		Ok(key)
 	}
