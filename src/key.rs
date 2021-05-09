@@ -1282,7 +1282,19 @@ impl Key {
 			}
 
 			if flags.len() > 0 {
-				
+				if flags.contains("|") {
+					let _splitre :Regex = compile_regex("\\|")?;
+					let _sarr :Vec<&str>;
+					_sarr = _splitre.split(flags.as_str()).collect();
+					if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
+						new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+					}
+					self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
+					self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
+				} else {
+					self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
+				}
+				flagmode = true;
 			}
 		}
 
