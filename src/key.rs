@@ -1197,6 +1197,11 @@ impl Key {
 		Ok(true)
 	}
 
+	fn __parse(&mut self,prefix :&str, key :&str, value :&Value, isflag :bool,
+			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
+		Ok(true)
+	}
+
 
 	pub fn new(prefix :&str, key1 :&str,
 		value :&Value,isflag :bool,
@@ -1204,6 +1209,7 @@ impl Key {
 		longprefix :&str,shortprefix :&str,
 		nochange :bool) -> Result<Key,Box<dyn Error>> {
 		let mut key :Key;
+		let bval :bool;
 		key = Key {
 			 keydata : KeyData::new(),
 			 __helpexpr : compile_regex("##([^#]+)##$")?,
@@ -1220,6 +1226,7 @@ impl Key {
 		key.keydata.set_string(KEYWORD_LONGPREFIX,longprefix);
 		key.keydata.set_string(KEYWORD_SHORTPREFIX,shortprefix);
 		key.keydata.set_bool(KEYWORD_NOCHANGE,&nochange);
+		bval = key.__parse(prefix,key1,value,isflag,ishelp,isjsonfile)?;
 
 		Ok(key)
 	}
