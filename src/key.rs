@@ -1204,7 +1204,9 @@ impl Key {
 		let mut flags :String;
 		let mut s :String;
 		let mut idx :usize;
-			let mut sv ;
+		let mut sv ;
+		let mut _splitre :Regex;
+		let mut _sarr :Vec<&str>;
 		flagmode = false;
 		cmdmode = false;
 		flags = format!("{}",KEYWORD_BLANK);
@@ -1283,8 +1285,7 @@ impl Key {
 
 			if flags.len() > 0 {
 				if flags.contains("|") {
-					let _splitre :Regex = compile_regex("\\|")?;
-					let _sarr :Vec<&str>;
+					_splitre = compile_regex("\\|")?;
 					_sarr = _splitre.split(flags.as_str()).collect();
 					if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
 						new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
@@ -1295,6 +1296,44 @@ impl Key {
 					self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
 				}
 				flagmode = true;
+			}
+		} else {
+			match self.__mustflagexpr.captures(origkey) {
+				Some(m) => {
+					if m.len() > 0 {
+						flags = format!("");
+						flags.push_str(&(m[0]));
+						if flags.contains("|") {
+							_splitre = compile_regex("\\|")?;
+							_sarr = _splitre.split(flags.as_str()).collect();
+							if _sarr.len() > 2 || _sarr[1].len() != 1 || _sarr[0].len() <= 1 {
+								new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+							}
+							self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
+							self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
+						} else {
+							if flags.len() <= 1 {
+								new_error!{KeyError,"({}) flag must have long opt",origkey}
+							}
+							self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
+						}
+						flagmode = true;
+					}
+				},
+				None => {
+					s = self.keydata.get_string_value(KEYWORD_ORIGKEY);
+					sv = s.chars().as_str().bytes();
+					match sv.nth(0) {
+						None => {
+						},
+						Some(v) => {
+							if v == ('$' as u8) {
+								self.keydata.set_string(KEYWORD_FLAGNAME,KEYWORD_ARGS);
+								flagmode = true;
+							}
+						},
+					}
+				}
 			}
 		}
 
@@ -1308,7 +1347,6 @@ impl Key {
 		longprefix :&str,shortprefix :&str,
 		nochange :bool) -> Result<Key,Box<dyn Error>> {
 		let mut key :Key;
-		let bval :bool;
 		key = Key {
 			 keydata : KeyData::new(),
 			 __helpexpr : compile_regex("##([^#]+)##$")?,
@@ -1325,7 +1363,7 @@ impl Key {
 		key.keydata.set_string(KEYWORD_LONGPREFIX,longprefix);
 		key.keydata.set_string(KEYWORD_SHORTPREFIX,shortprefix);
 		key.keydata.set_bool(KEYWORD_NOCHANGE,&nochange);
-		bval = key.__parse(prefix,key1,value,isflag,ishelp,isjsonfile)?;
+		key.__parse(prefix,key1,value,isflag,ishelp,isjsonfile)?;
 
 		Ok(key)
 	}
