@@ -1199,14 +1199,17 @@ impl Key {
 
 	fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
 			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
-		let mut flagmode : bool;
-		let mut cmdmode : bool;
+		let mut flagmode : bool = false;
+		let mut cmdmode : bool = false;
 		let mut flags :String;
 		let mut s :String;
 		let mut idx :usize;
 		let mut sv ;
 		let mut _splitre :Regex;
 		let mut _sarr :Vec<&str>;
+		let mut newprefix :String;
+		let vtrue :bool = true;
+		let vfalse :bool  = false;
 		flagmode = false;
 		cmdmode = false;
 		flags = format!("{}",KEYWORD_BLANK);
@@ -1335,7 +1338,109 @@ impl Key {
 					}
 				}
 			}
+
+			match self.__cmdexpr.captures(origkey) {
+				Some(m) => {
+					let mut cmds :String;
+					assert!(flagmode == false);
+					cmds = format!("");
+					cmds.push_str(&(m[0]));
+					if cmds.contains("|") {
+						_splitre = compile_regex("\\|")?;
+						_sarr = _splitre.split(cmds.as_str()).collect();
+						if _sarr.len() > 2 || _sarr[1].len() != 1 || _sarr[0].len() <= 1 {
+							new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+						}
+						self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
+						self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
+						flagmode= true;
+					} else {
+						self.keydata.set_string(KEYWORD_CMDNAME,&(m[0]));
+						cmdmode = true;
+					}
+				},
+				None => {
+
+				},
+			}
 		}
+
+		match self.__helpexpr.captures(origkey) {
+			Some(m) => {
+				if m.len() > 0 {
+					self.keydata.set_string(KEYWORD_HELPINFO,&(m[0]));	
+				}				
+			},
+			None => {
+
+			},
+		}
+
+		newprefix = String::from("");
+
+		if prefix.len() > 0 {
+			newprefix = format!("{}",prefix);
+		}
+
+		match self.__prefixexpr.captures(origkey) {
+			Some(m) => {
+				if m.len() > 0 {
+					if newprefix.len() > 0 {
+						newprefix.push_str("_");
+					}
+					newprefix.push_str(&(m[0]));
+					self.keydata.set_string(KEYWORD_PREFIX,newprefix.as_str());
+				}
+			},
+			None => {
+				if newprefix.len() > 0 {
+					self.keydata.set_string(KEYWORD_PREFIX,newprefix.as_str());
+				}
+			},
+		}
+
+		if flagmode {
+			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
+			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
+		}
+
+		if cmdmode {
+			self.keydata.set_bool(KEYWORD_ISFLAG,&vfalse);
+			self.keydata.set_bool(KEYWORD_ISCMD,&vtrue);
+		}
+
+		if !flagmode && !cmdmode {
+			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
+			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
+		}
+
+		self.keydata.set_jsonval(KEYWORD_VALUE,value);
+
+		if !ishelp && !isjsonfile {
+			self.keydata.set_string(KEYWORD_TYPE,TypeClass::new(value).get_type().as_str());
+		} else if ishelp {
+			self.keydata.set_string(KEYWORD_TYPE,KEYWORD_HELP);
+			self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+		} else if isjsonfile {
+			self.keydata.set_string(KEYWORD_TYPE,KEYWORD_JSONFILE);
+			self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(1)));
+		}
+
+		s = self.keydata.get_string_value(KEYWORD_TYPE);
+		if s == KEYWORD_HELP && !value.is_null() {
+			new_error!{KeyError,"help type must be value None"}
+		}
+
+		if cmdmode && s != KEYWORD_DICT {
+			flagmode = true;
+			cmdmode = false;
+			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
+			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
+			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
+			self.keydata.set_string(KEYWORD_FLAGNAME,s.as_str());
+			self.keydata.set_string(KEYWORD_CMDNAME,KEYWORD_BLANK);
+		}
+
 
 		Ok(true)
 	}
