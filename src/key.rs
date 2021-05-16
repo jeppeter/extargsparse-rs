@@ -1223,6 +1223,38 @@ impl Key {
 	}
 
 	fn __set_flag(&mut self, prefix :&str, key :&str,value :&Value) -> Result<bool,Box<dyn Error>> {
+		let vtrue : bool = true;
+		let vfalse :bool = false;
+		let mut binvalue :bool = false;
+		self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
+		self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
+		self.keydata.set_string(KEYWORD_ORIGKEY,key);
+
+		match value {
+			Value::Object(v2) => {
+				match v2.get(&(format!("{}",KEYWORD_VALUE)[..])) {
+					None => {
+
+					},
+					Some(v3) => {
+						match v3 {
+							Value::String(v4) => {
+								binvalue = true;
+							},
+							Value::Null => {
+								binvalue = true;
+							},
+							_ => {
+								binvalue =false;
+							}
+						}
+					}
+				}
+			},
+			_ => {
+				binvalue = false;
+			},
+		}
 		Ok(true)
 	}
 
@@ -1239,6 +1271,8 @@ impl Key {
 		let mut newprefix :String;
 		let vtrue :bool = true;
 		let vfalse :bool  = false;
+		let mut bmatch : bool = false;
+
 		flagmode = false;
 		cmdmode = false;
 		flags = format!("{}",KEYWORD_BLANK);
@@ -1491,9 +1525,9 @@ impl Key {
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
 			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS &&
 			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT {
-				let mut bmatch : bool = false;
 				let mut nval :Nargs = Nargs::Argnum(0);
 				let mut jval :Value = serde_json::from_str("null").unwrap();
+				bmatch = false;
 				s = self.keydata.get_type(KEYWORD_TYPE);
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::String(sval) => {
@@ -1525,7 +1559,12 @@ impl Key {
 					self.keydata.set_jsonval(KEYWORD_VALUE,&jval);
 					self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
 				}
+		}
 
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
+			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && 
+			self.keydata.get_string_value(KEYWORD_FLAGNAME).len() > 0 {
+			bmatch = self.__set_flag(prefix,origkey,value)?;
 		}
 
 
