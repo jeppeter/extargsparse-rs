@@ -364,6 +364,35 @@ impl KeyData {
 		v.set_type(c);
 	}
 
+	pub fn get_type(&self,key :&str) -> String {
+		let ks :String = String::from(key);
+		let mut retstr :String = format!("{}",KEYWORD_STRING);
+		match self.data.get(&ks) {
+			Some(v) => {
+				match v {
+					KeyVal::TypeVal(v2) => {
+						match v2 {
+							Some(v3) => {
+								retstr = v3.get_type();
+							},
+							_ => {
+								
+							}
+						}
+					},
+					_ => {
+						
+					},
+				}
+			},
+			_ => {
+				
+			},
+		}
+
+		return retstr;
+	}
+
 	pub fn set_type(&mut self,key :&str,c :&str)  {
 		let ks :String = String::from(key);
 
@@ -1439,6 +1468,64 @@ impl Key {
 			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
 			self.keydata.set_string(KEYWORD_FLAGNAME,s.as_str());
 			self.keydata.set_string(KEYWORD_CMDNAME,KEYWORD_BLANK);
+		}
+
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
+			self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_STRING && 
+			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS {
+				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+					Value::String(v) => {
+						if v == "+" {
+							let tmpv :Value = serde_json::from_str("0").unwrap();
+							self.keydata.set_jsonval(KEYWORD_VALUE,&tmpv);
+							self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+							self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+						}
+					},
+					_ => {
+
+					},
+				}
+		}
+
+		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
+			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS &&
+			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT {
+				let mut bmatch : bool = false;
+				let mut nval :Nargs = Nargs::Argnum(0);
+				let mut jval :Value = serde_json::from_str("null").unwrap();
+				s = self.keydata.get_type(KEYWORD_TYPE);
+				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+					Value::String(sval) => {
+						if sval == "+" || sval == "?" || sval == "*" {
+							bmatch = true;
+							nval = Nargs::Argtype(sval);
+						}
+					},
+					Value::Number(ref ival) => {
+						bmatch = false;
+						match ival.as_i64() {
+							Some(vv) => {
+								nval = Nargs::Argnum( vv as i32 );		
+							},
+							None => {
+								nval = Nargs::Argnum( 0 as i32);
+							},
+						}						
+					},
+					_ => {
+
+					},
+				}
+
+				if !((s == KEYWORD_STRING && bmatch )|| s == KEYWORD_INT) {
+					new_error!{KeyError,"({})({})({:?}) for $ should option dict set opt or +?* specialcase or type int",prefix,origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE)}
+				} else {
+					self.keydata.set_nargs(KEYWORD_NARGS,&nval);
+					self.keydata.set_jsonval(KEYWORD_VALUE,&jval);
+					self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+				}
+
 		}
 
 
