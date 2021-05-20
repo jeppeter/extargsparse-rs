@@ -1567,8 +1567,34 @@ impl Key {
 			bmatch = self.__set_flag(prefix,origkey,value)?;
 		}
 
+		match self.__attrexpr.captures(origkey) {
+			Some(m) => {
+				if m.len() > 0 {
+					let attr :KeyAttr = KeyAttr::new(&(m[0]))?;
+					self.keydata.set_keyattr(KEYWORD_ATTR,&attr);
+				}
+			},
+			None => {
 
-		Ok(true)
+			},
+		}
+
+		match self.__funcexpr.captures(origkey) {
+			Some(m) => {
+				if m.len() > 0 {
+					if flagmode {
+						self.keydata.set_string(KEYWORD_VARNAME,&(m[0]));
+					} else {
+						self.keydata.set_string(KEYWORD_FUNCTION,&(m[0]));
+					}
+				}
+			},
+			None => {
+
+			},
+		}
+		
+		self.__validate()
 	}
 
 
