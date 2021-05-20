@@ -6,6 +6,7 @@ use regex::Regex;
 use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
+use std::ptr;
 
 //#[macro_use]
 use super::{error_class,new_error};
@@ -309,6 +310,20 @@ const OTHERWORDS :&'static [&'static str] = &[KEYWORD_ORIGKEY,KEYWORD_ISCMD,KEYW
 #[allow(dead_code)]
 const FORMWORDS :&'static [&'static str] = &[KEYWORD_LONGOPT,KEYWORD_SHORTOPT,KEYWORD_OPTDEST,KEYWORD_NEEDARG];
 
+
+fn in_array_word( key :&str, sarr :&[&str]) -> bool {
+	let mut retval :bool = false;
+	let mut idx :usize = 0;
+
+	idx = 0;
+	for k in sarr {
+		if (*k) == key {
+			retval = true;
+			break;
+		}
+	}
+	retval
+}
 
 pub enum KeyVal {
 	StrVal(Option<String>),
@@ -1255,6 +1270,30 @@ impl Key {
 				binvalue = false;
 			},
 		}
+
+		if binvalue {
+			self.keydata.set_jsonval(KEYWORD_VALUE,&(Value::Null));
+			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+		}
+
+		match value {
+			Value::Object(v2) => {
+				for (k,v) in v2 {
+					println!("k [{}]", k);
+					if in_array_word(k,FLAGWORDS) {
+
+					} else if in_array_word(k,FLAGSPECIAL) {
+
+					} else if k == KEYWORD_ATTR {
+						
+					}
+				}
+			},
+			_ => {
+
+			},
+		}
+
 		Ok(true)
 	}
 
@@ -1593,7 +1632,7 @@ impl Key {
 
 			},
 		}
-		
+
 		self.__validate()
 	}
 
