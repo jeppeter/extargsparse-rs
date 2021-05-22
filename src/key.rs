@@ -1322,7 +1322,31 @@ impl Key {
 							}
 						}
 					} else if in_array_word(k,FLAGSPECIAL) {
+						if k == KEYWORD_PREFIX {
+							match v {
+								Value::String(vs) => {
+									self.keydata.set_string(KEYWORD_PREFIX,vs);
+								},
+								Value::Null =>  {
+									self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
+								},
+								_ => {
+									new_error!{KeyError,"({}) prefix not string or none", k}
+								}
+							}
+						} else if k == KEYWORD_VALUE {
+							match v {
+								Value::Object(_v3) => {
+									new_error!{KeyError,"{:?} object values",v}
+								},
+								_ => {
 
+								},
+							}
+							self.keydata.set_jsonval(KEYWORD_VALUE,v);
+						} else {
+							new_error!{KeyError,"{} not valid key", k}
+						}
 					} else if k == KEYWORD_ATTR {
 						
 					}
