@@ -1335,6 +1335,7 @@ impl Key {
 								}
 							}
 						} else if k == KEYWORD_VALUE {
+							let vtype :TypeClass;
 							match v {
 								Value::Object(_v3) => {
 									new_error!{KeyError,"{:?} object values",v}
@@ -1344,11 +1345,21 @@ impl Key {
 								},
 							}
 							self.keydata.set_jsonval(KEYWORD_VALUE,v);
+							vtype = TypeClass::new(v);
+							self.keydata.set_type(KEYWORD_TYPE,&(vtype.get_type()[..]));
 						} else {
 							new_error!{KeyError,"{} not valid key", k}
 						}
 					} else if k == KEYWORD_ATTR {
-						
+						match v {
+							Value::String(vs) => {
+								let vattr :KeyAttr = KeyAttr::new(vs)?;
+								self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
+							},
+							_ => {
+
+							},
+						}
 					}
 				}
 			},
@@ -1357,6 +1368,9 @@ impl Key {
 			},
 		}
 
+		if prefix.len() > 0 {
+			self.keydata.set_string(KEYWORD_PREFIX,prefix);
+		}
 		Ok(true)
 	}
 
