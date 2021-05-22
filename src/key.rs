@@ -1241,6 +1241,7 @@ impl Key {
 		let vtrue : bool = true;
 		let vfalse :bool = false;
 		let mut binvalue :bool = false;
+		let mut s :String;
 		self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
 		self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
 		self.keydata.set_string(KEYWORD_ORIGKEY,key);
@@ -1281,7 +1282,21 @@ impl Key {
 				for (k,v) in v2 {
 					println!("k [{}]", k);
 					if in_array_word(k,FLAGWORDS) {
+						if k == KEYWORD_NARGS {
 
+						} else {
+							match v {
+								Value::String(vs) => {
+									s = self.keydata.get_string_value(k);
+									if s != &(vs[..]) {
+										new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
+									}
+								},
+								_ => {
+									new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
+								},
+							}
+						}
 					} else if in_array_word(k,FLAGSPECIAL) {
 
 					} else if k == KEYWORD_ATTR {
