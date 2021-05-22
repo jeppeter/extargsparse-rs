@@ -216,7 +216,7 @@ const KEYWORD_LIST :&str = "list";
 const KEYWORD_BOOL :&str = "bool";
 const KEYWORD_INT :&str = "int";
 const KEYWORD_FLOAT :&str = "float";
-const KEYWORD_LONG :&str = "long";
+//const KEYWORD_LONG :&str = "long";
 const KEYWORD_ARGS :&str = "args";
 const KEYWORD_HELP :&str = "help";
 const KEYWORD_JSONFILE :&str = "jsonfile";
@@ -804,7 +804,8 @@ impl Key {
 			}
 
 			if sval == KEYWORD_INT || sval == KEYWORD_LIST || 
-			  sval == KEYWORD_LONG || sval == KEYWORD_FLOAT ||
+			  //sval == KEYWORD_LONG || sval == KEYWORD_FLOAT ||
+			  sval == KEYWORD_FLOAT ||
 			  sval == KEYWORD_STRING || sval == KEYWORD_JSONFILE {
 			  	retval = 1;
 			}
@@ -1373,7 +1374,7 @@ impl Key {
 		}
 		Ok(true)
 	}
-
+	#[allow(unused_assignments)]
 	fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
 			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
 		let mut flagmode : bool = false;
@@ -1588,6 +1589,7 @@ impl Key {
 			self.keydata.set_bool(KEYWORD_ISCMD,&vtrue);
 		}
 
+		flagmode = flagmode;
 		if !flagmode && !cmdmode {
 			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
 			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
@@ -1642,7 +1644,7 @@ impl Key {
 			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS &&
 			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT {
 				let mut nval :Nargs = Nargs::Argnum(0);
-				let mut jval :Value = serde_json::from_str("null").unwrap();
+				let jval :Value = serde_json::from_str("null").unwrap();
 				bmatch = false;
 				s = self.keydata.get_type(KEYWORD_TYPE);
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
@@ -1739,6 +1741,18 @@ impl Key {
 		key.__parse(prefix,key1,value,isflag,ishelp,isjsonfile)?;
 
 		Ok(key)
+	}
+
+	pub fn get_string_v(&self,key :&str) -> String {
+		return self.keydata.get_string_value(key);
+	}
+
+	pub fn get_bool_v(&self, key :&str) -> bool {
+		return self.keydata.get_bool_value(key);
+	}
+
+	pub fn get_nargs_v(&self, key :&str) -> Nargs {
+		return self.keydata.get_nargs_value(key);
 	}
 }
 
