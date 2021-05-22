@@ -6,7 +6,6 @@ use regex::Regex;
 use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
-use std::ptr;
 
 //#[macro_use]
 use super::{error_class,new_error};
@@ -313,9 +312,7 @@ const FORMWORDS :&'static [&'static str] = &[KEYWORD_LONGOPT,KEYWORD_SHORTOPT,KE
 
 fn in_array_word( key :&str, sarr :&[&str]) -> bool {
 	let mut retval :bool = false;
-	let mut idx :usize = 0;
 
-	idx = 0;
 	for k in sarr {
 		if (*k) == key {
 			retval = true;
@@ -1254,7 +1251,7 @@ impl Key {
 					},
 					Some(v3) => {
 						match v3 {
-							Value::String(v4) => {
+							Value::String(_v4) => {
 								binvalue = true;
 							},
 							Value::Null => {
@@ -1283,14 +1280,41 @@ impl Key {
 					println!("k [{}]", k);
 					if in_array_word(k,FLAGWORDS) {
 						if k == KEYWORD_NARGS {
-
+							let va :Nargs;
+							match v {
+								Value::String(vs) => {
+									if vs != "+" && vs != "*" && vs != "?" {
+										new_error!{KeyError,"{} not in +?*",vs}
+									}
+									va = Nargs::Argtype(vs.to_string());
+								},
+								Value::Number(vi) => {
+									if !vi.is_u64() {
+										new_error!{KeyError,"{:?} not valid u64",v}
+									}
+									match vi.as_u64() {
+										Some(v3) => {
+											va = Nargs::Argnum(v3 as i32);		
+										},
+										None => {
+											new_error!{KeyError,"{:?} not valid u64",v}
+										}
+									}
+									
+								},
+								_ => {
+									new_error!{KeyError,"{:?} not for int or string", v}
+								}
+							}
+							self.keydata.set_nargs(KEYWORD_NARGS,&va);
 						} else {
 							match v {
 								Value::String(vs) => {
 									s = self.keydata.get_string_value(k);
-									if s != &(vs[..]) {
+									if s != &(vs[..]) && s.len() > 0 {
 										new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
 									}
+									self.keydata.set_string(k,&(vs[..]));
 								},
 								_ => {
 									new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
