@@ -743,7 +743,7 @@ impl KeyData {
 }
 
 
-pub struct Key {
+pub struct ExtKeyParse {
 	keydata : KeyData,
 	__helpexpr :Regex,
 	__cmdexpr : Regex,
@@ -766,7 +766,7 @@ fn compile_regex(expr :&str) -> Result<Regex,Box<dyn Error>> {
 
 }
 
-impl Key {
+impl ExtKeyParse {
 	fn __reset(&mut self) {
 		self.keydata = KeyData::new();
 		return;
@@ -877,7 +877,7 @@ impl Key {
 		return Ok(retval);
 	}
 
-	fn __eq_name__(&self,other :&Key,name :&str) -> bool {
+	fn __eq_name__(&self,other :&ExtKeyParse,name :&str) -> bool {
 		let mut ret :bool = false;
 		let sjval  :Value;
 		let ojval :Value;
@@ -1720,9 +1720,9 @@ impl Key {
 		value :&Value,isflag :bool,
 		ishelp :bool,isjsonfile :bool,
 		longprefix :&str,shortprefix :&str,
-		nochange :bool) -> Result<Key,Box<dyn Error>> {
-		let mut key :Key;
-		key = Key {
+		nochange :bool) -> Result<ExtKeyParse,Box<dyn Error>> {
+		let mut key :ExtKeyParse;
+		key = ExtKeyParse {
 			 keydata : KeyData::new(),
 			 __helpexpr : compile_regex("##([^#]+)##$")?,
 			 __cmdexpr : compile_regex("^([^#<>\\+\\$!]+)")?,
@@ -1733,7 +1733,9 @@ impl Key {
 			 __attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
 		};
 
+		println!("before __reset");
 		key.__reset();
+		println!("after __reset");
 		key.keydata.set_string(KEYWORD_ORIGKEY,key1);
 		key.keydata.set_string(KEYWORD_LONGPREFIX,longprefix);
 		key.keydata.set_string(KEYWORD_SHORTPREFIX,shortprefix);
@@ -1756,7 +1758,7 @@ impl Key {
 	}
 }
 
-impl PartialEq for Key {
+impl PartialEq for ExtKeyParse {
 	fn eq(&self, other :&Self) -> bool {
 		if !self.__eq_name__(other,KEYWORD_TYPE) {
 			return false;
@@ -1789,4 +1791,36 @@ impl PartialEq for Key {
 	fn ne(&self,other :&Self) -> bool {
 		return ! self.eq(other);
 	}
+}
+
+
+#[cfg(test)]
+mod debug_key_test_case {
+	use super::*;
+	use serde_json::{Value};
+    #[test]
+    fn test_a001() {
+    	let data = r#"\"string\""#;
+    	let jsonv :Value ;
+    	let flags :ExtKeyParse ;
+
+    	match serde_json::from_str(data) {
+    		Ok(v) => {
+    			jsonv =v;
+    		},
+    		Err(e) => {
+    			panic!("{:?}", e);
+    		}
+    	}
+
+    	match ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false) {
+    		Ok(v) =>  {
+    			flags = v;
+    		},
+    		Err(e) => {
+    			panic!("{:?}",e);
+    		}
+    	}
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    }
 }
