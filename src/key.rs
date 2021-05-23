@@ -282,6 +282,7 @@ const KEYWORD_SHORTFLAG :&str = "shortflag";
 const KEYWORD_NARGS :&str = "nargs";
 const KEYWORD_VARNAME :&str = "varname";
 const KEYWORD_CMDNAME :&str = "cmdname";
+const KEYWORD_COMMAND :&str = "command";
 const KEYWORD_FUNCTION :&str = "function";
 const KEYWORD_ORIGKEY :&str = "origkey";
 const KEYWORD_ISCMD :&str = "iscmd";
@@ -331,6 +332,36 @@ pub enum KeyVal {
 	TypeVal(Option<TypeClass>),
 }
 
+impl KeyVal {
+	pub fn string(&self) -> String {
+		let mut rets :String = String::from("");
+		match self {
+			KeyVal::StrVal(Some(v)) => {
+				rets.push_str(&(format!("strval({})",v)[..]));
+			},
+			KeyVal::BoolVal(Some(v)) => {
+				rets.push_str(&(format!("boolval({:?})",v)[..]));
+			},
+			KeyVal::JsonVal(Some(v)) => {
+				rets.push_str(&(format!("jsonval({:?})",v)[..]));
+			},
+			KeyVal::KeyAttrVal(Some(v)) => {
+				rets.push_str(&(format!("keyattr({})",v.string())[..]));
+			},
+			KeyVal::NArgVal(Some(v)) => {
+				rets.push_str(&(format!("nargval({})",v.string())[..]));
+			},
+			KeyVal::TypeVal(Some(v)) => {
+				rets.push_str(&(format!("typeval({})",v.string())[..]));
+			},
+			_ => {
+				rets.push_str(&(format!("none")[..]));
+			}
+		}
+		return rets;
+	}
+}
+
 pub struct KeyData {
 	data :HashMap<String,KeyVal>,
 }
@@ -338,6 +369,7 @@ pub struct KeyData {
 impl KeyData {
 
 	pub fn reset(&mut self) {
+		let typeval = TypeClass::new(&(Value::Null));
 		self.data.clear();
 		self.data.insert(String::from(KEYWORD_VALUE),KeyVal::JsonVal(None));
 		self.data.insert(String::from(KEYWORD_PREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
@@ -351,7 +383,7 @@ impl KeyData {
 		self.data.insert(String::from(KEYWORD_ORIGKEY),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
 		self.data.insert(String::from(KEYWORD_ISCMD),KeyVal::BoolVal(None));
 		self.data.insert(String::from(KEYWORD_ISFLAG),KeyVal::BoolVal(None));
-		self.data.insert(String::from(KEYWORD_TYPE),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_TYPE),KeyVal::TypeVal(Some(typeval)));
 		self.data.insert(String::from(KEYWORD_ATTR),KeyVal::KeyAttrVal(None));
 		self.data.insert(String::from(KEYWORD_NOCHANGE),KeyVal::BoolVal(Some(false)));
 		self.data.insert(String::from(KEYWORD_LONGPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
@@ -393,15 +425,15 @@ impl KeyData {
 						}
 					},
 					_ => {
-						
+						debug_output!("get [{}] type not TypeVal[{}]",key,v.string());
 					},
 				}
 			},
 			_ => {
-				
+				debug_output!("get [{}] None", key);
 			},
 		}
-
+		debug_output!("type [{}]",retstr);
 		return retstr;
 	}
 
@@ -414,20 +446,21 @@ impl KeyData {
 					KeyVal::TypeVal(v2) => {
 						match v2 {
 							Some(v3) => {
+								debug_output!("set type [{}]",c);
 								v3.set_type(c)
 							},
 							_ => {
-								
+								debug_output!("set type [{}]",v.string());
 							}
 						}
 					},
 					_ => {
-						
+						debug_output!("set type [{}]",v.string());
 					},
 				}
 			},
 			_ => {
-				
+				debug_output!("set type [None]");
 			},
 		}
 		return;		
@@ -776,7 +809,6 @@ impl ExtKeyParse {
 		let bval :bool;
 		let bopt :Option<bool>;
 		let sval :String;
-		let sopt :Option<String>;
 		let mut retval :i32 = 0; 
 		if key == KEYWORD_NEEDARG {
 			bopt = self.keydata.get_bool(KEYWORD_ISFLAG);
@@ -793,15 +825,7 @@ impl ExtKeyParse {
 				return retval;
 			}
 
-			sopt = self.keydata.get_string(KEYWORD_TYPE);
-			match sopt {
-				None => {
-					return retval;
-				},
-				Some(v) => {
-					sval = v;
-				},
-			}
+			sval = self.keydata.get_type(KEYWORD_TYPE);
 
 			if sval == KEYWORD_INT || sval == KEYWORD_LIST || 
 			  //sval == KEYWORD_LONG || sval == KEYWORD_FLOAT ||
@@ -821,11 +845,11 @@ impl ExtKeyParse {
 		if key == KEYWORD_LONGOPT {
 			if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
-			    self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_ARGS	{
+			    self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_ARGS	{
 			    new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
-			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_BOOL {
+			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_BOOL {
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE){
 					Value::Bool(v) => {
 						bval = v;
@@ -841,7 +865,7 @@ impl ExtKeyParse {
 
 			sval = self.keydata.get_string_value(KEYWORD_PREFIX);
 			if sval.len() > 0 && 
-				self.keydata.get_string_value(KEYWORD_TYPE) != KEYWORD_HELP {
+				self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_HELP {
 				retval.push_str(&(format!("{}_",sval)[..]));
 			}
 			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
@@ -852,7 +876,7 @@ impl ExtKeyParse {
 		} else if key == KEYWORD_SHORTOPT {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
-			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
+			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
 			    new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
@@ -862,7 +886,7 @@ impl ExtKeyParse {
 		} else if key == KEYWORD_OPTDEST {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
-			    self.keydata.get_string_value(KEYWORD_TYPE)  == KEYWORD_ARGS {
+			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
 			    new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
@@ -927,8 +951,7 @@ impl ExtKeyParse {
 			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG || 
 			name == KEYWORD_VARNAME || name == KEYWORD_CMDNAME ||
 			name == KEYWORD_FUNCTION || name == KEYWORD_ORIGKEY || 
-			name == KEYWORD_TYPE || name == KEYWORD_LONGPREFIX ||
-			name == KEYWORD_SHORTPREFIX || name == KEYWORD_LONGOPT || 
+			name == KEYWORD_LONGPREFIX || name == KEYWORD_SHORTPREFIX || name == KEYWORD_LONGOPT || 
 			name == KEYWORD_SHORTOPT || name == KEYWORD_OPTDEST {
 			ssopt = self.keydata.get_string(name);
 			osopt = other.keydata.get_string(name);
@@ -954,7 +977,14 @@ impl ExtKeyParse {
 				ret = true;
 			}
 
-		} else if name == KEYWORD_NARGS {
+		} else if name == KEYWORD_TYPE {
+			ssval = self.keydata.get_type(name);
+			osval = self.keydata.get_type(name);
+			if osval == ssval {
+				ret = true;
+			}
+
+		}else if name == KEYWORD_NARGS {
 			snopt = self.keydata.get_nargs(name);
 			onopt = other.keydata.get_nargs(name);
 			match snopt {
@@ -1035,7 +1065,7 @@ impl ExtKeyParse {
 		let mut retstr :String;
 		let mut s :String;
 		retstr = String::from("{");
-		retstr.push_str(&(format!("<{}:{}>",KEYWORD_TYPE, self.keydata.get_string_value(KEYWORD_TYPE))[..]));
+		retstr.push_str(&(format!("<{}:{}>",KEYWORD_TYPE, self.keydata.get_type(KEYWORD_TYPE))[..]));
 		retstr.push_str(&(format!("<{}:{}>",KEYWORD_ORIGKEY,self.keydata.get_string_value(KEYWORD_ORIGKEY))[..]));
 		if self.keydata.get_bool_value(KEYWORD_ISCMD) {
 			retstr.push_str(&(format!("<cmdname:{}>",self.keydata.get_string_value(KEYWORD_CMDNAME))[..]));
@@ -1123,11 +1153,11 @@ impl ExtKeyParse {
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
-			if self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
+			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
 				new_error!{KeyError,"({}) flag can not accept dict",origkey}
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			s = self.keydata.get_type(KEYWORD_TYPE);
 			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
 				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
 				s != KEYWORD_HELP && s != KEYWORD_JSONFILE && s != KEYWORD_BOOL {
@@ -1139,7 +1169,7 @@ impl ExtKeyParse {
 				if s.len() == 0{
 					new_error!{KeyError,"({}) should at least for prefix", origkey}
 				}
-				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_PREFIX);
+				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_PREFIX);
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::Object(_v) => {},
 					_ => {
@@ -1155,7 +1185,7 @@ impl ExtKeyParse {
 					new_error!{KeyError,"({}) should not set shortflag",origkey}
 				}
 			} else if s == KEYWORD_DOLLAR_SIGN {
-				self.keydata.set_string(KEYWORD_TYPE,KEYWORD_ARGS);
+				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_ARGS);
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
 					new_error!{KeyError,"({}) can not set shortflag for args",origkey}
@@ -1167,7 +1197,7 @@ impl ExtKeyParse {
 				new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			s = self.keydata.get_type(KEYWORD_TYPE);
 			if s == KEYWORD_BOOL {
 				match self.keydata.get_nargs_value(KEYWORD_NARGS) {
 					Nargs::Argnum(iv) => {
@@ -1196,7 +1226,7 @@ impl ExtKeyParse {
 				},
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_TYPE);
+			s = self.keydata.get_type(KEYWORD_TYPE);
 			if s != KEYWORD_DICT {
 				new_error!{KeyError,"({}) command must be dict",origkey}
 			}
@@ -1212,7 +1242,8 @@ impl ExtKeyParse {
 				self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
 			}
 			
-			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_CMDNAME);
+			debug_output!("set [{}]=[{}]",KEYWORD_TYPE,KEYWORD_COMMAND);
+			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COMMAND);
 		}
 
 		s = self.keydata.get_string_value(KEYWORD_VARNAME);
@@ -1597,16 +1628,16 @@ impl ExtKeyParse {
 		self.keydata.set_jsonval(KEYWORD_VALUE,value);
 
 		if !ishelp && !isjsonfile {
-			self.keydata.set_string(KEYWORD_TYPE,TypeClass::new(value).get_type().as_str());
+			self.keydata.set_type(KEYWORD_TYPE,TypeClass::new(value).get_type().as_str());
 		} else if ishelp {
-			self.keydata.set_string(KEYWORD_TYPE,KEYWORD_HELP);
+			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_HELP);
 			self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
 		} else if isjsonfile {
-			self.keydata.set_string(KEYWORD_TYPE,KEYWORD_JSONFILE);
+			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_JSONFILE);
 			self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(1)));
 		}
 
-		s = self.keydata.get_string_value(KEYWORD_TYPE);
+		s = self.keydata.get_type(KEYWORD_TYPE);
 		if s == KEYWORD_HELP && !value.is_null() {
 			new_error!{KeyError,"help type must be value None"}
 		}
@@ -1622,7 +1653,7 @@ impl ExtKeyParse {
 		}
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
-			self.keydata.get_string_value(KEYWORD_TYPE) == KEYWORD_STRING && 
+			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_STRING && 
 			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS {
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::String(v) => {
@@ -1698,11 +1729,11 @@ impl ExtKeyParse {
 
 		match self.__funcexpr.captures(origkey) {
 			Some(m) => {
-				if m.len() > 0 {
+				if m.len() > 1 {
 					if flagmode {
-						self.keydata.set_string(KEYWORD_VARNAME,&(m[0]));
+						self.keydata.set_string(KEYWORD_VARNAME,&(m[1]));
 					} else {
-						self.keydata.set_string(KEYWORD_FUNCTION,&(m[0]));
+						self.keydata.set_string(KEYWORD_FUNCTION,&(m[1]));
 					}
 				}
 			},
@@ -1753,7 +1784,7 @@ impl ExtKeyParse {
 					return String::from(KEYWORD_BLANK);
 				}
 			}
-		}
+		} 
 		return self.keydata.get_string_value(key);
 	}
 
@@ -1834,7 +1865,7 @@ mod debug_key_test_case {
     	return;
     }
 
-    #[test]
+    //#[test]
     fn test_a002() {
     	let data = "[]";
     	let jsonv :Value = serde_json::from_str(data).unwrap();
@@ -1855,7 +1886,7 @@ mod debug_key_test_case {
     	return;
     }
 
-    #[test]
+    //#[test]
     fn test_a003() {
     	let data = "false";
     	let jsonv :Value = serde_json::from_str(data).unwrap();
@@ -1875,4 +1906,16 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
     	return;
 	}
+
+    //#[test]
+    fn test_a004() {
+    	let data = "{}";
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("newtype","flag<flag.main>##help for flag##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
+    	return;
+
+	}	
 }
