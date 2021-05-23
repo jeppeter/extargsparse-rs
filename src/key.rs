@@ -1814,34 +1814,38 @@ mod debug_key_test_case {
     #[test]
     fn test_a001() {
     	let data = "\"string\"";
-    	let jsonv :Value ;
-    	let flags :ExtKeyParse ;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
 
-    	match serde_json::from_str(data) {
-    		Ok(v) => {
-    			jsonv =v;
-    		},
-    		Err(e) => {
-    			panic!("{:?}", e);
-    		}
-    	}
-
-    	match ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false) {
-    		Ok(v) =>  {
-    			flags = v;
-    		},
-    		Err(e) => {
-    			panic!("{:?}",e);
-    		}
-    	}
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
     	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
     	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
     	assert!(flags.get_value_v() == Value::String(String::from("string")));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == "string");
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
     	assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+    	return;
+    }
+
+    #[test]
+    fn test_a002() {
+    	let data = "[]";
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,true,false,false,"--","-",false).unwrap();
+
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_LIST);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
