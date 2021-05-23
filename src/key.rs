@@ -1973,4 +1973,24 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a007() {
+    	let data = r#"{}"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","+flag",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "flag");
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_PREFIX);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+    	__opt_fail_check(&flags);
+    	return;
+    }
+
 }
