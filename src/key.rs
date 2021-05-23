@@ -2045,4 +2045,20 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a011() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut ok :i32 = 0;
+    	match ExtKeyParse::new("","f|f2",&jsonv,false,false,false,"--","-",false) {
+    		Ok(_v) => {
+
+    		},
+    		Err(_e) => {
+    			ok = 1;
+    		},
+    	}
+    	assert!(ok > 0);
+    	return;
+    }
 }
