@@ -1837,6 +1837,14 @@ impl PartialEq for ExtKeyParse {
 mod debug_key_test_case {
 	use super::*;
 	use serde_json::{Value};
+
+	fn __opt_fail_check(flags :&ExtKeyParse) {
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		return;
+	}
+
     #[test]
     fn test_a001() {
     	let data = "\"string\"";
@@ -1912,6 +1920,35 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
     	assert!(flags.get_string_v(KEYWORD_PREFIX) == "newtype");
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+    	__opt_fail_check(&flags);
+    	return;
+	}	
+
+    #[test]
+    fn test_a005() {
+    	let data = "\"\"";
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","flag<flag.main>##help for flag##",&jsonv,true,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
     	return;
 
 	}	
