@@ -1441,7 +1441,7 @@ impl ExtKeyParse {
 				},
 			}
 			idx = 1;
-			while idx < sv.len() {
+			while idx <= sv.len() {
 				match sv.nth(idx) {
 					None => {
 						new_error!{KeyError,"{} can not get [{}]", origkey,idx}
@@ -2133,4 +2133,20 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a015() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut ok :i32 = 0;
+    	match ExtKeyParse::new("","$$",&jsonv,false,false,false,"--","-",false) {
+    		Ok(_v) => {
+
+    		},
+    		Err(_e) => {
+    			ok = 1;
+    		},
+    	}
+    	assert!(ok > 0);
+    	return;
+    }
 }
