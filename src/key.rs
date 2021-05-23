@@ -1130,7 +1130,7 @@ impl ExtKeyParse {
 			s = self.keydata.get_string_value(KEYWORD_TYPE);
 			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
 				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
-				s != KEYWORD_HELP && s != KEYWORD_JSONFILE {
+				s != KEYWORD_HELP && s != KEYWORD_JSONFILE && s != KEYWORD_BOOL {
 				new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
 			}
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
@@ -1854,4 +1854,25 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
     	return;
     }
+
+    #[test]
+    fn test_a003() {
+    	let data = "false";
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
+
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+    	return;
+	}
 }
