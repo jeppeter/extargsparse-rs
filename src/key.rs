@@ -425,15 +425,12 @@ impl KeyData {
 						}
 					},
 					_ => {
-						debug_output!("get [{}] type not TypeVal[{}]",key,v.string());
 					},
 				}
 			},
 			_ => {
-				debug_output!("get [{}] None", key);
 			},
 		}
-		debug_output!("type [{}]",retstr);
 		return retstr;
 	}
 
@@ -446,21 +443,17 @@ impl KeyData {
 					KeyVal::TypeVal(v2) => {
 						match v2 {
 							Some(v3) => {
-								debug_output!("set type [{}]",c);
 								v3.set_type(c)
 							},
 							_ => {
-								debug_output!("set type [{}]",v.string());
 							}
 						}
 					},
 					_ => {
-						debug_output!("set type [{}]",v.string());
 					},
 				}
 			},
 			_ => {
-				debug_output!("set type [None]");
 			},
 		}
 		return;		
@@ -1577,8 +1570,8 @@ impl ExtKeyParse {
 
 		match self.__helpexpr.captures(origkey) {
 			Some(m) => {
-				if m.len() > 0 {
-					self.keydata.set_string(KEYWORD_HELPINFO,&(m[0]));	
+				if m.len() > 1 {
+					self.keydata.set_string(KEYWORD_HELPINFO,&(m[1]));	
 				}				
 			},
 			None => {
@@ -1784,7 +1777,9 @@ impl ExtKeyParse {
 					return String::from(KEYWORD_BLANK);
 				}
 			}
-		} 
+		}  else if key == KEYWORD_TYPE {
+			return self.keydata.get_type(key);
+		}
 		return self.keydata.get_string_value(key);
 	}
 
@@ -1865,7 +1860,7 @@ mod debug_key_test_case {
     	return;
     }
 
-    //#[test]
+    #[test]
     fn test_a002() {
     	let data = "[]";
     	let jsonv :Value = serde_json::from_str(data).unwrap();
@@ -1886,7 +1881,7 @@ mod debug_key_test_case {
     	return;
     }
 
-    //#[test]
+    #[test]
     fn test_a003() {
     	let data = "false";
     	let jsonv :Value = serde_json::from_str(data).unwrap();
@@ -1907,7 +1902,7 @@ mod debug_key_test_case {
     	return;
 	}
 
-    //#[test]
+    #[test]
     fn test_a004() {
     	let data = "{}";
     	let jsonv :Value = serde_json::from_str(data).unwrap();
@@ -1915,6 +1910,8 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "newtype");
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
     	return;
 
 	}	
