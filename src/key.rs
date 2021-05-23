@@ -2093,4 +2093,26 @@ mod debug_key_test_case {
     	return;
     }
 
+
+    #[test]
+    fn test_a013() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+cc<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "cc");
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--cc-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "cc_flag");
+    	return;
+    }
 }
