@@ -7,8 +7,8 @@ use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 
-//#[macro_use]
-use super::{error_class,new_error};
+#[allow(unused_imports)]
+use super::{error_class,new_error,debug_output,error_output};
 
 
 
@@ -847,7 +847,7 @@ impl ExtKeyParse {
 			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
 			if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
 				retval = retval.to_lowercase();
-				retval = retval.replace("-","_");
+				retval = retval.replace("_","-");
 			}
 		} else if key == KEYWORD_SHORTOPT {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
@@ -1278,7 +1278,6 @@ impl ExtKeyParse {
 		match value {
 			Value::Object(v2) => {
 				for (k,v) in v2 {
-					println!("k [{}]", k);
 					if in_array_word(k,FLAGWORDS) {
 						if k == KEYWORD_NARGS {
 							let va :Nargs;
@@ -1483,9 +1482,9 @@ impl ExtKeyParse {
 		} else {
 			match self.__mustflagexpr.captures(origkey) {
 				Some(m) => {
-					if m.len() > 0 {
+					if m.len() > 1 {
 						flags = format!("");
-						flags.push_str(&(m[0]));
+						flags.push_str(&(m[1]));
 						if flags.contains("|") {
 							_splitre = compile_regex("\\|")?;
 							_sarr = _splitre.split(flags.as_str()).collect();
@@ -1564,11 +1563,11 @@ impl ExtKeyParse {
 
 		match self.__prefixexpr.captures(origkey) {
 			Some(m) => {
-				if m.len() > 0 {
+				if m.len() > 1 {
 					if newprefix.len() > 0 {
 						newprefix.push_str("_");
 					}
-					newprefix.push_str(&(m[0]));
+					newprefix.push_str(&(m[1]));
 					self.keydata.set_string(KEYWORD_PREFIX,newprefix.as_str());
 				}
 			},
@@ -1733,9 +1732,7 @@ impl ExtKeyParse {
 			 __attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
 		};
 
-		println!("before __reset");
 		key.__reset();
-		println!("after __reset");
 		key.keydata.set_string(KEYWORD_ORIGKEY,key1);
 		key.keydata.set_string(KEYWORD_LONGPREFIX,longprefix);
 		key.keydata.set_string(KEYWORD_SHORTPREFIX,shortprefix);
@@ -1746,6 +1743,17 @@ impl ExtKeyParse {
 	}
 
 	pub fn get_string_v(&self,key :&str) -> String {
+		if in_array_word(key, FORMWORDS) {
+			match self.__form_word_str(key) {
+				Ok(v) => {
+					return v;
+				},
+				Err(e) => {
+					error_output!("can not get [{}] [{}]",key,e);
+					return String::from(KEYWORD_BLANK);
+				}
+			}
+		}
 		return self.keydata.get_string_value(key);
 	}
 
@@ -1800,7 +1808,7 @@ mod debug_key_test_case {
 	use serde_json::{Value};
     #[test]
     fn test_a001() {
-    	let data = r#"\"string\""#;
+    	let data = "\"string\"";
     	let jsonv :Value ;
     	let flags :ExtKeyParse ;
 
@@ -1822,5 +1830,7 @@ mod debug_key_test_case {
     		}
     	}
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	debug_output!("[{}]=[{}]",KEYWORD_LONGOPT,flags.get_string_v(KEYWORD_LONGOPT));
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
     }
 }
