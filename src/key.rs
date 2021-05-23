@@ -1220,7 +1220,7 @@ impl ExtKeyParse {
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && s.len() == 0 && 
 			s2.len() > 0 {
 			if s2 != KEYWORD_DOLLAR_SIGN {
-				s2 = self.keydata.get_string_value(KEYWORD_OPTDEST);
+				s2 = self.__form_word_str(KEYWORD_OPTDEST)?;
 				self.keydata.set_string(KEYWORD_VARNAME,s2.as_str());
 			} else {
 				s2 = self.keydata.get_string_value(KEYWORD_PREFIX);
@@ -1761,6 +1761,11 @@ impl ExtKeyParse {
 		return self.keydata.get_bool_value(key);
 	}
 
+	pub fn get_value_v(&self) -> Value {
+		let val :Value = self.keydata.get_jsonval_value(KEYWORD_VALUE);
+		return val;
+	}
+
 	pub fn get_nargs_v(&self, key :&str) -> Nargs {
 		return self.keydata.get_nargs_value(key);
 	}
@@ -1830,7 +1835,19 @@ mod debug_key_test_case {
     		}
     	}
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	debug_output!("[{}]=[{}]",KEYWORD_LONGOPT,flags.get_string_v(KEYWORD_LONGOPT));
     	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+    	assert!(flags.get_value_v() == Value::String(String::from("string")));
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == "string");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+    	return;
     }
 }
