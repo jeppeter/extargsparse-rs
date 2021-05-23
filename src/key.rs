@@ -372,22 +372,22 @@ impl KeyData {
 		let typeval = TypeClass::new(&(Value::Null));
 		self.data.clear();
 		self.data.insert(String::from(KEYWORD_VALUE),KeyVal::JsonVal(None));
-		self.data.insert(String::from(KEYWORD_PREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_FLAGNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_HELPINFO),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_SHORTFLAG),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_PREFIX),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_FLAGNAME),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_HELPINFO),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_SHORTFLAG),KeyVal::StrVal(None));
 		self.data.insert(String::from(KEYWORD_NARGS),KeyVal::NArgVal(None));
-		self.data.insert(String::from(KEYWORD_VARNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_CMDNAME),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_FUNCTION),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_ORIGKEY),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_VARNAME),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_CMDNAME),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_FUNCTION),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_ORIGKEY),KeyVal::StrVal(None));
 		self.data.insert(String::from(KEYWORD_ISCMD),KeyVal::BoolVal(None));
 		self.data.insert(String::from(KEYWORD_ISFLAG),KeyVal::BoolVal(None));
 		self.data.insert(String::from(KEYWORD_TYPE),KeyVal::TypeVal(Some(typeval)));
 		self.data.insert(String::from(KEYWORD_ATTR),KeyVal::KeyAttrVal(None));
 		self.data.insert(String::from(KEYWORD_NOCHANGE),KeyVal::BoolVal(Some(false)));
-		self.data.insert(String::from(KEYWORD_LONGPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
-		self.data.insert(String::from(KEYWORD_SHORTPREFIX),KeyVal::StrVal(Some(String::from(KEYWORD_BLANK))));
+		self.data.insert(String::from(KEYWORD_LONGPREFIX),KeyVal::StrVal(None));
+		self.data.insert(String::from(KEYWORD_SHORTPREFIX),KeyVal::StrVal(None));
 		return;
 	}
 
@@ -1138,15 +1138,25 @@ impl ExtKeyParse {
 	fn __validate(&mut self) -> Result<bool,Box<dyn Error>>{
 		let mut s:String;
 		let mut s2 :String;
+		let mut bnone :bool;
 		let origkey :String = self.keydata.get_string_value(KEYWORD_ORIGKEY);
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
+			assert!(!self.keydata.get_bool_value(KEYWORD_ISCMD));
 			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
 			if s.len() > 0 {
 				new_error!{KeyError,"({}) can not accept function", origkey}
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
-			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && s.len() > 0 {
+			bnone = false;
+			match self.keydata.get_string(KEYWORD_FLAGNAME) {
+				Some(_v) => {
+				},
+				None => {
+					bnone = true;
+				}
+			}
+
+			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && !bnone {
 				new_error!{KeyError,"({}) flag can not accept dict",origkey}
 			}
 
@@ -1294,7 +1304,7 @@ impl ExtKeyParse {
 			},
 		}
 
-		if binvalue {
+		if !binvalue {
 			self.keydata.set_jsonval(KEYWORD_VALUE,&(Value::Null));
 			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
 		}
@@ -1612,7 +1622,6 @@ impl ExtKeyParse {
 			self.keydata.set_bool(KEYWORD_ISCMD,&vtrue);
 		}
 
-		flagmode = flagmode;
 		if !flagmode && !cmdmode {
 			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
 			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
@@ -2061,4 +2070,27 @@ mod debug_key_test_case {
     	assert!(ok > 0);
     	return;
     }
+
+    #[test]
+    fn test_a012() {
+    	let data = r#"{}"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_value_v() == Value::Null);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
+    	return;
+    }
+
 }
