@@ -1443,8 +1443,8 @@ impl ExtKeyParse {
 					}
 				},
 			}
-			idx = 1;
-			while idx <= sv.len() {
+			idx = 0;
+			while idx < sv.len() {
 				match sv.nth(idx) {
 					None => {
 						new_error!{KeyError,"{} can not get [{}]", origkey,idx}
@@ -2214,4 +2214,26 @@ mod debug_key_test_case {
     	return ;
     }
 
+    #[test]
+    fn test_a019() {
+    	let data = r#"{ "prefix" : "good" , "value" : false }"#;
+    	let falses = r#"false"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str(falses).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
+    	return;
+    }
 }
