@@ -2254,4 +2254,24 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a021() {
+    	let data = r#"{ "nargs" : "?" , "value" : null }"#;
+    	let nulls = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str(nulls).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("command","$## self define ##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "command");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "subnargs");
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_QUESTION_SIGN)));
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " self define ");
+    	__opt_fail_check(&flags);
+    	return;
+    }
 }
