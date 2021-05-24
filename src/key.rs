@@ -2794,4 +2794,27 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a042() {
+    	let data = r#"{}"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","main",&jsonv,false,false,false,"--","-",false).unwrap();
+    	let mut ok :i32 = 0;
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "main");
+    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
+    	match flags.get_keyattr(KEYWORD_ATTR) {
+    		None => {
+    			ok = 1;
+    		},
+    		_ => {
+
+    		}
+    	}
+    	assert!(ok > 0);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "main");
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	__opt_fail_check(&flags);
+    	return;
+    }
 }
