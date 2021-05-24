@@ -2838,4 +2838,27 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
     	return;
     }
+
+    #[test]
+    fn test_a044() {
+    	let data = r#"true"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,true,false,false,"++","+",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++no-rollback");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
+    	assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
+    	assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
+    	return;
+    }
 }
