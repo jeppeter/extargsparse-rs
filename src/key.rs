@@ -95,6 +95,32 @@ pub struct KeyAttr {
 
 #[allow(dead_code)]
 impl KeyAttr {
+	fn new_json(val :&Value) -> Result<KeyAttr, Box<dyn Error>> {
+		let mut kattr = KeyAttr {
+			__splitchar  : ';',
+			__obj : HashMap::new(),
+		};
+		match val {
+			Value::Object(_v) => {
+				for (k,v) in val.as_object().unwrap() {
+					match v {
+						Value::String(sv) => {
+							kattr.__obj.insert(format!("{}",k), format!("{}",sv));
+						},
+						_ => {
+							new_error!{KeyError,"[{}] not string type", v}
+						}
+					}
+				}
+			},
+			_ => {
+				new_error!(KeyError,"{:?} not valid object", val)
+			},
+		}
+	
+		Ok(kattr)
+	}
+
 	fn new(_attr :&str) -> Result<KeyAttr,Box<dyn Error>> {
 		let mut kattr = KeyAttr {
 			__splitchar  : ';',
@@ -1464,6 +1490,10 @@ impl ExtKeyParse {
 								let vattr :KeyAttr = KeyAttr::new(vs)?;
 								self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
 							},
+							Value::Object(_ov) => {
+								let vattr :KeyAttr = KeyAttr::new_json(&v)?;
+								self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
+							}
 							_ => {
 
 							},
@@ -2737,4 +2767,31 @@ mod debug_key_test_case {
     	assert!(flag1.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
     	return;
     }
+
+    #[test]
+    fn test_a041() {
+    	let data = r#"{ "nargs" : 1,"attr" : {"func" : "args_opt_func" , "wait" : "cc"} }"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$json",&jsonv,false,false,false,"--","-",false).unwrap();
+    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	match flags.get_keyattr(KEYWORD_ATTR) {
+    		None => {
+    		},
+    		Some(v) => {
+    			attr = v.clone();
+    		}
+    	}
+    	assert!(attr.get_attr("func") == "args_opt_func");
+    	assert!(attr.get_attr("wait") == "cc");
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "json");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_json");
+    	return;
+    }
+
 }
