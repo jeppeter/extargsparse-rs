@@ -801,6 +801,46 @@ impl ExtKeyParse {
 		return;
 	}
 
+	fn __compare_value_type(&self,types :&str) -> bool {
+		let mut retval :bool = false;
+		match self.get_value_v() {
+			Value::Null => {
+				if types == KEYWORD_STRING {
+					retval = true;
+				}
+			},
+			Value::String(_v) => {
+				if types == KEYWORD_STRING {
+					retval = true;
+				}
+			},
+			Value::Number(v) => {
+				if v.is_u64() && types == KEYWORD_INT {
+					retval = true;
+				} else if !v.is_u64() && types == KEYWORD_FLOAT {
+					retval = true;
+				}
+			},
+			Value::Object(_v) => {
+				if types == KEYWORD_DICT {
+					retval = true;
+				}
+			},
+			Value::Array(_v) => {
+				if types == KEYWORD_LIST {
+					retval = true;
+				}
+			},
+			Value::Bool(_v) => {
+				if types == KEYWORD_BOOL {
+					retval = true;
+				}
+			},
+		}
+
+		return retval;
+	}
+
 	fn __form_word_num(&self,key :&str) -> i32 {
 		let bval :bool;
 		let bopt :Option<bool>;
@@ -1164,9 +1204,8 @@ impl ExtKeyParse {
 			}
 
 			s = self.keydata.get_type(KEYWORD_TYPE);
-			if s != KEYWORD_STRING && s != KEYWORD_INT && s != KEYWORD_FLOAT && 
-				s != KEYWORD_LIST && s != KEYWORD_DICT && s != KEYWORD_COUNT && 
-				s != KEYWORD_HELP && s != KEYWORD_JSONFILE && s != KEYWORD_BOOL {
+			if !self.__compare_value_type(&(s[..])) && s != KEYWORD_COUNT && s != KEYWORD_HELP && 
+				s != KEYWORD_JSONFILE {
 				new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
 			}
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
@@ -1489,6 +1528,8 @@ impl ExtKeyParse {
 			}
 
 			if flags.len() == 0  {
+				s = format!("{}", origkey);
+				sv = s.chars().as_str().bytes();
 				match sv.nth(0) {
 					None => {
 
@@ -1657,9 +1698,10 @@ impl ExtKeyParse {
 			self.keydata.set_string(KEYWORD_CMDNAME,KEYWORD_BLANK);
 		}
 
+
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
 			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_STRING && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN {
+			self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::String(v) => {
 						if v == "+" {
@@ -2315,6 +2357,33 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
+    	return;
+    }
+
+    #[test]
+    fn test_a024() {
+    	let data = r#"{ "prefix" : "good" , "value" : false, "nargs" : 2 }"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut ok :i32 = 0;
+    	match ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false) {
+    		Ok(_v) => {
+
+    		},
+    		Err(_e) => {
+    			ok = 1;
+    		},
+    	}
+    	assert!(ok > 0);
+    	return;
+    }
+
+
+    #[test]
+    fn test_a026() {
+    	let data = r#""+""#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("dep","$",&jsonv,true,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
     	return;
     }
 }
