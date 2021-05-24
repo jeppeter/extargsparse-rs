@@ -2722,4 +2722,19 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rdep_ip_modules");
     	return;
     }
+
+    #[test]
+    fn test_a040() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+    	let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flag1 == flag2);
+    	flag1 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+    	flag2 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+    	assert!(flag1 == flag2);
+    	assert!(flag1.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
+    	assert!(flag1.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
+    	return;
+    }
 }
