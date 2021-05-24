@@ -2700,4 +2700,26 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a039() {
+    	let mut data = r#"{ "modules" : [], "$<NARGS>" : "+" }"#;
+    	let mut jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut flags :ExtKeyParse = ExtKeyParse::new("rdep","ip",&jsonv,false,false,false,"--","-",false).unwrap();
+
+    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "ip");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep");
+
+    	data = r#"[]"#;
+    	jsonv = serde_json::from_str(data).unwrap();
+    	flags = ExtKeyParse::new("rdep_ip","modules",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep_ip");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--rdep-ip-modules");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rdep_ip_modules");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rdep_ip_modules");
+    	return;
+    }
 }
