@@ -1244,13 +1244,45 @@ impl ExtKeyParse {
 
 			s = self.keydata.get_type(KEYWORD_TYPE);
 			if s == KEYWORD_BOOL {
-				match self.keydata.get_nargs_value(KEYWORD_NARGS) {
-					Nargs::Argnum(iv) => {
+				match self.keydata.get_nargs(KEYWORD_NARGS) {
+					Some(Nargs::Argnum(iv)) => {
 						if iv != 0 {
 							new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
 						}
 					},
 					_ => {},
+				}
+				self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+			} else if s == KEYWORD_HELP {
+				match self.keydata.get_nargs(KEYWORD_NARGS) {
+					Some(Nargs::Argnum(iv)) => {
+						if iv != 0 {
+							new_error!{KeyError,"help type ({}) can not accept not 0 nargs",origkey}
+						}
+					},
+					_ => {},
+				}
+				self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+			} else if s != KEYWORD_PREFIX && s != KEYWORD_COUNT && self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
+				if self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
+					match self.keydata.get_nargs(KEYWORD_NARGS) {
+						Some(Nargs::Argnum(iv)) => {
+							if iv != 1 {
+								new_error!{KeyError,"({})only $ can accept nargs option [{}]",origkey,iv}
+							}
+						},
+						_ => {},
+					}
+					self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(1)));
+				}
+			} else {
+				if self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN {
+					match self.keydata.get_nargs(KEYWORD_NARGS) {
+						None => {
+							self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argtype(String::from(KEYWORD_STAR_SIGN))));
+						},
+						_ => {},
+					}
 				}
 			}
 		} else {
@@ -2463,4 +2495,25 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a030() {
+    	let iv :i64 = 0xffffffff;
+    	let data = format!("{}",iv);
+    	let jsonv :Value = serde_json::from_str(&(data[..])).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","maxval|m##max value set ##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "maxval");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "m");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_INT);
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "max value set ");
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(1));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "maxval");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "maxval");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--maxval");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-m");
+    	return;
+    }
 }
