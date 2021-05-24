@@ -1707,7 +1707,7 @@ impl ExtKeyParse {
 						if v == "+" {
 							let tmpv :Value = serde_json::from_str("0").unwrap();
 							self.keydata.set_jsonval(KEYWORD_VALUE,&tmpv);
-							self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+							self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COUNT);
 							self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
 						}
 					},
@@ -2381,7 +2381,6 @@ mod debug_key_test_case {
     #[test]
     fn test_a026() {
     	let data = r#""+""#;
-
     	let jsonv :Value = serde_json::from_str(data).unwrap();
     	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("dep","$",&jsonv,true,false,false,"--","-",false).unwrap();
@@ -2396,6 +2395,28 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
     	__opt_fail_check(&flags);
+    	return;
+    }
+
+    #[test]
+    fn test_a027() {
+    	let data = r#""+""#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("0").unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("dep","verbose|v",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "dep_verbose");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "dep_verbose");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--dep-verbose");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
     	return;
     }
 }
