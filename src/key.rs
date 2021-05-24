@@ -2861,4 +2861,27 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
     	return;
     }
+
+    #[test]
+    fn test_a045() {
+    	let data = r#"false"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","crl_CA_compromise",&jsonv,false,false,false,"++","+",true).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "crl_CA_compromise");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+    	assert!(flags.get_value_v() == jsonv);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "crl_CA_compromise");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "crl_CA_compromise");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++crl_CA_compromise");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
+    	assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
+    	return;
+    }
 }
