@@ -2647,4 +2647,41 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[allow(unused_assignments)]
+    #[test]
+    fn test_a037() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	let mut val :i32 = 0;
+    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "help");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_HELP);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "h");
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_help");
+    	match flags.get_keyattr(KEYWORD_ATTR) {
+    		None => {
+    			val = 0;
+    		},
+    		Some(v) => {
+    			val = 1;
+    			attr = v.clone();
+    		}
+    	}
+    	assert!(val > 0);
+    	assert!(attr.get_attr("func") == "args_opt_func");
+    	assert!(attr.get_attr("wait") == "cc");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--help");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-h");
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_help");
+    	return;
+    }
+
 }
