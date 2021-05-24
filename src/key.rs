@@ -2684,4 +2684,20 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[test]
+    fn test_a038() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flag1 == flag2);
+    	flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	assert!(flag1 == flag2);
+    	flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+    	assert!(flag1 != flag2);
+    	return;
+    }
+
 }
