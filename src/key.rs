@@ -1795,8 +1795,8 @@ impl ExtKeyParse {
 
 		match self.__attrexpr.captures(origkey) {
 			Some(m) => {
-				if m.len() > 0 {
-					let attr :KeyAttr = KeyAttr::new(&(m[0]))?;
+				if m.len() > 1 {
+					let attr :KeyAttr = KeyAttr::new(&(m[1]))?;
 					self.keydata.set_keyattr(KEYWORD_ATTR,&attr);
 				}
 			},
@@ -2611,4 +2611,40 @@ mod debug_key_test_case {
     	__opt_fail_check(&flags);
     	return;
     }
+
+    #[allow(unused_assignments)]
+    #[test]
+    fn test_a036() {
+    	let data = r#""+""#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+    	let mut val :i32 = 0;
+    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
+    	match flags.get_keyattr(KEYWORD_ATTR) {
+    		None => {
+    			val = 0;
+    		},
+    		Some(v) => {
+    			val = 1;
+    			attr = v.clone();
+    		}
+    	}
+    	assert!(val > 0);
+    	assert!(attr.get_attr("func") == "args_opt_func");
+    	assert!(attr.get_attr("wait") == "cc");
+    	__opt_fail_check(&flags);
+    	return;
+    }
+
 }
