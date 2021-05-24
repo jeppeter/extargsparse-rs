@@ -2381,9 +2381,21 @@ mod debug_key_test_case {
     #[test]
     fn test_a026() {
     	let data = r#""+""#;
+
     	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("dep","$",&jsonv,true,false,false,"--","-",false).unwrap();
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from("+")));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
+    	__opt_fail_check(&flags);
     	return;
     }
 }
