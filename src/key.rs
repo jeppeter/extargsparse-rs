@@ -2294,4 +2294,27 @@ mod debug_key_test_case {
     	__opt_fail_check(&flags);
     	return;
     }
+
+    #[test]
+    fn test_a023() {
+    	let data = r#"{ "prefix" : "good" , "value" : 3.9, "nargs" : 1 }"#;
+    	let floats = r#"3.9"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str(floats).unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(1));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
+    	return;
+    }
 }
