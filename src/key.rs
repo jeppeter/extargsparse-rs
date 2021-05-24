@@ -2419,4 +2419,26 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
     	return;
     }
+
+    #[test]
+    fn test_a028() {
+    	let data = r#""+""#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("0").unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("","verbose|v## new help info ##",&jsonv,false,false,false,"--","-",false).unwrap();
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " new help info ");
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "verbose");
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "verbose");
+    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--verbose");
+    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
+    	return;
+    }
 }
