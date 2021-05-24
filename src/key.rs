@@ -1880,6 +1880,10 @@ impl ExtKeyParse {
 	pub fn get_nargs_v(&self, key :&str) -> Nargs {
 		return self.keydata.get_nargs_value(key);
 	}
+
+	pub fn get_keyattr(&self, key :&str) -> Option<KeyAttr> {
+		return self.keydata.get_keyattr(key);
+	}
 }
 
 impl PartialEq for ExtKeyParse {
@@ -2577,4 +2581,34 @@ mod debug_key_test_case {
     	return;
     }
 
+    #[allow(unused_assignments)]
+    #[test]
+    fn test_a035() {
+    	let data = r#""+""#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>",&jsonv,false,false,false,"--","-",false).unwrap();
+    	let mut val :i32 = 0;
+    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+    	assert!(flags.get_value_v() == cmpjsonv);
+    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
+    	match flags.get_keyattr(KEYWORD_ATTR) {
+    		None => {
+    			val = 1;
+    		},
+    		_ => {
+    			val = 0;
+    		}
+    	}
+    	assert!(val > 0);
+    	__opt_fail_check(&flags);
+    	return;
+    }
 }
