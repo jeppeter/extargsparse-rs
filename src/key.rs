@@ -1659,7 +1659,7 @@ impl ExtKeyParse {
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
 			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_STRING && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS {
+			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN {
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::String(v) => {
 						if v == "+" {
@@ -1676,7 +1676,7 @@ impl ExtKeyParse {
 		}
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_ARGS &&
+			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN &&
 			self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_DICT {
 				let mut nval :Nargs = Nargs::Argnum(0);
 				let jval :Value = serde_json::from_str("null").unwrap();
@@ -2236,4 +2236,22 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
     	return;
     }
+
+    #[test]
+    fn test_a020() {
+    	let data = r#"null"#;
+    	let jsonv :Value = serde_json::from_str(data).unwrap();
+    	let mut ok :i32 = 0;
+    	match ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false) {
+    		Ok(_v) => {
+
+    		},
+    		Err(_e) => {
+    			ok = 1;
+    		},
+    	}
+    	assert!(ok > 0);
+    	return;
+    }
+
 }
