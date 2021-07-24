@@ -1,6 +1,7 @@
 use serde_json::Value;
 use std::collections::HashMap;
 use regex::Regex;
+use std::fmt::{Debug};
 
 
 use std::fmt;
@@ -34,6 +35,12 @@ impl Nargs {
 		}
 
 		return retstr;
+	}
+}
+
+impl Debug for Nargs {
+	fn fmt(&self,f :&mut fmt::Formatter) -> fmt::Result {
+		write!(f,"{}",self.string())
 	}
 }
 
