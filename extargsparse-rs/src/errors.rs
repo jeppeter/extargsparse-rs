@@ -1,3 +1,16 @@
+use std::env;
+
+
+fn _get_environ_var(envname :&str) -> String {
+	match env::var(envname) {
+		Ok(v) => {
+			format!("{}",v)
+		},
+		Err(_e) => {
+			String::from("")
+		}
+	}
+}
 
 
 #[macro_export]
