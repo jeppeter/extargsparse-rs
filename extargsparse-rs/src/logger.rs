@@ -1,8 +1,5 @@
 
 use std::env;
-use log::{error, info, trace};
-use lazy_static::lazy_static;
-
 
 use log::{LevelFilter};
 use log4rs::append::console::{ConsoleAppender, Target};
@@ -87,36 +84,4 @@ pub (crate) fn extargs_proc_log_init(prefix :&str) -> i32 {
 		retv	
 }
 
-lazy_static! {
-	static ref EXTARGS_LOG_LEVEL : i32 = {
-		extargs_proc_log_init("EXTARGS")
-	};
-}
-
-#[macro_export]
-macro_rules! extargs_call_error {
-	($($arg:tt)+) => {
-		if *EXTARGS_LOG_LEVEL >= 0 {
-			error!($($arg)+);
-		}
-	}
-}
-
-#[macro_export]
-macro_rules! extargs_call_info {
-	($($arg:tt)+) => {
-		if *EXTARGS_LOG_LEVEL >= 20 {
-			info!($($arg)+);
-		}
-	}
-}
-
-#[macro_export]
-macro_rules! extargs_call_trace {
-	($($arg:tt)+) => {
-		if *EXTARGS_LOG_LEVEL >= 40 {
-			trace!($($arg)+);
-		}
-	}
-}
 

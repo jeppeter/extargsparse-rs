@@ -1,5 +1,5 @@
 mod errors;
-mod logger;
+pub mod logger;
 pub mod key;
 pub mod options;
 
