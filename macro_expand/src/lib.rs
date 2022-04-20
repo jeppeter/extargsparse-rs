@@ -3,7 +3,7 @@ use std::env;
 use lazy_static::lazy_static;
 
 
-use log::{error, info, trace};
+//use log::{error, info, trace};
 use log::{LevelFilter};
 use log4rs::append::console::{ConsoleAppender, Target};
 use log4rs::append::file::FileAppender;

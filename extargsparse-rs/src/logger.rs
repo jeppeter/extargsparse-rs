@@ -1,7 +1,10 @@
 
 use std::env;
 
+use lazy_static::lazy_static;
+
 use log::{LevelFilter};
+use log::{error, info, trace};
 use log4rs::append::console::{ConsoleAppender, Target};
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root,RootBuilder,ConfigBuilder};
@@ -20,9 +23,9 @@ fn _extargs_get_environ_var(envname :&str) -> String {
 	}
 }
 
-const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}][{f}:{L}] {m}\n";
+const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}]{m}\n";
 
-pub (crate) fn extargs_proc_log_init(prefix :&str) -> i32 {
+fn extargs_proc_log_init(prefix :&str) -> i32 {
 		let mut msgfmt :String = String::from(DEFAULT_MSG_FMT);
 		let mut getv :String;
 		let mut retv :i32 = 0;
@@ -84,4 +87,50 @@ pub (crate) fn extargs_proc_log_init(prefix :&str) -> i32 {
 		retv	
 }
 
+lazy_static! {
+	static ref EXT_OPTIONS_LOG_LEVEL : i32 = {
+		extargs_proc_log_init("EXTARGS")
+	};
+}
 
+
+pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
+	if *EXT_OPTIONS_LOG_LEVEL >= level {
+		if level <= 0 {
+			error!("{}",outs);
+		} else if level < 40 {
+			info!("{}",outs);
+		} else {
+			trace!("{}",outs);
+		}
+	}
+	return;
+}
+
+
+#[macro_export]
+macro_rules! extargs_log_error {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_debug_out(0, c);
+	}
+}
+
+#[macro_export]
+macro_rules! extargs_log_info {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_debug_out(20, c);
+	}
+}
+
+#[macro_export]
+macro_rules! extargs_log_trace {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_debug_out(40, c);
+	}
+}

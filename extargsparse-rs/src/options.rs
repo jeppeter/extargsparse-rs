@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use serde_json::{Value};
 use lazy_static::lazy_static;
-use log::{error, info, trace};
-use super::logger::{extargs_proc_log_init};
+use super::logger::{extargs_debug_out};
+use super::{extargs_log_error,extargs_log_info};
 
 
 const OPT_PROG :&str = "prog";
@@ -16,38 +16,7 @@ const OPT_LONG_PREFIX :&str = "longprefix";
 const OPT_SHORT_PREFIX :&str = "shortprefix";
 
 
-lazy_static! {
-	static ref EXT_OPTIONS_LOG_LEVEL : i32 = {
-		extargs_proc_log_init("EXT_OPTIONS")
-	};
-}
 
-#[macro_export]
-macro_rules! ext_opts_call_error {
-	($($arg:tt)+) => {
-		if *EXT_OPTIONS_LOG_LEVEL >= 0 {
-			error!($($arg)+);
-		}
-	}
-}
-
-#[macro_export]
-macro_rules! ext_opts_call_info {
-	($($arg:tt)+) => {
-		if *EXT_OPTIONS_LOG_LEVEL >= 20 {
-			info!($($arg)+);
-		}
-	}
-}
-
-#[macro_export]
-macro_rules! ext_opts_call_trace {
-	($($arg:tt)+) => {
-		if *EXT_OPTIONS_LOG_LEVEL >= 40 {
-			trace!($($arg)+);
-		}
-	}
-}
 
 
 pub struct ExtArgsOptions {
@@ -84,13 +53,13 @@ lazy_static! {
 	static ref OPT_DEFAULT_VALUE :HashMap<String,Value> = {
 		let defs = OPT_DEFAULT_S!();
 		let tmpv :HashMap<String,Value>;
-		ext_opts_call_info!("parse opt default\n{}",defs);
+		extargs_log_info!("parse opt default\n{}",defs);
 		match serde_json::from_str(&defs) {
 			Ok(d) => {
 				tmpv = d;
 			},
 			Err(e) => {
-				ext_opts_call_error!("can not parse error[{}]\n{}",e,defs);
+				extargs_log_error!("can not parse error[{}]\n{}",e,defs);
 				panic!("exit");
 			}
 		}
