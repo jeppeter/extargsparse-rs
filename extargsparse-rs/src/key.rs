@@ -9,7 +9,10 @@ use std::error::Error;
 use std::boxed::Box;
 
 #[allow(unused_imports)]
-use super::{error_class,new_error,debug_output,error_output};
+use super::{error_class,new_error};
+use super::logger::{extargs_debug_out};
+use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
+
 
 
 
@@ -1352,7 +1355,7 @@ impl ExtKeyParse {
 				self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
 			}
 			
-			debug_output!("set [{}]=[{}]",KEYWORD_TYPE,KEYWORD_COMMAND);
+			extargs_log_trace!("set [{}]=[{}]",KEYWORD_TYPE,KEYWORD_COMMAND);
 			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COMMAND);
 		}
 
@@ -1894,8 +1897,8 @@ impl ExtKeyParse {
 				Ok(v) => {
 					return v;
 				},
-				Err(e) => {
-					error_output!("can not get [{}] [{}]",key,e);
+				Err(_e) => {
+					//extargs_log_error!("can not get [{}] [{}]",key,e);
 					return String::from(KEYWORD_BLANK);
 				}
 			}
