@@ -193,7 +193,7 @@ impl ExtArgsOptions {
 									reti = ic as i32;
 								},
 								_ => {
-									
+
 								}
 							}
 						}
@@ -208,5 +208,25 @@ impl ExtArgsOptions {
 			}
 		}
 		reti
+	}
+
+	pub fn get_bool(self,k :&str) -> bool {
+		let mut retb :bool = false;
+		match self.values.get(k) {
+			Some(v1) => {
+				match v1 {
+					Value::Bool(v) => {
+						retb = *v;
+					},
+					_ => {
+
+					}
+				}
+			},
+			None => {
+
+			}
+		}
+		retb
 	}
 }
