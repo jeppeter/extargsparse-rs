@@ -118,7 +118,7 @@ lazy_static! {
 	};
 }
 
-pub fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
+pub (crate) fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
 	let mut retv :ExtArgsOptions = ExtArgsOptions {
 			values :HashMap::new(),
 	};
@@ -145,7 +145,7 @@ pub fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
 }
 
 impl ExtArgsOptions {
-	pub fn string(self) -> String {
+	pub (crate) fn string(self) -> String {
 		let mut rets :String;
 		let mut idx :i32 = 0;
 		rets = "".to_string();
@@ -158,7 +158,7 @@ impl ExtArgsOptions {
 		}
 		rets
 	}
-	pub fn get_string(self,k :&str) -> String {
+	pub (crate) fn get_string(self,k :&str) -> String {
 		let mut rets :String = "".to_string();
 
 		match self.values.get(k) {
@@ -172,7 +172,7 @@ impl ExtArgsOptions {
 		rets
 	}
 
-	pub fn get_int(self,k :&str) -> i32 {
+	pub (crate) fn get_int(self,k :&str) -> i32 {
 		let mut reti :i32 = 0;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -210,7 +210,7 @@ impl ExtArgsOptions {
 		reti
 	}
 
-	pub fn get_bool(self,k :&str) -> bool {
+	pub (crate) fn get_bool(self,k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
 			Some(v1) => {
