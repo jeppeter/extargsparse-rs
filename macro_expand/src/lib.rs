@@ -3,7 +3,7 @@ use std::env;
 use lazy_static::lazy_static;
 
 
-//use log::{error, info, trace};
+use log::{error, info, trace};
 use log::{LevelFilter};
 use log4rs::append::console::{ConsoleAppender, Target};
 use log4rs::append::file::FileAppender;
@@ -23,7 +23,7 @@ fn _macro_ext_get_environ_var(envname :&str) -> String {
 	}
 }
 
-const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}][{f}:{L}] {m}\n";
+const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}] {m}\n";
 
 fn _macro_ext_proc_log_init(prefix :&str) -> i32 {
 		let mut msgfmt :String = String::from(DEFAULT_MSG_FMT);
@@ -93,27 +93,41 @@ lazy_static! {
 	};
 }
 
-macro_rules! _macro_ext_call_error {
-	($($arg:tt)+) => {
-		if *_MACRO_EXT_LOG_LEVEL >= 0 {
-			error!($($arg)+);
+fn extargs_macro_debug_out(level :i32, outs :String) {
+	if *_MACRO_EXT_LOG_LEVEL >= level {
+		if level <= 0 {
+			error!("{}",outs);
+		} else if level < 40 {
+			info!("{}",outs);
+		} else {
+			trace!("{}",outs);
 		}
+	}
+	return;
+}
+
+
+macro_rules! em_log_error {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_macro_debug_out(0, c);
 	}
 }
 
-macro_rules! _macro_ext_call_info {
+macro_rules! em_log_info {
 	($($arg:tt)+) => {
-		if *_MACRO_EXT_LOG_LEVEL >= 20 {
-			info!($($arg)+);
-		}
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_macro_debug_out(20, c);
 	}
 }
 
-macro_rules! _macro_ext_call_trace {
+macro_rules! em_log_trace {
 	($($arg:tt)+) => {
-		if *_MACRO_EXT_LOG_LEVEL >= 40 {
-			trace!($($arg)+);
-		}
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_macro_debug_out(40, c);
 	}
 }
 
