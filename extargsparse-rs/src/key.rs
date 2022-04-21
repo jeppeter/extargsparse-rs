@@ -246,22 +246,22 @@ impl Clone for KeyAttr {
 	}
 }
 
-const KEYWORD_STRING :&str = "string";
-const KEYWORD_DICT :&str = "dict";
-const KEYWORD_LIST :&str = "list";
-const KEYWORD_BOOL :&str = "bool";
-const KEYWORD_INT :&str = "int";
-const KEYWORD_FLOAT :&str = "float";
+pub const KEYWORD_STRING :&str = "string";
+pub const KEYWORD_DICT :&str = "dict";
+pub const KEYWORD_LIST :&str = "list";
+pub const KEYWORD_BOOL :&str = "bool";
+pub const KEYWORD_INT :&str = "int";
+pub const KEYWORD_FLOAT :&str = "float";
 //const KEYWORD_LONG :&str = "long";
-const KEYWORD_ARGS :&str = "args";
-const KEYWORD_HELP :&str = "help";
-const KEYWORD_JSONFILE :&str = "jsonfile";
-const KEYWORD_COUNT :&str = "count";
-const KEYWORD_DOLLAR_SIGN :&str = "$";
-const KEYWORD_SUBNARGS :&str = "subnargs";
-const KEYWORD_PLUS_SIGN :&str = "+";
-const KEYWORD_STAR_SIGN :&str = "*";
-const KEYWORD_QUESTION_SIGN :&str = "?";
+pub const KEYWORD_ARGS :&str = "args";
+pub const KEYWORD_HELP :&str = "help";
+pub const KEYWORD_JSONFILE :&str = "jsonfile";
+pub const KEYWORD_COUNT :&str = "count";
+pub const KEYWORD_DOLLAR_SIGN :&str = "$";
+pub const KEYWORD_SUBNARGS :&str = "subnargs";
+pub const KEYWORD_PLUS_SIGN :&str = "+";
+pub const KEYWORD_STAR_SIGN :&str = "*";
+pub const KEYWORD_QUESTION_SIGN :&str = "?";
 
 
 #[derive(Clone)]
@@ -314,7 +314,7 @@ impl TypeClass {
 
 }
 
-const KEYWORD_VALUE :&str = "value";
+pub const KEYWORD_VALUE :&str = "value";
 const KEYWORD_PREFIX :&str = "prefix";
 const KEYWORD_FLAGNAME :&str = "flagname";
 const KEYWORD_HELPINFO :&str = "helpinfo";
@@ -1942,6 +1942,18 @@ impl ExtKeyParse {
 
 	pub fn func_name(&self) -> String {
 		return self.get_string_v(KEYWORD_FUNCTION);
+	}
+
+	pub fn type_name(&self) -> String {
+		return self.get_string_v(KEYWORD_TYPE);
+	}
+
+	pub fn opt_dest(&self) -> String {
+		return self.get_string_v(KEYWORD_OPTDEST);
+	}
+
+	pub fn is_flag(&self) -> bool {
+		return self.get_bool_v(KEYWORD_ISFLAG);
 	}
 }
 

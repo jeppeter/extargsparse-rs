@@ -4,7 +4,7 @@ use std::env;
 use lazy_static::lazy_static;
 
 use log::{LevelFilter};
-use log::{error, info, trace};
+use log::{error, info, trace,warn};
 use log4rs::append::console::{ConsoleAppender, Target};
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root,RootBuilder,ConfigBuilder};
@@ -98,6 +98,8 @@ pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
 	if *EXT_OPTIONS_LOG_LEVEL >= level {
 		if level <= 0 {
 			error!("{}",outs);
+		}  else if level <= 10 {
+			warn!("{}",outs);
 		} else if level < 40 {
 			info!("{}",outs);
 		} else {
@@ -116,6 +118,16 @@ macro_rules! extargs_log_error {
 		extargs_debug_out(0, c);
 	}
 }
+
+#[macro_export]
+macro_rules! extargs_log_warn {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		extargs_debug_out(10, c);
+	}
+}
+
 
 #[macro_export]
 macro_rules! extargs_log_info {

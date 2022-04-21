@@ -1,10 +1,13 @@
 
-use super::key::{ExtKeyParse};
+use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
-use super::{extargs_assert};
+use super::{extargs_assert,extargs_log_warn};
+use super::funccall::{ExtArgsMatchFuncMap};
+
 use std::rc::Rc;
 use serde_json::{Value};
+
 
 
 pub struct ParserCompat {
@@ -94,13 +97,35 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 }
 
 impl ParserCompat {
-	fn get_help_info(keycls :&ExtKeyParse) -> String {
+	fn get_help_info(keycls :&ExtKeyParse,mapv :&ExtArgsMatchFuncMap) -> String {
 		let hlp = keycls.get_keyattr("opthelp");
 		let mut rets :String = "".to_string();
 		if hlp.is_some() {
 			let hlpfunc = hlp.unwrap().string();
-
+			let funchelp = mapv.get_help_func(&hlpfunc);
+			if funchelp.is_some() {
+				let callf = funchelp.unwrap();
+				return callf(keycls);
+			}
+			extargs_log_warn!("can not find function [{}] for opthelp", hlpfunc);
 		}
+
+		if keycls.type_name() == KEYWORD_BOOL {
+			if keycls.get_bool_v(KEYWORD_VALUE) == true {
+				rets.push_str(&(format!("{} set false default(True)", keycls.opt_dest())));
+			} else {
+				rets.push_str(&(format!("{} set true default(False)", keycls.opt_dest())));
+			}
+		} else if keycls.type_name() == KEYWORD_STRING && keycls.get_string_v(KEYWORD_VALUE) == "+" {
+			if keycls.is_flag() == true {
+				rets.push_str(&(format!("{} inc", keycls.opt_dest())));
+			} else {
+				extargs_assert!(false == true,"cmd({}) can not set value({:?})", keycls.cmd_name(), keycls.get_string_v(KEYWORD_STRING));
+			}
+		} else if keycls.type_name() == KEYWORD_HELP {
+			rets.push_str(&(format!("to display this help information")));
+		}
+
 		rets
 	}
 }
