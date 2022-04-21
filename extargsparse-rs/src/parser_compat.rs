@@ -3,7 +3,7 @@ use super::key::{ExtKeyParse};
 use super::options::{ExtArgsOptions};
 
 pub struct ParserCompat {
-	pub keycls :ExtKeyParse,
+	pub keycls :Option<ExtKeyParse>,
 	pub cmdname :String,
 	pub cmdopts :Vec<ExtKeyParse>,
 	pub subcmds :Vec<Box<ParserCompat>>,
@@ -17,9 +17,9 @@ pub struct ParserCompat {
 	pub version :String,
 }
 
-pub (crate) fn new(cls :&ExtKeyParse , _opt :&ExtArgsOptions) -> ParserCompat {
+pub (crate) fn new(_cls :Option<Box<ExtKeyParse>> , _opt :Option<Box<ExtArgsOptions>>) -> ParserCompat {
 	let retc :ParserCompat = ParserCompat {
-		keycls : cls.clone(),
+		keycls : None,
 		cmdname : "".to_string(),
 		cmdopts : Vec::new(),
 		subcmds : Vec::new(),
