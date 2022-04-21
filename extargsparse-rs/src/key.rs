@@ -1931,6 +1931,18 @@ impl ExtKeyParse {
 	pub fn is_cmd(&self) -> bool {
 		return self.get_bool_v(KEYWORD_ISCMD);
 	}
+
+	pub fn cmd_name(&self) -> String {
+		return self.get_string_v(KEYWORD_CMDNAME);
+	}
+
+	pub fn help_info(&self) -> String {
+		return self.get_string_v(KEYWORD_HELPINFO);
+	}
+
+	pub fn func_name(&self) -> String {
+		return self.get_string_v(KEYWORD_FUNCTION);
+	}
 }
 
 impl PartialEq for ExtKeyParse {

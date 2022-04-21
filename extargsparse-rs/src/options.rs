@@ -19,26 +19,26 @@ error_class!{ExtArgsOptionParseError}
 
 
 
-const OPT_PROG :&str = "prog";
-const OPT_USAGE :&str = "usage";
-const OPT_DESCRIPTION :&str= "description";
-const OPT_EPILOG :&str = "epilog";
-const OPT_VERSION :&str = "version";
-const OPT_ERROR_HANDLER :&str = "errorhandler";
-const OPT_HELP_HANDLER :&str = "helphandler";
-const OPT_LONG_PREFIX :&str = "longprefix";
-const OPT_SHORT_PREFIX :&str = "shortprefix";
-const OPT_NO_HELP_OPTION :&str = "nohelpoption";
-const OPT_NO_JSON_OPTION :&str = "nojsonoption";
-const OPT_HELP_LONG :&str = "helplong";
-const OPT_HELP_SHORT :&str = "helpshort";
-const OPT_JSON_LONG :&str = "jsonlong";
-const OPT_CMD_PREFIX_ADDED :&str = "cmdprefixadded";
-const OPT_PARSE_ALL :&str = "parseall";
-const OPT_SCREEN_WIDTH :&str = "screenwidth";
-const OPT_FLAG_NO_CHANGE :&str = "flagnochange";
-const OPT_VAR_UPPER_CASE :&str = "varuppercase";
-const OPT_FUNC_UPPER_CASE :&str = "funcuppercase";
+pub const OPT_PROG :&str = "prog";
+pub const OPT_USAGE :&str = "usage";
+pub const OPT_DESCRIPTION :&str= "description";
+pub const OPT_EPILOG :&str = "epilog";
+pub const OPT_VERSION :&str = "version";
+pub const OPT_ERROR_HANDLER :&str = "errorhandler";
+pub const OPT_HELP_HANDLER :&str = "helphandler";
+pub const OPT_LONG_PREFIX :&str = "longprefix";
+pub const OPT_SHORT_PREFIX :&str = "shortprefix";
+pub const OPT_NO_HELP_OPTION :&str = "nohelpoption";
+pub const OPT_NO_JSON_OPTION :&str = "nojsonoption";
+pub const OPT_HELP_LONG :&str = "helplong";
+pub const OPT_HELP_SHORT :&str = "helpshort";
+pub const OPT_JSON_LONG :&str = "jsonlong";
+pub const OPT_CMD_PREFIX_ADDED :&str = "cmdprefixadded";
+pub const OPT_PARSE_ALL :&str = "parseall";
+pub const OPT_SCREEN_WIDTH :&str = "screenwidth";
+pub const OPT_FLAG_NO_CHANGE :&str = "flagnochange";
+pub const OPT_VAR_UPPER_CASE :&str = "varuppercase";
+pub const OPT_FUNC_UPPER_CASE :&str = "funcuppercase";
 
 #[derive(Clone)]
 pub struct ExtArgsOptions {
@@ -159,6 +159,18 @@ impl ExtArgsOptions {
 		}
 		rets
 	}
+	pub (crate) fn get_value(self, k :&str) -> Option<Value> {
+		match self.values.get(k) {
+			Some(v) => {
+				let retv = v.clone();
+				return Some(retv);
+			},
+			None => {
+				return None;
+			}
+		}
+	}
+
 	pub (crate) fn get_string(self,k :&str) -> String {
 		let mut rets :String = "".to_string();
 

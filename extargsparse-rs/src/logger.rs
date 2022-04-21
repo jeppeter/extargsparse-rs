@@ -142,8 +142,7 @@ macro_rules! extargs_assert {
 		if !($v) {
 			let mut _c :String= format!("[{}:{}] ",file!(),line!());
 			_c.push_str(&(format!($($arg)+)[..]));
-			extargs_debug_out(0, _c);
-			panic!("[{}:{}] {}", file!(),line!(), format!($($arg)+));
+			panic!("{}", _c);
 		}
 	}
 }
