@@ -264,6 +264,7 @@ const KEYWORD_STAR_SIGN :&str = "*";
 const KEYWORD_QUESTION_SIGN :&str = "?";
 
 
+#[derive(Clone)]
 pub struct TypeClass {
 	typeval : String,
 }
@@ -362,6 +363,7 @@ fn in_array_word( key :&str, sarr :&[&str]) -> bool {
 	retval
 }
 
+#[derive(Clone)]
 pub enum KeyVal {
 	StrVal(Option<String>),
 	BoolVal(Option<bool>),
@@ -401,6 +403,7 @@ impl KeyVal {
 	}
 }
 
+#[derive(Clone)]
 pub struct KeyData {
 	data :HashMap<String,KeyVal>,
 }
@@ -807,7 +810,7 @@ impl KeyData {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct ExtKeyParse {
 	keydata : KeyData,
 	__helpexpr :Regex,
