@@ -1955,6 +1955,10 @@ impl ExtKeyParse {
 	pub fn is_flag(&self) -> bool {
 		return self.get_bool_v(KEYWORD_ISFLAG);
 	}
+
+	pub	 fn value(&self) -> Value {
+		return self.keydata.get_jsonval_value(KEYWORD_VALUE)
+	}
 }
 
 impl PartialEq for ExtKeyParse {

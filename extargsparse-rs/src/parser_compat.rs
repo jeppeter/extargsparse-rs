@@ -124,6 +124,12 @@ impl ParserCompat {
 			}
 		} else if keycls.type_name() == KEYWORD_HELP {
 			rets.push_str(&(format!("to display this help information")));
+		} else {
+			if keycls.is_flag() == true {
+				rets.push_str(&(format!("{} set default {:?}",keycls.opt_dest(),keycls.value())));
+			} else {
+				rets.push_str(&(format!("{} command exec", keycls.cmd_name())));
+			}
 		}
 
 		rets
