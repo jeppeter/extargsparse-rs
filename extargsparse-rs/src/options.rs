@@ -40,6 +40,7 @@ const OPT_FLAG_NO_CHANGE :&str = "flagnochange";
 const OPT_VAR_UPPER_CASE :&str = "varuppercase";
 const OPT_FUNC_UPPER_CASE :&str = "funcuppercase";
 
+#[derive(Clone)]
 pub struct ExtArgsOptions {
 	values :HashMap<String,Value>,
 }
