@@ -1,6 +1,6 @@
 
 use super::key::{ExtKeyParse};
-use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH};
+use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert};
 use std::rc::Rc;
@@ -39,6 +39,7 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 	};
 	let mut tmps :String;
 	let mut jsonv :Value;
+	let mut isopt :bool = false;
 
 	if _cls.is_some() {
 		let c :Rc<ExtKeyParse> = _cls.unwrap();
@@ -69,9 +70,28 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 	}
 	retc.screenwidth = 80;
 
-	if _opt.is_some() && _opt.as_ref().unwrap().get_value(OPT_SCREEN_WIDTH).is_some()  {
-		retc.screenwidth = _opt.as_ref().unwrap().get_int(OPT_SCREEN_WIDTH);
+	if _opt.is_some() {
+		isopt = true;
+	}
+
+	if isopt  {
+		let optc = _opt.as_ref().unwrap();
+		if optc.get_value(OPT_SCREEN_WIDTH).is_some() {
+			retc.screenwidth = optc.get_int(OPT_SCREEN_WIDTH);	
+		}
+		retc.epilog = optc.get_string(OPT_EPILOG);
+		retc.description = optc.get_string(OPT_DESCRIPTION);
+		retc.prog = optc.get_string(OPT_PROG);
+		retc.usage = optc.get_string(OPT_USAGE);
+		retc.version = optc.get_string(OPT_VERSION);		
+	}
+
+	if retc.screenwidth < 40 {
+		retc.screenwidth = 40;
 	}
 
 	retc
+}
+
+impl ParserCompat {
 }

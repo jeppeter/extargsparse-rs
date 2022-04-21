@@ -162,8 +162,7 @@ impl ExtArgsOptions {
 	pub (crate) fn get_value(&self, k :&str) -> Option<Value> {
 		match self.values.get(k) {
 			Some(v) => {
-				let retv = serde_json::from_str(&(v.to_string())).unwrap();
-				return Some(retv);
+				return Some(v.clone());
 			},
 			None => {
 				return None;
