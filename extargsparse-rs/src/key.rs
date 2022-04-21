@@ -1927,6 +1927,10 @@ impl ExtKeyParse {
 	pub fn get_keyattr(&self, key :&str) -> Option<KeyAttr> {
 		return self.keydata.get_keyattr(key);
 	}
+
+	pub fn is_cmd(&self) -> bool {
+		return self.get_bool_v(KEYWORD_ISCMD);
+	}
 }
 
 impl PartialEq for ExtKeyParse {

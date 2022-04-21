@@ -35,7 +35,7 @@ impl NameSpaceEx {
 	pub fn is_accessed(self,k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
-			Some(v1) => {
+			Some(_v1) => {
 				retb = true;
 			},
 			None => {

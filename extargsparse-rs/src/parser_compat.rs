@@ -1,6 +1,9 @@
 
 use super::key::{ExtKeyParse};
 use super::options::{ExtArgsOptions};
+use super::logger::{extargs_debug_out};
+use super::{extargs_assert};
+
 
 pub struct ParserCompat {
 	pub keycls :Option<ExtKeyParse>,
@@ -32,6 +35,11 @@ pub (crate) fn new(_cls :Option<Box<ExtKeyParse>> , _opt :Option<Box<ExtArgsOpti
 		usage : "".to_string(),
 		version : "".to_string(),
 	};
+
+	if _cls.is_some() {
+		let c :Box<ExtKeyParse> = _cls.unwrap();
+		extargs_assert!(c.is_cmd(),"{} must be cmd", c.string());
+	}
 
 	retc
 }
