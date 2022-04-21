@@ -7,4 +7,12 @@ pub struct ParserCompat {
 	pub cmdopts :Vec<ExtKeyParse>,
 	pub subcmds :Vec<Box<ParserCompat>>,
 	pub helpinfo :String,
+	pub callfunction :String,
+	pub screenwidht :i32,
+	pub epilog :String,
+	pub description :String,
+	pub prog :String,
+	pub usage :String,
+	pub version :String,
 }
+
