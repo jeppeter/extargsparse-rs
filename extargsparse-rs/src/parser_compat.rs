@@ -94,4 +94,13 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 }
 
 impl ParserCompat {
+	fn get_help_info(keycls :&ExtKeyParse) -> String {
+		let hlp = keycls.get_keyattr("opthelp");
+		let mut rets :String = "".to_string();
+		if hlp.is_some() {
+			let hlpfunc = hlp.unwrap().string();
+
+		}
+		rets
+	}
 }

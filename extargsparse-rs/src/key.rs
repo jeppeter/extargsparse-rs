@@ -178,7 +178,7 @@ impl KeyAttr {
 		return Ok(kattr);
 	}
 
-	fn get_keys(&self) -> Vec<String> {
+	pub fn get_keys(&self) -> Vec<String> {
 		let mut retvec :Vec<String> = Vec::new();
 		for (k,_) in &(self.__obj) {
 			retvec.push(String::from(k));
@@ -186,7 +186,7 @@ impl KeyAttr {
 		return retvec;
 	}
 
-	fn string(&self) -> String {
+	pub fn string(&self) -> String {
 		let mut retstr :String;
 		let mut v:Vec<_> = (&(self.__obj)).into_iter().collect();
 		let mut i:usize;
@@ -202,7 +202,7 @@ impl KeyAttr {
 		return retstr;
 	}
 
-	fn get_attr(&self,name :&str) -> String {
+	pub fn get_attr(&self,name :&str) -> String {
 		match self.__obj.get(name) {
 			Some(v) => { return v.to_string();},
 			None => {return String::from("");}
