@@ -4,7 +4,7 @@ use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
 use std::collections::HashMap;
 use serde_json::{Value};
 
-
+#[derive(Clone)]
 pub struct NameSpaceEx {
 	values :HashMap<String,Value>,
 }
@@ -16,7 +16,7 @@ pub (crate) fn new() -> NameSpaceEx {
 }
 
 impl NameSpaceEx {
-	pub fn get_bool(self, k :&str) -> bool {
+	pub fn get_bool(&self, k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -32,7 +32,7 @@ impl NameSpaceEx {
 		retb
 	}
 
-	pub fn is_accessed(self,k :&str) -> bool {
+	pub fn is_accessed(&self,k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
 			Some(_v1) => {
@@ -45,11 +45,11 @@ impl NameSpaceEx {
 		retb
 	}
 
-	pub (crate) fn set_value(mut self,k :&str, v :Value) {
+	pub (crate) fn set_value( & mut self,k :&str, v :Value) {
 		self.values.insert(k.to_string(),v);
 	}
 
-	pub fn get_string(self,k :&str) -> String {
+	pub fn get_string(&self,k :&str) -> String {
 		let mut rets :String = "".to_string();
 
 		match self.values.get(k) {
@@ -61,7 +61,7 @@ impl NameSpaceEx {
 		rets
 	}
 
-	pub fn get_int(self,k :&str) -> i64 {
+	pub fn get_int(&self,k :&str) -> i64 {
 		let mut reti :i64 = 0;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -100,7 +100,7 @@ impl NameSpaceEx {
 		reti
 	}
 
-	pub fn get_float(self,k :&str) -> f64 {
+	pub fn get_float(&self,k :&str) -> f64 {
 		let mut retf :f64 = 0.0;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -139,7 +139,7 @@ impl NameSpaceEx {
 		retf
 	}
 
-	pub fn get_array(self, k :&str) -> Vec<String> {
+	pub fn get_array(&self, k :&str) -> Vec<String> {
 		let mut retv :Vec<String> = Vec::new();
 		let mut errorval :i32 = 0;
 		match self.values.get(k) {
@@ -171,7 +171,7 @@ impl NameSpaceEx {
 		retv
 	}
 
-	pub fn get_keys(self) -> Vec<String> {
+	pub fn get_keys(&self) -> Vec<String> {
 		let mut retv :Vec<String> = Vec::new();
 		for (k,_) in self.values.clone() {
 			retv.push(k.to_string());
@@ -179,7 +179,7 @@ impl NameSpaceEx {
 		retv
 	}
 
-	pub fn string(self) -> String {
+	pub fn string(&self) -> String {
 		let mut rets :String = "".to_string();
 		let mut i :i32 = 0;
 

@@ -39,8 +39,6 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 	};
 	let mut tmps :String;
 	let mut jsonv :Value;
-	let mut isopt :bool = false;
-	let mut optc :Rc<ExtArgsOptions>;
 
 	if _cls.is_some() {
 		let c :Rc<ExtKeyParse> = _cls.unwrap();
@@ -70,17 +68,9 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 		}
 	}
 	retc.screenwidth = 80;
-	if _opt.is_some() {
-		isopt = true;
-	}
 
-	if isopt  {
-		optc = _opt.as_ref().unwrap().clone();
-		if optc.get_value(OPT_SCREEN_WIDTH).is_some() {
-			optc = _opt.unwrap().clone();
-			retc.screenwidth = optc.get_int(OPT_SCREEN_WIDTH);	
-		}
-		
+	if _opt.is_some() && _opt.as_ref().unwrap().get_value(OPT_SCREEN_WIDTH).is_some()  {
+		retc.screenwidth = _opt.as_ref().unwrap().get_int(OPT_SCREEN_WIDTH);
 	}
 
 	retc
