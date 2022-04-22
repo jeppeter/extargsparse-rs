@@ -1,5 +1,5 @@
 
-use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP};
+use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_warn};
@@ -97,7 +97,7 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 }
 
 impl ParserCompat {
-	fn get_help_info(_keycls :Option<&ExtKeyParse>,mapv :&ExtArgsMatchFuncMap) -> String {
+	fn get_help_info(&self,_keycls :Option<&ExtKeyParse>,mapv :&ExtArgsMatchFuncMap) -> String {
 		extargs_assert!(_keycls.is_some(), "must no be null");
 		let keycls = _keycls.unwrap();
 		let hlp = keycls.get_keyattr("opthelp");
@@ -147,6 +147,23 @@ impl ParserCompat {
 			}
 		}
 		rets
+	}
+
+	fn get_opt_help_optexpr(&self,_opt :Option<&ExtKeyParse>) -> String {
+		let mut rets :String = "".to_string();
+		if _opt.is_some() {
+			let opt = _opt.unwrap();
+			if opt.type_name() != KEYWORD_BOOL &&  opt.type_name() != KEYWORD_ARGS && 
+				opt.type_name() != KEYWORD_DICT &&   opt.type_name() != KEYWORD_HELP {
+					rets = opt.var_name();
+					rets = rets.replace("-","_");
+			}
+		}
+		rets
+	}
+
+	fn get_opt_help_opthelp(&self,_opt :Option<&ExtKeyParse>,mapv :&ExtArgsMatchFuncMap) -> String {
+		return self.get_help_info(_opt,mapv);
 	}
 
 }

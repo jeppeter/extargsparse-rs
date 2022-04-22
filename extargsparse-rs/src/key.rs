@@ -1967,6 +1967,10 @@ impl ExtKeyParse {
 	pub fn short_opt(&self) -> String {
 		return self.get_string_v(KEYWORD_SHORTOPT);
 	}
+
+	pub fn var_name(&self) -> String {
+		return self.get_string_v(KEYWORD_VARNAME);
+	}
 }
 
 impl PartialEq for ExtKeyParse {
