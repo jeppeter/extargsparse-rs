@@ -97,7 +97,9 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 }
 
 impl ParserCompat {
-	fn get_help_info(keycls :&ExtKeyParse,mapv :&ExtArgsMatchFuncMap) -> String {
+	fn get_help_info(_keycls :Option<&ExtKeyParse>,mapv :&ExtArgsMatchFuncMap) -> String {
+		extargs_assert!(_keycls.is_some(), "must no be null");
+		let keycls = _keycls.unwrap();
 		let hlp = keycls.get_keyattr("opthelp");
 		let mut rets :String = "".to_string();
 		if hlp.is_some() {
@@ -135,7 +137,7 @@ impl ParserCompat {
 		rets
 	}
 
-	fn get_opt_help_optname(&self,_opt :Option<ExtKeyParse>) -> String {
+	fn get_opt_help_optname(&self,_opt :Option<&ExtKeyParse>) -> String {
 		let mut rets :String = "".to_string();
 		if _opt.is_some() {
 			let opt = _opt.unwrap();
@@ -146,5 +148,6 @@ impl ParserCompat {
 		}
 		rets
 	}
+
 }
 
