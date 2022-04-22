@@ -1959,6 +1959,14 @@ impl ExtKeyParse {
 	pub	 fn value(&self) -> Value {
 		return self.keydata.get_jsonval_value(KEYWORD_VALUE)
 	}
+
+	pub fn long_opt(&self) -> String {
+		return self.get_string_v(KEYWORD_LONGOPT);
+	}
+
+	pub fn short_opt(&self) -> String {
+		return self.get_string_v(KEYWORD_SHORTOPT);
+	}
 }
 
 impl PartialEq for ExtKeyParse {

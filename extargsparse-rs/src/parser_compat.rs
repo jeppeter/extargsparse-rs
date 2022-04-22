@@ -134,4 +134,17 @@ impl ParserCompat {
 
 		rets
 	}
+
+	fn get_opt_help_optname(&self,_opt :Option<ExtKeyParse>) -> String {
+		let mut rets :String = "".to_string();
+		if _opt.is_some() {
+			let opt = _opt.unwrap();
+			rets.push_str(&format!("{}",opt.long_opt()));
+			if opt.short_opt().len() > 0 {
+				rets.push_str(&format!("|{}",opt.short_opt()));
+			}
+		}
+		rets
+	}
 }
+
