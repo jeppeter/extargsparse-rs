@@ -166,5 +166,21 @@ impl ParserCompat {
 		return self.get_help_info(_opt,mapv);
 	}
 
+	fn get_cmd_help_cmdname(&self) -> String {
+		let mut rets :String = "".to_string();
+		if self.cmdname.len() > 0 {
+			rets = format!("[{}]",self.cmdname);
+		}
+		rets
+	}
+
+	fn get_cmd_help_cmdhelp(&self) -> String {
+		let mut rets :String = "".to_string();
+		if self.helpinfo.len() > 0 {
+			rets = format!("{}",self.helpinfo);
+		}
+		rets
+	}
+
 }
 

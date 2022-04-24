@@ -4,6 +4,7 @@ pub mod key;
 pub mod options;
 pub mod funccall;
 pub mod namespace;
+pub mod helpsize;
 pub mod parser_compat;
 pub mod parser;
 
