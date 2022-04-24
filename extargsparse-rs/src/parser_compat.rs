@@ -213,5 +213,43 @@ impl ParserCompat {
 		}
 	}
 
+	fn get_indent_string(&self,s :String, indentsize :i32 , maxsize :i32) -> String {
+		let mut curs :String = "".to_string();
+		let mut rets :String = "".to_string();
+		let mut ncurs :String;
+		let mut i :usize=0;
+		let mut j :usize=0;
+
+		i = 0;
+		while i < indentsize as usize {
+			curs.push(' ');
+			i += 1;
+		}
+
+		let bs = s.as_bytes();
+		j = 0;
+		while j < bs.len() {
+			if (bs[j] == ' ' as u8 || bs[j] == '\t' as u8 ) && curs.len() > maxsize as usize {
+				rets.push_str(&(format!("{}\n",curs)));
+				curs = "".to_string();
+				i = 0;
+				while i < indentsize as usize {
+					curs.push(' ');
+					i += 1;
+				}
+				j += 1;
+				continue;
+			}
+			curs.push( bs[j] as char);
+			j += 1;
+		}
+
+		ncurs = format!("{}",curs.trim_start());
+		if ncurs.len() > 0 {
+			rets.push_str(&(format!("{}",curs.trim())));
+		}
+		rets
+	}
+
 }
 
