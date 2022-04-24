@@ -1969,6 +1969,15 @@ impl ExtKeyParse {
 	pub fn var_name(&self) -> String {
 		return self.get_string_v(KEYWORD_VARNAME);
 	}
+
+	pub fn flag_name(&self) -> String {
+		return self.get_string_v(KEYWORD_FLAGNAME);
+	}
+
+	pub fn short_flag(&self) -> String {
+		return self.get_string_v(KEYWORD_SHORTFLAG);
+	}
+
 }
 
 impl PartialEq for ExtKeyParse {

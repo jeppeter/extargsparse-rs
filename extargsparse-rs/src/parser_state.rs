@@ -2,8 +2,8 @@
 
 use super::parser_compat::{ParserCompat};
 use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
-use super::key::{ExtKeyParse};
-use super::{error_class,new_error,extargs_assert,extargs_log_trace};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN};
+use super::{error_class,new_error,extargs_assert,extargs_log_trace,extargs_log_info};
 use super::logger::{extargs_debug_out};
 
 use std::error::Error;
@@ -123,9 +123,10 @@ impl ParserState {
 	}
 
 	fn find_key_cls(&mut self) -> Result<Option<ExtKeyParse>,Box<dyn Error>> {
-		let retv :Option<ExtKeyParse> = None;
-		let  oldcharidx :i32;
-		let oldidx :i32;
+		let mut retv :Option<ExtKeyParse> = None;
+		let oldcharidx :i32;
+		let mut oldidx :i32;
+		let mut idx :i32;
 
 		if self.ended > 0 {
 			return Ok(retv);
@@ -144,6 +145,119 @@ impl ParserState {
 		oldidx = self.curidx;
 
 		extargs_log_trace!("oldcharidx [{}] oldidx[{}]",oldcharidx,oldidx);
+
+		if oldidx >= self.args.len() as i32 {
+			self.curidx = oldidx;
+			self.curcharidx = -1;
+			self.shortcharargs = -1;
+			self.longargs = -1;
+			self.keyidx = -1;
+			self.validx = -1;
+			self.ended = 1;
+			return Ok(retv);
+		}
+
+		if oldcharidx >= 0 {
+			let c = format!("{}",self.args[oldidx as usize]);
+			if c.len() as i32 <= oldcharidx {
+				oldidx += 1;
+				extargs_log_trace!("oldidx [{}] [{}] [{}]", oldidx,c,oldcharidx);
+				if self.shortcharargs > 0 {
+					oldidx += self.shortcharargs;
+				}
+				extargs_log_trace!("oldidx [{}] __shortcharargs [{}]",oldidx, self.shortcharargs);
+				self.curidx = oldidx;
+				self.curcharidx = -1;
+				self.shortcharargs = -1;
+				self.keyidx = -1;
+				self.validx = -1;
+				self.longargs = -1;
+				return self.find_key_cls();
+			}
+			let cbs = c.as_bytes();
+			let curch :String = format!("{}", cbs[oldcharidx as usize] as char) ;
+			extargs_log_trace!("argv[{}][{}] {}", oldidx, oldcharidx, curch);
+			let mut idx :i32 = (self.cmdpaths.len() - 1) as i32;
+			while idx >= 0 {
+				let cmd = self.cmdpaths[idx as usize].clone();
+				for opt in cmd.cmdopts.iter() {
+					if !opt.is_flag() {
+						continue;
+					}
+
+					if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+						continue;
+					}
+
+					if opt.short_flag().len() != 0 {
+						if opt.short_flag().eq(&curch) {
+							self.keyidx = oldidx;
+							self.validx = oldidx + 1;
+							self.curidx = oldidx;
+							self.curcharidx = oldcharidx + 1;
+							extargs_log_info!("{} validx [{}]",opt.string(), self.validx);
+							retv = Some(opt.clone());
+							return Ok(retv);
+						}
+					}
+				}
+
+				idx -= 1;
+			}
+			new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+		} else {
+			if !self.bundlemode {
+				let curarg = format!("{}",self.args[oldidx as usize]);
+				if self.longprefix.len() != 0  && curarg.starts_with(&self.longprefix) {
+					if curarg.eq(&self.longprefix) {
+						self.keyidx = -1;
+						self.curidx = oldidx + 1;
+						self.curcharidx = -1;
+						self.validx = oldidx + 1;
+						self.shortcharargs = -1;
+						self.longargs = -1;
+						self.ended = 1;
+						idx = self.curidx;
+						while idx < self.args.len() as i32 {
+							self.leftargs.push(format!("{}",self.args[idx as usize]));
+							idx += 1;
+						}
+						retv = None;
+						return Ok(retv);
+					}
+				}
+
+				idx = (self.cmdpaths.len() - 1 ) as i32;
+				while idx >= 0 {
+					let cmd = self.cmdpaths[idx as usize].clone();
+					for opt in cmd.cmdopts {
+						if !opt.is_flag() {
+							continue;
+						}
+
+						if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+							continue;
+						}
+
+						extargs_log_info!("[{}]longopt {} curarg {}", idx, opt.long_opt(), curarg);
+						if opt.long_opt().eq(&curarg) {
+							self.keyidx = oldidx;
+							oldidx += 1;
+							self.validx = oldidx;
+							self.shortcharargs = -1;
+							self.longargs = -1;
+							extargs_log_info!("oldidx {} (len {})", oldidx, self.args.len());
+							self.curidx = oldidx;
+							self.curcharidx = -1;
+							retv = Some(opt.clone());
+							return Ok(retv);
+						}
+					}
+					idx -= 1;
+				}
+				new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+			}
+		}
 
 		Ok(retv)
 	}
