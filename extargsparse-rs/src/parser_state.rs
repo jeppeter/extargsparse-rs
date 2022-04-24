@@ -1,7 +1,7 @@
 
 
 use super::parser_compat::{ParserCompat};
-use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX};
+use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
 
 #[derive(Clone)]
 pub (crate) struct ParserState {
@@ -43,12 +43,14 @@ pub (crate) fn new(args :Vec<String>,maincmd :ParserCompat,optattr :ExtArgsOptio
 	retv.longprefix = optattr.get_string(OPT_LONG_PREFIX);
 	retv.shortprefix = optattr.get_string(OPT_SHORT_PREFIX);
 
-	if retv.longprefix.len() == 0 || retv.shortprefix.len() == 0 || 
-		retv.longprefix == retv.shortprefix {
-			retv.bundlemode = true;
-		} else {
-			retv.bundlemode = false;
-		}
-
+	if retv.longprefix.len() == 0 || 
+	retv.shortprefix.len() == 0 || 
+	retv.longprefix == retv.shortprefix {
+		retv.bundlemode = true;
+	} else {
+		retv.bundlemode = false;
+	}
+	retv.parseall = optattr.get_bool(OPT_PARSE_ALL);
+	retv.args = args.clone();
 	retv
 }
