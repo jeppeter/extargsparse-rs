@@ -2,9 +2,15 @@
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 
+pub const OPT_NAME_SIZE :&str = "optnamesize";
+pub const OPT_EXPR_SIZE :&str = "optexprsize";
+pub const OPT_HELP_SIZE :&str = "opthelpsize";
+pub const CMD_NAME_SIZE :&str = "cmdnamesize";
+pub const CMD_HELP_SIZE :&str = "cmdhelpsize";
+
 lazy_static! {
 	static ref HELP_SIZE_KEYWORDS :Vec<String> = {
-		vec![format!("optnamesize"), format!("optexprsize"), format!("opthelpsize"), format!("cmdnamesize"),format!("cmdhelpsize")]
+		vec![format!("{}",OPT_NAME_SIZE), format!("{}",OPT_EXPR_SIZE), format!("{}",OPT_HELP_SIZE), format!("{}",CMD_NAME_SIZE),format!("{}",CMD_HELP_SIZE)]
 	};
 }
 

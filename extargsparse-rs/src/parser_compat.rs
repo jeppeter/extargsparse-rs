@@ -4,6 +4,7 @@ use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_warn};
 use super::funccall::{ExtArgsMatchFuncMap};
+use super::helpsize::{HelpSize,CMD_NAME_SIZE,CMD_HELP_SIZE,OPT_NAME_SIZE,OPT_EXPR_SIZE,OPT_HELP_SIZE};
 
 use std::rc::Rc;
 use serde_json::{Value};
@@ -13,8 +14,8 @@ use serde_json::{Value};
 pub struct ParserCompat {
 	pub keycls :Option<Rc<ExtKeyParse>>,
 	pub cmdname :String,
-	pub cmdopts :Vec<Box<ExtKeyParse>>,
-	pub subcmds :Vec<Box<ParserCompat>>,
+	pub cmdopts :Vec<ExtKeyParse>,
+	pub subcmds :Vec<ParserCompat>,
 	pub helpinfo :String,
 	pub callfunction :String,
 	pub screenwidth :i32,
@@ -180,6 +181,36 @@ impl ParserCompat {
 			rets = format!("{}",self.helpinfo);
 		}
 		rets
+	}
+
+	pub (crate) fn get_help_size(&self,hs :&mut HelpSize, recursive :i32,mapv :&ExtArgsMatchFuncMap) {
+		hs.set_value(CMD_NAME_SIZE,self.get_cmd_help_cmdname().len() as i32 + 1);
+		hs.set_value(CMD_HELP_SIZE,self.get_cmd_help_cmdhelp().len() as i32 + 1);
+
+		for curopt in self.cmdopts.iter() {
+			if curopt.type_name() == KEYWORD_ARGS {
+				continue;
+			}
+			let copt = Some(curopt);
+			hs.set_value(CMD_NAME_SIZE, self.get_opt_help_optname(copt).len() as i32 + 1);
+			hs.set_value(OPT_EXPR_SIZE, self.get_opt_help_optexpr(copt).len() as i32 + 1);
+			hs.set_value(OPT_HELP_SIZE, self.get_opt_help_opthelp(copt,mapv).len() as i32 + 1);
+		}
+
+		if recursive != 0 {
+			for cursub in self.subcmds.iter() {
+				if recursive > 0 {
+					cursub.get_help_size(hs,recursive - 1,mapv);
+				} else {
+					cursub.get_help_size(hs,recursive,mapv);
+				}
+			}
+		}
+
+		for cursub in self.subcmds.iter() {
+			hs.set_value(CMD_NAME_SIZE,cursub.get_cmd_help_cmdname().len() as i32 + 1);
+			hs.set_value(CMD_HELP_SIZE,cursub.get_cmd_help_cmdhelp().len() as i32 + 1);
+		}
 	}
 
 }
