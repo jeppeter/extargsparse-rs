@@ -14,7 +14,7 @@ use std::env;
 
 #[derive(Clone)]
 pub struct ParserCompat {
-	pub keycls :Option<Rc<ExtKeyParse>>,
+	pub keycls :Option<ExtKeyParse>,
 	pub cmdname :String,
 	pub cmdopts :Vec<ExtKeyParse>,
 	pub subcmds :Vec<ParserCompat>,
@@ -28,7 +28,7 @@ pub struct ParserCompat {
 	pub version :String,
 }
 
-pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOptions>>) -> ParserCompat {
+pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<Rc<ExtArgsOptions>>) -> ParserCompat {
 	let mut retc :ParserCompat = ParserCompat {
 		keycls : None,
 		cmdname : "".to_string(),
@@ -44,11 +44,11 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 		version : "".to_string(),
 	};
 	let mut tmps :String;
-	let mut jsonv :Value;
+	let jsonv :Value;
 	let mut isopt :bool = false;
 
 	if _cls.is_some() {
-		let c :Rc<ExtKeyParse> = _cls.unwrap();
+		let c :ExtKeyParse = _cls.unwrap();
 		extargs_assert!(c.is_cmd(),"{} must be cmd", c.string());
 		retc.keycls = Some(c.clone());
 		retc.cmdname = c.cmd_name();
@@ -67,7 +67,7 @@ pub (crate) fn new(_cls :Option<Rc<ExtKeyParse>> , _opt :Option<Rc<ExtArgsOption
 		jsonv = serde_json::from_str(&tmps).unwrap();
 		match ExtKeyParse::new("","main",&jsonv,false,false,false,"--","-",false) {
 			Ok(_cv) => {
-				retc.keycls = Some(Rc::new(_cv));
+				retc.keycls = Some(_cv);
 			},
 			Err(_e) => {
 				panic!("can not parse [{}] error[{:?}]", tmps,_e);
