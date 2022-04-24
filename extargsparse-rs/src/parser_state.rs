@@ -3,6 +3,12 @@
 use super::parser_compat::{ParserCompat};
 use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
 use super::key::{ExtKeyParse};
+use super::{error_class,new_error};
+use std::error::Error;
+use std::boxed::Box;
+use std::fmt;
+
+error_class!{ParseStateError}
 
 #[derive(Clone)]
 pub (crate) struct ParserState {
@@ -89,7 +95,28 @@ impl ParserState {
 				}
 			}
 		}
-
 		retv
+	}
+
+	pub (crate) fn add_parse_args(&mut self, nargs :i32) -> Result<(),Box<dyn Error>> {
+		if self.curcharidx >= 0 {
+			if nargs > 0 && self.shortcharargs > 0 {
+				new_error!{ParseStateError,"[{}] already set args",self.args[self.curidx as usize]}
+			}
+
+			if self.shortcharargs < 0 {
+				self.shortcharargs = 0;
+			}
+			self.shortcharargs += nargs;
+		} else {
+			if self.longargs > 0 {
+				new_error!{ParseStateError,"[{}] not handled", self.args[self.curidx as usize]}
+			}
+			if self.longargs < 0 {
+				self.longargs = 0;
+			}
+			self.longargs += nargs;
+		}
+		Ok(())
 	}
 }
