@@ -3,7 +3,9 @@
 use super::parser_compat::{ParserCompat};
 use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
 use super::key::{ExtKeyParse};
-use super::{error_class,new_error};
+use super::{error_class,new_error,extargs_assert,extargs_log_trace};
+use super::logger::{extargs_debug_out};
+
 use std::error::Error;
 use std::boxed::Box;
 use std::fmt;
@@ -118,5 +120,31 @@ impl ParserState {
 			self.longargs += nargs;
 		}
 		Ok(())
+	}
+
+	fn find_key_cls(&mut self) -> Result<Option<ExtKeyParse>,Box<dyn Error>> {
+		let retv :Option<ExtKeyParse> = None;
+		let  oldcharidx :i32;
+		let oldidx :i32;
+
+		if self.ended > 0 {
+			return Ok(retv);
+		}
+
+		if self.longargs > 0 {
+			extargs_assert!{self.curcharidx < 0 , "curcharidx [{}]", self.curcharidx};
+			self.curcharidx += self.longargs ;
+			extargs_assert!{self.args.len() as i32 >= self.curidx ,"[{}] < [{}]", self.args.len(), self.curidx};
+			self.longargs = -1;
+			self.validx = -1;
+			self.keyidx = -1;
+		}
+
+		oldcharidx = self.curcharidx;
+		oldidx = self.curidx;
+
+		extargs_log_trace!("oldcharidx [{}] oldidx[{}]",oldcharidx,oldidx);
+
+		Ok(retv)
 	}
 }
