@@ -12,6 +12,7 @@ use std::env;
 
 
 
+#[derive(Clone)]
 pub struct ParserCompat {
 	pub keycls :Option<Rc<ExtKeyParse>>,
 	pub cmdname :String,
