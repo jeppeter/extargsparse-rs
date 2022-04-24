@@ -1,13 +1,14 @@
 
-use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT};
+use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,Nargs};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
-use super::{extargs_assert,extargs_log_warn};
+use super::{extargs_assert,extargs_log_warn,extargs_log_trace};
 use super::funccall::{ExtArgsMatchFuncMap};
 use super::helpsize::{HelpSize,CMD_NAME_SIZE,CMD_HELP_SIZE,OPT_NAME_SIZE,OPT_EXPR_SIZE,OPT_HELP_SIZE};
 
 use std::rc::Rc;
 use serde_json::{Value};
+use std::env;
 
 
 
@@ -216,7 +217,7 @@ impl ParserCompat {
 	fn get_indent_string(&self,s :String, indentsize :i32 , maxsize :i32) -> String {
 		let mut curs :String = "".to_string();
 		let mut rets :String = "".to_string();
-		let mut ncurs :String;
+		let ncurs :String;
 		let mut i :usize=0;
 		let mut j :usize=0;
 
@@ -251,5 +252,181 @@ impl ParserCompat {
 		rets
 	}
 
+	pub (crate) fn get_help_info_ex(&self,hs :&mut HelpSize,parentcmds :Vec<ParserCompat>,mapv :&ExtArgsMatchFuncMap) -> String {
+		let mut rets :String = "".to_string();
+		let mut rootcmds :&ParserCompat;
+		let curcmd :&ParserCompat;
+		if self.usage.len() > 0 {
+			rets.push_str(&(format!("{}",self.usage)));
+		} else {
+			rootcmds = self;
+			curcmd = self;
+			if parentcmds.len() > 0 {
+				rootcmds = &(parentcmds[0]);
+			}
+
+			if rootcmds.prog.len() > 0 {
+				rets.push_str(&(format!("{}",rootcmds.prog)));
+			} else {
+				for arg in env::args() {
+					rets.push_str(&(format!("{}", arg)));
+					break;
+				}
+			}
+
+			if parentcmds.len() > 0 {
+				for c in parentcmds.iter() {
+					rets.push_str(&(format!(" {}", c.cmdname)));
+				}
+			}
+
+			rets.push_str(&(format!(" {}",self.cmdname)));
+			if self.helpinfo.len() > 0 {
+				rets.push_str(&(format!(" {}",self.helpinfo)));
+			} else {
+				if self.cmdopts.len() > 0 {
+					rets.push_str(&(format!(" [OPTIONS]")));
+				}
+
+				if self.subcmds.len() > 0 {
+					rets.push_str(&(format!(" [SUBCOMMANDS]")));
+				}
+
+				for curopt in self.cmdopts.iter() {
+					if curopt.type_name() == KEYWORD_ARGS {
+						match curopt.get_nargs_v() {
+							Nargs::Argtype(s) => {
+								if s == "+" {
+									rets.push_str(&(format!(" args...")));
+								} else if s == "*" {
+									rets.push_str(&(format!(" [args...]")));
+								} else if s == "?" {
+									rets.push_str(&(format!(" arg")));
+								}
+							},
+							Nargs::Argnum(n) => {
+								if n > 1 {
+									rets.push_str(&(format!(" args...")));
+								} else if n == 1 {
+									rets.push_str(&(format!(" arg")));
+								}
+							},
+						}
+					} 
+				}
+			}
+			rets.push_str(&(format!("\n")));
+		}
+		
+
+		if self.description.len() > 0 {
+			rets.push_str(&(format!("{}\n",self.description)));
+		}
+
+		rets.push_str(&(format!("\n")));
+		if self.cmdopts.len() > 0 {
+			rets.push_str(&format!(" [OPTIONS]\n"));
+
+			for curopt in self.cmdopts.iter() {
+				let mut curs :String = "".to_string();
+				if curopt.type_name() == KEYWORD_ARGS {
+					continue;
+				}
+				let optname = self.get_opt_help_optname(Some(curopt));
+				let optexpr = self.get_opt_help_optexpr(Some(curopt));
+				let opthelp = self.get_opt_help_opthelp(Some(curopt),mapv);
+				let namesize = hs.get_value(OPT_NAME_SIZE) as usize;
+				let exprsize = hs.get_value(OPT_EXPR_SIZE) as usize;
+				let helpsize = hs.get_value(OPT_HELP_SIZE) as usize;
+				curs.push_str(&(format!("    ")));
+				curs.push_str(&(format!("{:<namesize$} {:<exprsize$} {:<helpsize$}\n",optname,optexpr,opthelp)));
+				if curs.len() < self.screenwidth as usize {
+					rets.push_str(&curs);
+				} else {
+					curs = "".to_string();
+					curs.push_str(&(format!("    ")));
+					curs.push_str(&format!("{:<namesize$} {:<exprsize$}",optname,optexpr));
+					rets.push_str(&(format!("{}\n",curs)));
+					if self.screenwidth > 60 {
+						rets.push_str(&(self.get_indent_string(opthelp, 20,self.screenwidth)));
+					} else {
+						rets.push_str(&(self.get_indent_string(opthelp,15,self.screenwidth)));
+					}
+				}
+			}
+		}
+
+		if self.subcmds.len() > 0 {
+			rets.push_str(&(format!("\n")));
+			rets.push_str(&(format!("[SUBCOMMANDS]\n")));
+
+			for curcmd in self.subcmds.iter() {
+				let cmdname = curcmd.get_cmd_help_cmdname();
+				let cmdhelp = curcmd.get_cmd_help_cmdhelp();
+				let mut curs :String = "".to_string();
+				let namesize = hs.get_value(CMD_NAME_SIZE)  as usize;
+				let helpsize = hs.get_value(CMD_HELP_SIZE) as usize;
+
+				curs.push_str(&(format!("    ")));
+				curs.push_str(&(format!("{:<namesize$} {:<helpsize$}",cmdname,cmdhelp)));
+				if curs.len() < self.screenwidth as usize {
+					rets.push_str(&(format!("{}\n",curs)));
+				} else {
+					curs = "".to_string();
+					curs.push_str(&format!("    "));
+					curs.push_str(&format!("{:<namesize$}", cmdname));
+					rets.push_str(&(format!("{}\n",curs)));
+					if self.screenwidth > 60 { 
+						rets.push_str(&(self.get_indent_string(cmdhelp,20, self.screenwidth)));
+					} else {
+						rets.push_str(&(self.get_indent_string(cmdhelp,15,self.screenwidth)));
+					}
+				}
+			}
+		}
+
+		if self.epilog.len() > 0 {
+			rets.push_str(&format!("\n"));
+			rets.push_str(&(format!("\n{}\n",self.epilog)));
+		}
+		extargs_log_trace!("{}",rets);
+
+		rets
+	}
+
+	pub (crate) fn string(&self) -> String {
+		let mut rets :String = "".to_string();
+			let mut i :i32 = 0;
+		rets.push_str(&(format!("@{}|",self.cmdname)));
+		if self.keycls.is_some() {
+			let k = self.keycls.as_ref().unwrap();
+			rets.push_str(&format!("{}|",k.string()));
+		} else {
+			rets.push_str(&(format!("nil|")));
+		}
+
+		if self.subcmds.len() > 0 {
+			rets.push_str(&(format!("subcommands[{}]<",self.subcmds.len())));
+			i = 0;
+			for curcmd in self.subcmds.iter() {
+				if i > 0 {
+					rets.push_str(&(format!(",")));
+				}
+				rets.push_str(&(format!("{}",curcmd.cmdname)));
+				i += 1;
+			}
+			rets.push_str(&(format!(">")));
+		}
+
+		if self.cmdopts.len() > 0 {
+			rets.push_str(&(format!("cmdopts[{}]<",self.cmdopts.len())));
+			for curopt in self.cmdopts.iter() {
+				rets.push_str(&format!("{}",curopt.string()));
+			}
+			rets.push_str(&(format!(">")));
+		}
+
+		rets
+	}
 }
 

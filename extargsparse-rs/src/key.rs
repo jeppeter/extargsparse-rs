@@ -19,7 +19,6 @@ use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
 error_class!{KeyAttrError}
 error_class!{KeyError}
 
-#[allow(dead_code)]
 pub enum Nargs {	
 	Argtype(String),
 	Argnum(i32),
@@ -1920,8 +1919,8 @@ impl ExtKeyParse {
 		return val;
 	}
 
-	pub fn get_nargs_v(&self, key :&str) -> Nargs {
-		return self.keydata.get_nargs_value(key);
+	pub fn get_nargs_v(&self) -> Nargs {
+		return self.keydata.get_nargs_value(KEYWORD_NARGS);
 	}
 
 	pub fn get_keyattr(&self, key :&str) -> Option<KeyAttr> {
@@ -2327,7 +2326,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_ARGS);
     	assert!(flags.get_value_v() == Value::Null);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(format!("{}",KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(format!("{}",KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
@@ -2392,7 +2391,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
     	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2434,7 +2433,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_QUESTION_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_QUESTION_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " self define ");
     	__opt_fail_check(&flags);
     	return;
@@ -2472,7 +2471,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(1));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(1));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2512,7 +2511,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from("+")));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from("+")));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2533,7 +2532,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "dep_verbose");
@@ -2555,7 +2554,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " new help info ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "verbose");
@@ -2576,7 +2575,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
     	assert!(flags.get_value_v() == jsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
@@ -2598,7 +2597,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_INT);
     	assert!(flags.get_value_v() == jsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "max value set ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(1));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(1));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "maxval");
@@ -2619,7 +2618,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2639,7 +2638,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2659,7 +2658,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2681,7 +2680,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2713,7 +2712,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2748,7 +2747,7 @@ mod debug_key_test_case {
     	assert!(flags.get_value_v() == cmpjsonv);
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_HELP);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "h");
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
@@ -2886,7 +2885,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
     	assert!(flags.get_value_v() == jsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
@@ -2907,7 +2906,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
     	assert!(flags.get_value_v() == jsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
@@ -2930,7 +2929,7 @@ mod debug_key_test_case {
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
     	assert!(flags.get_value_v() == jsonv);
     	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v(KEYWORD_NARGS) == Nargs::Argnum(0));
+    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
     	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
     	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "crl_CA_compromise");
