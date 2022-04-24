@@ -6,6 +6,7 @@ pub mod funccall;
 pub mod namespace;
 pub mod helpsize;
 pub mod parser_compat;
+pub mod parser_state;
 pub mod parser;
 
 
