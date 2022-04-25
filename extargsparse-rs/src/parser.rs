@@ -13,7 +13,8 @@ use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 use serde_json::Value;
-use super::{extargs_assert};
+use super::logger::{extargs_debug_out};
+use super::{extargs_assert,extargs_log_info};
 
 
 use super::{error_class,new_error,debug_output,error_output};
@@ -214,6 +215,10 @@ impl ExtArgsParser {
 		return self.check_flag_insert(keycls,parsers);
 	}
 
+	fn get_subparser_inner(&self,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Option<ParserCompat> {
+
+	}
+
 	fn load_commandline_subparser(&mut self,_prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
 		if keycls.type_name() != KEYWORD_COMMAND {
 			new_error!{ParserError,"{} not valid command", keycls.string()}
@@ -221,7 +226,16 @@ impl ExtArgsParser {
 		if keycls.cmd_name().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),keycls.cmd_name()) {
 			new_error!{ParserError,"{} in reserved %v", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
 		}
-		
+		extargs_log_info!("load [{}]",keycls.string());
+		if keycls.is_cmd() && check_in_array(PARSER_RESERVE_ARGS.clone(),keycls.cmd_name()) {
+			new_error!{ParserError,"{} in reserved %v", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+		}
+		let oparsers = self.get_subparser_inner(keycls.clone(),parsers.clone());
+		if oparsers.is_none() {
+			new_error!{ParserError,"can not find [{}] ", keycls.string()}
+		}
+		let parser = oparsers.as_ref().unwrap().clone();
+		let nextparsers :Vec<ParserCompat> = Vec::new();
 	}
 
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
