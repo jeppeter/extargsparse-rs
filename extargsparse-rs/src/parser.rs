@@ -216,7 +216,23 @@ impl ExtArgsParser {
 	}
 
 	fn get_subparser_inner(&self,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Option<ParserCompat> {
+		let mut retv :Option<ParserCompat> = None;
+		let mut cmdname :String = "".to_string(); 
+		let parentname :String;
+		parentname = self.format_cmd_from_cmd_array(parsers.clone());
+		cmdname.push_str(&parentname);
+		if cmdname.len() > 0 {
+			cmdname.push_str(".");
+		}
+		cmdname.push_str(&keycls.cmd_name());
+		let oparser = self.find_subparser_inner(&cmdname,None);
+		if oparser.is_some() {
+			return oparser;
+		}
+		let parser = parser_compat::new(keycls.clone(),self.options.as_ref().unwrap().clone());
+		extargs_log_info!("{}",parser.string());
 
+		retv
 	}
 
 	fn load_commandline_subparser(&mut self,_prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
