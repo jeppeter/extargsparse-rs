@@ -11,6 +11,8 @@ use lazy_static::lazy_static;
 use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
+use serde_json::Value;
+use super::{extargs_assert};
 
 
 use super::{error_class,new_error,debug_output,error_output};
@@ -163,5 +165,20 @@ impl ExtArgsParser {
 
 	fn load_commandline_json_file(&mut self,keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>, Box<dyn Error>> {
 		return self.check_flag_insert(keycls,parsers);
+	}
+
+	fn load_commandline_json_added(&mut self,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		let mut prefix :String = "".to_string();
+		let key1 :String;
+		let v :Value;
+		let keycls :ExtKeyParse;
+		key1 = format!("{}##json input file to get the value set##",self.json_long);
+		prefix = self.format_cmd_from_cmd_array(parsers.clone());
+		prefix = prefix.replace(".","_");
+		v = Value::Null;
+		let res = ExtKeyParse::new(&prefix,&key1,&v,true,false,true,&self.long_prefix,&self.short_prefix,false);
+		extargs_assert!(res.is_ok(), "create json keycls error [{:?}]", res.err().unwrap());
+		keycls = res.unwrap();
+		return self.load_commandline_json_file(keycls,parsers);
 	}
 }
