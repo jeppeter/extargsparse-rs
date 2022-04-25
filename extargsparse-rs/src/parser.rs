@@ -115,8 +115,10 @@ impl ExtArgsParser {
 	fn check_flag_insert(&mut self,keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
 		let lastparser :ParserCompat;
 		let mut retparser = parsers.clone();
+		let mut parserclone :i32 = 0;
 		if parsers.len() > 0 {
-			lastparser = parsers[0].clone();
+			lastparser = parsers[parsers.len() - 1].clone();
+			parserclone = 1;
 		} else {
 			lastparser = self.maincmd.as_ref().unwrap().clone();
 		}
@@ -127,10 +129,39 @@ impl ExtArgsParser {
 					if opt.opt_dest().eq(&keycls.opt_dest()) {
 						new_error!{ParserError,"[{}] already inserted", keycls.opt_dest()}
 					}
+				} else if opt.type_name() == KEYWORD_HELP && keycls.type_name() == KEYWORD_HELP {
+					new_error!{ParserError,"help [{}] had already inserted", keycls.string()}
 				}
+			} else if opt.flag_name() == KEYWORD_DOLLAR_SIGN && keycls.flag_name() == KEYWORD_DOLLAR_SIGN {
+				new_error!{ParserError,"args [{}] already inserted", keycls.string()}
+			}
+		}
+
+		if parserclone > 0 {
+			retparser[parsers.len()-1].cmdopts.push(keycls);
+		} else {
+			if self.maincmd.is_some() {
+				self.maincmd.as_mut().unwrap().cmdopts.push(keycls);
+			} else {
+				new_error!{ParserError,"no maincmd set"}
 			}
 		}
 
 		Ok(retparser)
+	}
+
+	fn format_cmd_from_cmd_array(&self,parsers :Vec<ParserCompat>) -> String {
+		let mut rets :String = "".to_string();
+		for v in parsers.iter() {
+			if rets.len() > 0 {
+				rets.push_str(".");
+			}
+			rets.push_str(&v.cmdname);
+		}
+		rets
+	}
+
+	fn load_commandline_json_file(&mut self,keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>, Box<dyn Error>> {
+		return self.check_flag_insert(keycls,parsers);
 	}
 }
