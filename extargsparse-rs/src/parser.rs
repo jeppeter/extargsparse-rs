@@ -181,4 +181,23 @@ impl ExtArgsParser {
 		keycls = res.unwrap();
 		return self.load_commandline_json_file(keycls,parsers);
 	}
+
+	fn load_commandline_help(&mut self, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		return self.check_flag_insert(keycls,parsers);
+	}
+
+	fn load_commandline_help_added(&mut self,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>, Box<dyn Error>> {
+		let mut key1 :String = "".to_string();
+		let v :Value;
+
+		key1.push_str(&format!("{}",self.help_long));
+		if self.help_short.len() > 0 {
+			key1.push_str(&format!("|{}",self.help_short));
+		}
+		v = Value::Null;
+		let res = ExtKeyParse::new("",&key1,&v,true,true,false,&self.long_prefix,&self.short_prefix,false);
+		extargs_assert!(res.is_ok(),"create help keycls error [{:?}]", res.err().unwrap());
+		let keycls = res.unwrap();
+		return self.load_commandline_help(keycls,parsers);
+	}
 }
