@@ -4,8 +4,9 @@ use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_P
 use super::parser_compat;
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState,StateOptVal};
-use super::key::{KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,ExtKeyParse};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
+use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
 
 use std::fmt;
@@ -58,6 +59,7 @@ fn is_valid_priority (k :i32) -> bool {
 	}
 	return false;
 }
+
 
 pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<ExtArgsParser,Box<dyn Error>> {
 	let mut retv :ExtArgsParser = ExtArgsParser {
@@ -199,5 +201,37 @@ impl ExtArgsParser {
 		extargs_assert!(res.is_ok(),"create help keycls error [{:?}]", res.err().unwrap());
 		let keycls = res.unwrap();
 		return self.load_commandline_help(keycls,parsers);
+	}
+
+	fn load_commandline_base(&mut self, prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		if keycls.is_flag() && keycls.flag_name() != KEYWORD_DOLLAR_SIGN && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.flag_name())) {
+			new_error!{ParserError,"{} in the {}", keycls.flag_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+		}
+		return self.check_flag_insert(keycls,parsers);
+	}
+
+	fn load_commandline_args(&mut self, _prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		return self.check_flag_insert(keycls,parsers);
+	}
+
+	fn load_commandline_subparser(&mut self,_prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		if keycls.type_name() != KEYWORD_COMMAND {
+			new_error!{ParserError,"{} not valid command", keycls.string()}
+		}
+		if keycls.cmd_name().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),keycls.cmd_name()) {
+			new_error!{ParserError,"{} in reserved %v", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+		}
+		
+	}
+
+	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		if prefix == KEYWORD_STRING || prefix == KEYWORD_INT || prefix == KEYWORD_FLOAT ||
+			prefix == KEYWORD_LIST || prefix == KEYWORD_BOOL || prefix == KEYWORD_COUNT ||
+			prefix == KEYWORD_HELP || prefix == KEYWORD_JSONFILE {
+				return self.load_commandline_base(prefix,keycls,parsers);
+		}  else if prefix == KEYWORD_ARGS {
+			return self.load_commandline_args(prefix,keycls,parsers);
+		}
+		new_error!{ParserError,"not {} prefix parse",prefix}
 	}
 }

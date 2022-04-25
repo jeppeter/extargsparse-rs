@@ -1,5 +1,6 @@
 mod errors;
 pub mod const_value;
+pub mod util;
 pub mod logger;
 pub mod key;
 pub mod options;
