@@ -428,5 +428,9 @@ impl ParserState {
 		validx = self.curidx;
 		return Ok((validx,optval,keycls));
 	}
+
+	pub (crate) fn get_cmd_paths(&self) -> Vec<ParserCompat> {
+		return self.cmdpaths.clone();
+	}
 }
 
