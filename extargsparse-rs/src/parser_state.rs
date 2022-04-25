@@ -124,7 +124,7 @@ impl ParserState {
 
 	fn find_key_cls(&mut self) -> Result<Option<ExtKeyParse>,Box<dyn Error>> {
 		let mut retv :Option<ExtKeyParse> = None;
-		let oldcharidx :i32;
+		let mut oldcharidx :i32;
 		let mut oldidx :i32;
 		let mut idx :i32;
 
@@ -206,8 +206,9 @@ impl ParserState {
 			}
 			new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
 		} else {
+			let curarg;
 			if !self.bundlemode {
-				let curarg = format!("{}",self.args[oldidx as usize]);
+				curarg = format!("{}",self.args[oldidx as usize]);
 				if self.longprefix.len() != 0  && curarg.starts_with(&self.longprefix) {
 					if curarg.eq(&self.longprefix) {
 						self.keyidx = -1;
@@ -225,29 +226,96 @@ impl ParserState {
 						retv = None;
 						return Ok(retv);
 					}
-				}
 
-				idx = (self.cmdpaths.len() - 1 ) as i32;
+					idx = (self.cmdpaths.len() - 1 ) as i32;
+					while idx >= 0 {
+						let cmd = self.cmdpaths[idx as usize].clone();
+						for opt in cmd.cmdopts {
+							if !opt.is_flag() {
+								continue;
+							}
+
+							if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+								continue;
+							}
+
+							extargs_log_info!("[{}]longopt {} curarg {}", idx, opt.long_opt(), curarg);
+							if opt.long_opt().eq(&curarg) {
+								self.keyidx = oldidx;
+								oldidx += 1;
+								self.validx = oldidx;
+								self.shortcharargs = -1;
+								self.longargs = -1;
+								extargs_log_info!("oldidx {} (len {})", oldidx, self.args.len());
+								self.curidx = oldidx;
+								self.curcharidx = -1;
+								retv = Some(opt.clone());
+								return Ok(retv);
+							}
+						}
+						idx -= 1;
+					}
+					new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+				} else if self.shortprefix.len() > 0 && curarg.starts_with(&self.shortprefix) {
+					if curarg.eq(&self.shortprefix) {
+						if self.parseall {
+							self.leftargs.push(format!("{}",curarg));
+							oldidx += 1;
+							self.curidx = oldidx;
+							self.curcharidx = -1;
+							self.longargs = -1;
+							self.shortcharargs = -1;
+							self.keyidx = -1;
+							self.validx = -1;
+							return self.find_key_cls();
+						} else {
+							self.ended = 1;
+							idx = oldidx;
+							while idx < self.args.len() as i32 {
+								self.leftargs.push(format!("{}",self.args[idx as usize]));
+								idx += 1;
+							}
+							self.validx = oldidx;
+							self.keyidx = -1;
+							self.curidx = oldidx;
+							self.curcharidx = -1;
+							self.shortcharargs = -1;
+							self.longargs = -1;
+							retv = None;
+							return Ok(retv);
+						}
+					}
+					oldcharidx = self.shortprefix.len() as i32;
+					self.curidx = oldidx;
+					self.curcharidx = oldcharidx;
+					return self.find_key_cls();
+				}
+			} else {
+				/*
+					not bundle mode ,it means that the long prefix and short prefix are the same
+					so we should test one by one
+					first to check for the long opt
+				*/
+				idx = (self.cmdpaths.len() - 1) as i32;
+				curarg = format!("{}",self.args[oldidx as usize]);
 				while idx >= 0 {
 					let cmd = self.cmdpaths[idx as usize].clone();
-					for opt in cmd.cmdopts {
-						if !opt.is_flag() {
+					for opt in cmd.cmdopts.iter() {
+						if ! opt.is_flag() {
 							continue;
 						}
-
 						if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
 							continue;
 						}
+						extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.long_opt(), curarg);
 
-						extargs_log_info!("[{}]longopt {} curarg {}", idx, opt.long_opt(), curarg);
 						if opt.long_opt().eq(&curarg) {
 							self.keyidx = oldidx;
-							oldidx += 1;
-							self.validx = oldidx;
+							self.validx = oldidx + 1;
 							self.shortcharargs = -1;
 							self.longargs = -1;
 							extargs_log_info!("oldidx {} (len {})", oldidx, self.args.len());
-							self.curidx = oldidx;
+							self.curidx = oldidx + 1;
 							self.curcharidx = -1;
 							retv = Some(opt.clone());
 							return Ok(retv);
@@ -255,10 +323,73 @@ impl ParserState {
 					}
 					idx -= 1;
 				}
-				new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+
+				idx = (self.cmdpaths.len() - 1) as i32;
+				while idx >= 0 {
+					let cmd = self.cmdpaths[idx as usize].clone();
+					for opt in cmd.cmdopts.iter() {
+						if !opt.is_flag() {
+							continue;
+						}
+						if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+							continue;
+						}
+						extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.short_opt(), curarg);
+						if opt.short_opt().eq(&curarg) {
+							self.keyidx = oldidx;
+							self.validx = oldidx + 1;
+							self.shortcharargs = -1;
+							self.longargs = -1;
+							self.curidx = oldidx;
+							self.curcharidx = opt.short_opt().len() as i32;
+							retv = Some(opt.clone());
+							return Ok(retv);
+						}
+					}
+					idx -= 1;
+				}
 			}
 		}
 
+		let name = format!("{}",self.args[oldidx as usize]);
+		let kopt = 	self.find_sub_command(&name);
+		if kopt.is_some() {
+			let keycls = kopt.unwrap();
+			extargs_log_info!("find {}", self.args[oldidx as usize]);
+			self.keyidx = oldidx;
+			self.curidx = oldidx + 1;
+			self.validx = oldidx + 1;
+			self.curcharidx = -1;
+			self.shortcharargs = -1;
+			self.longargs = -1;
+			retv = Some(keycls.clone());
+			return Ok(retv);
+		}
+
+		if self.parseall {
+			self.leftargs.push(format!("{}",self.args[oldidx as usize]));
+			oldidx += 1;
+			self.keyidx = -1;
+			self.validx = oldidx;
+			self.curidx = oldidx;
+			self.curcharidx = -1;
+			self.shortcharargs = -1;
+			self.longargs = -1;
+			return self.find_key_cls();
+		} else {
+			self.ended = 1;
+			idx = oldidx;
+			while idx < self.args.len() as i32 {
+				self.leftargs.push(format!("{}",self.args[idx as usize]));
+				idx += 1;
+			}
+			self.keyidx = -1;
+			self.curidx = oldidx;
+			self.curcharidx = -1;
+			self.shortcharargs = -1;
+			self.longargs = -1;
+		}
+		retv = None;
 		Ok(retv)
 	}
 }
