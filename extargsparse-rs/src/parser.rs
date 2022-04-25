@@ -4,10 +4,14 @@ use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_P
 use super::parser_compat;
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState,StateOptVal};
+use super::key::{KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,ExtKeyParse};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use lazy_static::lazy_static;
+
 use std::fmt;
 use std::error::Error;
+use std::boxed::Box;
+
 
 use super::{error_class,new_error,debug_output,error_output};
 
@@ -105,4 +109,28 @@ pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<Ext
 	
 
 	Ok(retv)
+}
+
+impl ExtArgsParser {
+	fn check_flag_insert(&mut self,keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Result<Vec<ParserCompat>,Box<dyn Error>> {
+		let lastparser :ParserCompat;
+		let mut retparser = parsers.clone();
+		if parsers.len() > 0 {
+			lastparser = parsers[0].clone();
+		} else {
+			lastparser = self.maincmd.as_ref().unwrap().clone();
+		}
+
+		for opt in lastparser.cmdopts.iter() {
+			if opt.flag_name() != KEYWORD_DOLLAR_SIGN && keycls.flag_name() != KEYWORD_DOLLAR_SIGN {
+				if opt.type_name() != KEYWORD_HELP && keycls.type_name() != KEYWORD_HELP {
+					if opt.opt_dest().eq(&keycls.opt_dest()) {
+						new_error!{ParserError,"[{}] already inserted", keycls.opt_dest()}
+					}
+				}
+			}
+		}
+
+		Ok(retparser)
+	}
 }
