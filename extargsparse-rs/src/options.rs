@@ -12,7 +12,6 @@ use std::error::Error;
 use std::boxed::Box;
 
 
-#[allow(unused_imports)]
 use super::{error_class,new_error,debug_output,error_output};
 
 error_class!{ExtArgsOptionParseError}

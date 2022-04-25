@@ -28,7 +28,7 @@ pub struct ParserCompat {
 	pub version :String,
 }
 
-pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<Rc<ExtArgsOptions>>) -> ParserCompat {
+pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<ExtArgsOptions>) -> ParserCompat {
 	let mut retc :ParserCompat = ParserCompat {
 		keycls : None,
 		cmdname : "".to_string(),
@@ -81,7 +81,7 @@ pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<Rc<ExtArgsOptions>>)
 	}
 
 	if isopt  {
-		let optc = _opt.as_ref().unwrap();
+		let optc = _opt.as_ref().unwrap().clone();
 		if optc.get_value(OPT_SCREEN_WIDTH).is_some() {
 			retc.screenwidth = optc.get_int(OPT_SCREEN_WIDTH);	
 		}
