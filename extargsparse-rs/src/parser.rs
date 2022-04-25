@@ -215,7 +215,7 @@ impl ExtArgsParser {
 		return self.check_flag_insert(keycls,parsers);
 	}
 
-	fn find_subparser_inner(&self,name :&str, oparser :Option<ParserCompat>) -> Option<ParserCompat> {
+	fn  (&self,name :&str, oparser :Option<ParserCompat>) -> Option<ParserCompat> {
 		let mut retv :Option<ParserCompat> = None;
 		let rootparser :ParserCompat;
 		if oparser.is_none() {
@@ -226,7 +226,15 @@ impl ExtArgsParser {
 		if name.len() == 0 {
 			return Some(rootparser);
 		}
-		
+
+		let carr = name.split(".");
+		let cmpn = carr.nth(0).unwrap();
+		for c in rootparser.subcmds.iter() {
+			if c.cmdname.eq(carr.clone().nth(0).unwrap()) {
+				
+			}
+		}
+
 	}
 
 	fn get_subparser_inner(&self,keycls :ExtKeyParse, parsers :&mut Vec<ParserCompat>) -> Option<ParserCompat> {
