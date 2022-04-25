@@ -12,6 +12,12 @@ use std::fmt;
 
 error_class!{ParseStateError}
 
+pub (crate) enum StateOptVal {
+	LeftArgs(Vec<String>),
+	OptDest(String),
+	CmdPaths(String),
+}
+
 #[derive(Clone)]
 pub (crate) struct ParserState {
 	cmdpaths :Vec<ParserCompat>,
@@ -392,4 +398,35 @@ impl ParserState {
 		retv = None;
 		Ok(retv)
 	}
+
+	pub (crate) fn step_one(&mut self) -> Result<(i32,Option<StateOptVal>,Option<ExtKeyParse>),Box<dyn Error>> {
+		let mut validx :i32 = 0;
+		let mut optval :Option<StateOptVal> = None;
+		let mut keycls : Option<ExtKeyParse> = None;
+		if self.ended > 0 {
+			validx = self.curidx;
+			optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
+			keycls = None;
+			return Ok((validx,optval,keycls));
+		}
+
+		keycls = self.find_key_cls()?;
+		if keycls.is_none() {
+			validx = self.curidx;
+			optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
+			return Ok((validx,optval,keycls));
+		}
+
+		let kopt = keycls.as_ref().unwrap().clone();
+		if !kopt.is_cmd() {
+			optval = Some(StateOptVal::OptDest(format!("{}",kopt.opt_dest())));
+		} else if kopt.is_cmd() {
+			let cmdpaths = self.cmdpaths.clone();
+			let r = self.format_cmd_name_path(cmdpaths);
+			optval = Some(StateOptVal::CmdPaths(r));
+		}
+		validx = self.curidx;
+		return Ok((validx,optval,keycls));
+	}
 }
+
