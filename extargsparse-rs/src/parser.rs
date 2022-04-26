@@ -1,5 +1,4 @@
 
-use super::options;
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED};
 use super::parser_compat;
 use super::parser_compat::{ParserCompat};
@@ -82,7 +81,7 @@ pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<Ext
 		cmd_prefix_added : true,
 		load_priority : Vec::new(),
 	};
-	let mut setopt = options::new("{}")?.clone();
+	let mut setopt = ExtArgsOptions::new("{}")?.clone();
 	let mut setpriority = PARSER_PRIORITY_ARGS.clone();
 	if opt.is_some() {
 		setopt = opt.as_ref().unwrap().clone();

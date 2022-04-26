@@ -798,7 +798,7 @@ impl KeyData {
 	}
 }
 
-pub struct InnerExtKeyParse {
+struct InnerExtKeyParse {
 	keydata : KeyData,
 	__helpexpr :Regex,
 	__cmdexpr : Regex,
@@ -2004,11 +2004,10 @@ impl PartialEq for InnerExtKeyParse {
 	}
 }
 
-type RcExtKeyParse = Rc<RefCell<InnerExtKeyParse>>;
 
 #[derive(Clone)]
 pub struct ExtKeyParse {
-	innerrc :RcExtKeyParse,
+	innerrc :Rc<RefCell<InnerExtKeyParse>>,
 }
 
 impl ExtKeyParse {

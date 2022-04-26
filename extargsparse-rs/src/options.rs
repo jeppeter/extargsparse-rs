@@ -10,6 +10,8 @@ use std::fmt::{Debug};
 use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 
 use super::{error_class,new_error};
@@ -39,10 +41,6 @@ pub const OPT_FLAG_NO_CHANGE :&str = "flagnochange";
 pub const OPT_VAR_UPPER_CASE :&str = "varuppercase";
 pub const OPT_FUNC_UPPER_CASE :&str = "funcuppercase";
 
-#[derive(Clone)]
-pub struct ExtArgsOptions {
-	values :HashMap<String,Value>,
-}
 
 macro_rules! OPT_DEFAULT_S {
 	() => {
@@ -118,33 +116,38 @@ lazy_static! {
 	};
 }
 
-pub (crate) fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
-	let mut retv :ExtArgsOptions = ExtArgsOptions {
-		values :HashMap::new(),
-	};
-
-	for (k,v) in OPT_DEFAULT_VALUE.clone() {
-		retv.values.insert(k,v);
-	}
-	let err = serde_json::from_str(s);
-	if err.is_err() {
-		new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", err, s}
-	}
-
-	let f :Value = err.unwrap();
-	if !f.is_object() {
-		new_error!{ExtArgsOptionParseError,"{} not object", s}
-	}
-	for (k,v) in f.as_object().unwrap() {
-		retv.values.insert(k.to_string(),v.clone());
-	}
-
-
-	Ok(retv)
+#[derive(Clone)]
+struct InnerExtArgsOptions {
+	values :HashMap<String,Value>,
 }
 
-impl ExtArgsOptions {
-	#[allow(dead_code)]
+
+#[allow(dead_code)]
+impl InnerExtArgsOptions {
+	pub (crate) fn new(s :&str) -> Result<InnerExtArgsOptions,Box<dyn Error>> {
+		let mut retv :InnerExtArgsOptions = InnerExtArgsOptions {
+			values :HashMap::new(),
+		};
+
+		for (k,v) in OPT_DEFAULT_VALUE.clone() {
+			retv.values.insert(k,v);
+		}
+		let err = serde_json::from_str(s);
+		if err.is_err() {
+			new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", err, s}
+		}
+
+		let f :Value = err.unwrap();
+		if !f.is_object() {
+			new_error!{ExtArgsOptionParseError,"{} not object", s}
+		}
+		for (k,v) in f.as_object().unwrap() {
+			retv.values.insert(k.to_string(),v.clone());
+		}
+
+
+		Ok(retv)
+	}
 	pub (crate) fn string(&self) -> String {
 		let mut rets :String;
 		let mut idx :i32 = 0;
@@ -239,5 +242,34 @@ impl ExtArgsOptions {
 			}
 		}
 		retb
+	}
+}
+
+#[derive(Clone)]
+pub struct ExtArgsOptions {
+	innerrc :Rc<RefCell<InnerExtArgsOptions>>,
+}
+
+impl ExtArgsOptions {
+	pub (crate) fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
+		let k :InnerExtArgsOptions = InnerExtArgsOptions::new(s)?;
+		Ok(ExtArgsOptions {
+			innerrc : Rc::new(RefCell::new(k)),
+		})
+	}
+	pub (crate) fn get_value(&self, k :&str) -> Option<Value> {
+		return self.innerrc.borrow().get_value(k);
+	}
+
+	pub (crate) fn get_int(&self,k :&str) -> i32 {
+		return self.innerrc.borrow().get_int(k);
+	}
+
+	pub (crate) fn get_string(&self,k :&str) -> String {
+		return self.innerrc.borrow().get_string(k);
+	}
+
+	pub (crate) fn get_bool(&self,k :&str) -> bool {
+		return self.innerrc.borrow().get_bool(k);
 	}
 }
