@@ -66,26 +66,7 @@ fn is_valid_priority (k :i32) -> bool {
 
 #[allow(dead_code)]
 impl InnerExtArgsParser {
-
 	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
-		let mut retv :InnerExtArgsParser = InnerExtArgsParser {
-			options : None,
-			maincmd : None,
-			arg_state : None,
-			error_handler : "".to_string(),
-			help_handler : "".to_string(),
-			output_mode : Vec::new(),
-			ended : 0,
-			long_prefix : "".to_string(),
-			short_prefix : "".to_string(),
-			no_help_option : false,
-			no_json_option : false,
-			help_long : "".to_string(),
-			help_short : "".to_string(),
-			json_long : "".to_string(),
-			cmd_prefix_added : true,
-			load_priority : Vec::new(),
-		};
 		let mut setopt = ExtArgsOptions::new("{}")?.clone();
 		let mut setpriority = PARSER_PRIORITY_ARGS.clone();
 		if opt.is_some() {
@@ -100,24 +81,24 @@ impl InnerExtArgsParser {
 				new_error!{ParserError,"unknown type [{}]",  *v}
 			}
 		}
-
-		retv.options = Some(setopt.clone());
-		retv.maincmd = Some(ParserCompat::new(None,Some(setopt.clone())));
-		retv.arg_state = None;
-		retv.help_handler = format!("{}",setopt.get_string(OPT_HELP_HANDLER));
-		retv.output_mode = Vec::new();
-		retv.ended = 0;
-		retv.long_prefix = setopt.get_string(OPT_LONG_PREFIX);
-		retv.short_prefix = setopt.get_string(OPT_SHORT_PREFIX);
-		retv.no_help_option = setopt.get_bool(OPT_NO_HELP_OPTION);
-		retv.no_json_option = setopt.get_bool(OPT_NO_JSON_OPTION);
-		retv.help_long = setopt.get_string(OPT_HELP_LONG);
-		retv.help_short = setopt.get_string(OPT_HELP_SHORT);
-		retv.json_long = setopt.get_string(OPT_JSON_LONG);
-		retv.cmd_prefix_added = setopt.get_bool(OPT_CMD_PREFIX_ADDED);
-		retv.load_priority = setpriority.clone();
-
-
+		let retv :InnerExtArgsParser = InnerExtArgsParser {
+			options : Some(setopt.clone()),
+			maincmd : Some(ParserCompat::new(None,Some(setopt.clone()))),
+			arg_state : None,
+			error_handler : "".to_string(),
+			help_handler : format!("{}",setopt.get_string(OPT_HELP_HANDLER)),
+			output_mode : Vec::new(),
+			ended : 0,
+			long_prefix : setopt.get_string(OPT_LONG_PREFIX),
+			short_prefix : setopt.get_string(OPT_SHORT_PREFIX),
+			no_help_option : setopt.get_bool(OPT_NO_HELP_OPTION),
+			no_json_option : setopt.get_bool(OPT_NO_JSON_OPTION),
+			help_long : setopt.get_string(OPT_HELP_LONG),
+			help_short : setopt.get_string(OPT_HELP_SHORT),
+			json_long : setopt.get_string(OPT_JSON_LONG),
+			cmd_prefix_added : setopt.get_bool(OPT_CMD_PREFIX_ADDED),
+			load_priority : setpriority.clone(),
+		};
 		Ok(retv)
 	}
 
