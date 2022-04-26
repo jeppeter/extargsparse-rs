@@ -3,22 +3,24 @@
 //use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
 use std::collections::HashMap;
 use serde_json::{Value};
+use std::rc::Rc;
+use std::cell::RefCell;
 
+#[allow(dead_code)]
 #[derive(Clone)]
-pub struct NameSpaceEx {
+struct InnerNameSpaceEx {
 	values :HashMap<String,Value>,
 }
 
 
-
-impl NameSpaceEx {
-	#[allow(dead_code)]
-	pub (crate) fn new() -> NameSpaceEx {
-		NameSpaceEx {
+#[allow(dead_code)]
+impl InnerNameSpaceEx {
+	pub (crate) fn new() -> InnerNameSpaceEx {
+		InnerNameSpaceEx {
 			values : HashMap::new(),
 		}
 	}
-	pub fn get_bool(&self, k :&str) -> bool {
+	pub (crate) fn get_bool(&self, k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -34,7 +36,7 @@ impl NameSpaceEx {
 		retb
 	}
 
-	pub fn is_accessed(&self,k :&str) -> bool {
+	pub (crate) fn is_accessed(&self,k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
 			Some(_v1) => {
@@ -47,12 +49,11 @@ impl NameSpaceEx {
 		retb
 	}
 
-	#[allow(dead_code)]
 	pub (crate) fn set_value( & mut self,k :&str, v :Value) {
 		self.values.insert(k.to_string(),v);
 	}
 
-	pub fn get_string(&self,k :&str) -> String {
+	pub (crate) fn get_string(&self,k :&str) -> String {
 		let mut rets :String = "".to_string();
 
 		match self.values.get(k) {
@@ -64,7 +65,7 @@ impl NameSpaceEx {
 		rets
 	}
 
-	pub fn get_int(&self,k :&str) -> i64 {
+	pub (crate) fn get_int(&self,k :&str) -> i64 {
 		let mut reti :i64 = 0;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -103,7 +104,7 @@ impl NameSpaceEx {
 		reti
 	}
 
-	pub fn get_float(&self,k :&str) -> f64 {
+	pub (crate) fn get_float(&self,k :&str) -> f64 {
 		let mut retf :f64 = 0.0;
 		match self.values.get(k) {
 			Some(v1) => {
@@ -142,7 +143,7 @@ impl NameSpaceEx {
 		retf
 	}
 
-	pub fn get_array(&self, k :&str) -> Vec<String> {
+	pub (crate) fn get_array(&self, k :&str) -> Vec<String> {
 		let mut retv :Vec<String> = Vec::new();
 		let mut errorval :i32 = 0;
 		match self.values.get(k) {
@@ -174,7 +175,7 @@ impl NameSpaceEx {
 		retv
 	}
 
-	pub fn get_keys(&self) -> Vec<String> {
+	pub (crate) fn get_keys(&self) -> Vec<String> {
 		let mut retv :Vec<String> = Vec::new();
 		for (k,_) in self.values.clone() {
 			retv.push(k.to_string());
@@ -182,7 +183,7 @@ impl NameSpaceEx {
 		retv
 	}
 
-	pub fn string(&self) -> String {
+	pub (crate) fn string(&self) -> String {
 		let mut rets :String = "".to_string();
 		let mut i :i32 = 0;
 
@@ -195,5 +196,20 @@ impl NameSpaceEx {
 		}
 		rets
 	}
+}
 
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct NameSpaceEx {
+	innerrc : Rc<RefCell<InnerNameSpaceEx>>,
+}
+
+#[allow(dead_code)]
+impl NameSpaceEx {
+	pub (crate) fn new() -> NameSpaceEx {
+		NameSpaceEx {
+			innerrc : Rc::new(RefCell::new(InnerNameSpaceEx::new())),
+		}
+	}
+	
 }
