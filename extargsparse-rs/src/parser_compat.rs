@@ -490,4 +490,14 @@ impl ParserCompat {
 		self.innerrc.borrow_mut().cmdopts.push(keycls);
 		return;
 	}
+
+	pub (crate) fn push_subcmds(&self ,input :ParserCompat) {
+		let mut v = self.innerrc.borrow_mut();
+		v.subcmds.push(input.innerrc);
+		return;
+	}
+
+	pub (crate) fn string(&self) -> String {
+		return self.innerrc.borrow().string();
+	}
 }
