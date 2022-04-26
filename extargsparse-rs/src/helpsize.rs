@@ -14,20 +14,24 @@ lazy_static! {
 	};
 }
 
+#[allow(dead_code)]
 pub (crate) struct HelpSize {
 	intvalue :HashMap<String,i32>,
 }
 
-pub (crate) fn new() -> HelpSize {
-	let mut retv :HelpSize = HelpSize {
-		intvalue :HashMap::new(),
-	};
-	for k in HELP_SIZE_KEYWORDS.iter() {
-		retv.intvalue.insert(k.to_string(),0);
-	}
-	retv
-}
+#[allow(dead_code)]
 impl HelpSize {
+	pub (crate) fn new() -> HelpSize {
+		let mut retv :HelpSize = HelpSize {
+			intvalue :HashMap::new(),
+		};
+		for k in HELP_SIZE_KEYWORDS.iter() {
+			retv.intvalue.insert(k.to_string(),0);
+		}
+		retv
+	}
+
+
 	pub (crate) fn get_value(&self,k :&str) -> i32 {
 		let mut retv :i32 = 0;
 		let bv = self.intvalue.get(k);

@@ -9,6 +9,7 @@ pub enum ExtArgsParseFunc {
 	HelpFunc(ExtArgsParseHelpFunc),
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ExtArgsMatchFuncMap {
 	data :HashMap<String,ExtArgsParseFunc>,
@@ -21,6 +22,7 @@ pub fn new() -> ExtArgsMatchFuncMap {
 }
 
 impl ExtArgsMatchFuncMap {
+	#[allow(dead_code)]
 	pub (crate) fn get_help_func(&self,k :&str) -> Option<ExtArgsParseHelpFunc> {
 		let mut retv :Option<ExtArgsParseHelpFunc> = None;
 		match self.data.get(k) {

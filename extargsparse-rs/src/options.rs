@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use serde_json::{Value};
 use lazy_static::lazy_static;
 use super::logger::{extargs_debug_out};
-use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
+use super::{extargs_log_error,extargs_log_info};
 
 use std::fmt::{Debug};
 
@@ -12,7 +12,7 @@ use std::error::Error;
 use std::boxed::Box;
 
 
-use super::{error_class,new_error,debug_output,error_output};
+use super::{error_class,new_error};
 
 error_class!{ExtArgsOptionParseError}
 
@@ -47,32 +47,32 @@ pub struct ExtArgsOptions {
 macro_rules! OPT_DEFAULT_S {
 	() => {
 		format!(r#"
-{{
-	"{}" : "",
-	"{}" : "",
-	"{}" : "",
-	"{}" : "",
-	"{}" : "0.0.1",
-	"{}" : "exit",
-	"{}" : null,
-	"{}" : "--",
-	"{}" : "-",
-	"{}" : false,
-	"{}" : false,
-	"{}" : "help",
-	"{}" : "h",
-	"{}" : "json",
-	"{}" : true ,
-	"{}" : true,
-	"{}" : 80,
-	"{}" : false,
-	"{}" : true,
-	"{}" : true
-}}
-"#,OPT_PROG,OPT_USAGE,OPT_DESCRIPTION,OPT_EPILOG,OPT_VERSION,
-	OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX, OPT_NO_HELP_OPTION,
-	OPT_NO_JSON_OPTION, OPT_HELP_LONG,OPT_HELP_SHORT, OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED,
-	OPT_PARSE_ALL, OPT_SCREEN_WIDTH,OPT_FLAG_NO_CHANGE, OPT_VAR_UPPER_CASE,OPT_FUNC_UPPER_CASE)
+			{{
+				"{}" : "",
+				"{}" : "",
+				"{}" : "",
+				"{}" : "",
+				"{}" : "0.0.1",
+				"{}" : "exit",
+				"{}" : null,
+				"{}" : "--",
+				"{}" : "-",
+				"{}" : false,
+				"{}" : false,
+				"{}" : "help",
+				"{}" : "h",
+				"{}" : "json",
+				"{}" : true ,
+				"{}" : true,
+				"{}" : 80,
+				"{}" : false,
+				"{}" : true,
+				"{}" : true
+			}}
+			"#,OPT_PROG,OPT_USAGE,OPT_DESCRIPTION,OPT_EPILOG,OPT_VERSION,
+			OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX, OPT_NO_HELP_OPTION,
+			OPT_NO_JSON_OPTION, OPT_HELP_LONG,OPT_HELP_SHORT, OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED,
+			OPT_PARSE_ALL, OPT_SCREEN_WIDTH,OPT_FLAG_NO_CHANGE, OPT_VAR_UPPER_CASE,OPT_FUNC_UPPER_CASE)
 	}
 }
 
@@ -120,31 +120,31 @@ lazy_static! {
 
 pub (crate) fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
 	let mut retv :ExtArgsOptions = ExtArgsOptions {
-			values :HashMap::new(),
+		values :HashMap::new(),
 	};
-	let mut vmap :HashMap<String,Value> = HashMap::new();
-
-	match serde_json::from_str(s) {
-		Ok(d) => {
-			vmap = d;
-		},
-		Err(e) => {
-			new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", e, s}
-		}
-	}
 
 	for (k,v) in OPT_DEFAULT_VALUE.clone() {
 		retv.values.insert(k,v);
 	}
-
-	for (k,v) in vmap {
-		retv.values.insert(k,v);
+	let err = serde_json::from_str(s);
+	if err.is_err() {
+		new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", err, s}
 	}
+
+	let f :Value = err.unwrap();
+	if !f.is_object() {
+		new_error!{ExtArgsOptionParseError,"{} not object", s}
+	}
+	for (k,v) in f.as_object().unwrap() {
+		retv.values.insert(k.to_string(),v.clone());
+	}
+
 
 	Ok(retv)
 }
 
 impl ExtArgsOptions {
+	#[allow(dead_code)]
 	pub (crate) fn string(&self) -> String {
 		let mut rets :String;
 		let mut idx :i32 = 0;

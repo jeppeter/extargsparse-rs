@@ -1,6 +1,6 @@
 
-use super::logger::{extargs_debug_out};
-use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
+//use super::logger::{extargs_debug_out};
+//use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
 use std::collections::HashMap;
 use serde_json::{Value};
 
@@ -9,13 +9,15 @@ pub struct NameSpaceEx {
 	values :HashMap<String,Value>,
 }
 
-pub (crate) fn new() -> NameSpaceEx {
-	NameSpaceEx {
-		values : HashMap::new(),
-	}
-}
+
 
 impl NameSpaceEx {
+	#[allow(dead_code)]
+	pub (crate) fn new() -> NameSpaceEx {
+		NameSpaceEx {
+			values : HashMap::new(),
+		}
+	}
 	pub fn get_bool(&self, k :&str) -> bool {
 		let mut retb :bool = false;
 		match self.values.get(k) {
@@ -45,6 +47,7 @@ impl NameSpaceEx {
 		retb
 	}
 
+	#[allow(dead_code)]
 	pub (crate) fn set_value( & mut self,k :&str, v :Value) {
 		self.values.insert(k.to_string(),v);
 	}

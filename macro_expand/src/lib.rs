@@ -1,4 +1,5 @@
 
+/*
 use std::env;
 use lazy_static::lazy_static;
 
@@ -131,3 +132,4 @@ macro_rules! em_log_trace {
 	}
 }
 
+*/

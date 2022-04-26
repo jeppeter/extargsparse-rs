@@ -6,7 +6,7 @@ use super::{extargs_assert,extargs_log_warn,extargs_log_trace};
 use super::funccall::{ExtArgsMatchFuncMap};
 use super::helpsize::{HelpSize,CMD_NAME_SIZE,CMD_HELP_SIZE,OPT_NAME_SIZE,OPT_EXPR_SIZE,OPT_HELP_SIZE};
 
-use std::rc::Rc;
+//use std::rc::Rc;
 use serde_json::{Value};
 use std::env;
 
@@ -99,6 +99,7 @@ pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<ExtArgsOptions>) -> 
 	retc
 }
 
+#[allow(dead_code)]
 impl ParserCompat {
 	fn get_help_info(&self,_keycls :Option<&ExtKeyParse>,mapv :&ExtArgsMatchFuncMap) -> String {
 		extargs_assert!(_keycls.is_some(), "must no be null");
@@ -157,9 +158,9 @@ impl ParserCompat {
 		if _opt.is_some() {
 			let opt = _opt.unwrap();
 			if opt.type_name() != KEYWORD_BOOL &&  opt.type_name() != KEYWORD_ARGS && 
-				opt.type_name() != KEYWORD_DICT &&   opt.type_name() != KEYWORD_HELP {
-					rets = opt.var_name();
-					rets = rets.replace("-","_");
+			opt.type_name() != KEYWORD_DICT &&   opt.type_name() != KEYWORD_HELP {
+				rets = opt.var_name();
+				rets = rets.replace("-","_");
 			}
 		}
 		rets
@@ -219,8 +220,8 @@ impl ParserCompat {
 		let mut curs :String = "".to_string();
 		let mut rets :String = "".to_string();
 		let ncurs :String;
-		let mut i :usize=0;
-		let mut j :usize=0;
+		let mut i :usize;
+		let mut j :usize;
 
 		i = 0;
 		while i < indentsize as usize {
@@ -256,12 +257,10 @@ impl ParserCompat {
 	pub (crate) fn get_help_info_ex(&self,hs :&mut HelpSize,parentcmds :Vec<ParserCompat>,mapv :&ExtArgsMatchFuncMap) -> String {
 		let mut rets :String = "".to_string();
 		let mut rootcmds :&ParserCompat;
-		let curcmd :&ParserCompat;
 		if self.usage.len() > 0 {
 			rets.push_str(&(format!("{}",self.usage)));
 		} else {
-			rootcmds = self;
-			curcmd = self;
+			rootcmds = &self;
 			if parentcmds.len() > 0 {
 				rootcmds = &(parentcmds[0]);
 			}
@@ -397,7 +396,7 @@ impl ParserCompat {
 
 	pub (crate) fn string(&self) -> String {
 		let mut rets :String = "".to_string();
-			let mut i :i32 = 0;
+		let mut i :i32;
 		rets.push_str(&(format!("@{}|",self.cmdname)));
 		if self.keycls.is_some() {
 			let k = self.keycls.as_ref().unwrap();

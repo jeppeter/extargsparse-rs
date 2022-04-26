@@ -12,12 +12,14 @@ use std::fmt;
 
 error_class!{ParseStateError}
 
+#[allow(dead_code)]
 pub (crate) enum StateOptVal {
 	LeftArgs(Vec<String>),
 	OptDest(String),
 	CmdPaths(String),
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub (crate) struct ParserState {
 	cmdpaths :Vec<ParserCompat>,
@@ -36,41 +38,41 @@ pub (crate) struct ParserState {
 	leftargs :Vec<String>,
 }
 
-pub (crate) fn new(args :Vec<String>,maincmd :ParserCompat,optattr :ExtArgsOptions) -> ParserState {
-	let mut retv :ParserState = ParserState {
-		cmdpaths : Vec::new(),
-		curidx : 0,
-		curcharidx : -1,
-		shortcharargs : -1,
-		longargs : -1,
-		keyidx : -1,
-		validx : -1,
-		args : Vec::new(),
-		ended : 0,
-		longprefix : "--".to_string(),
-		shortprefix : "-".to_string(),
-		bundlemode : false,
-		parseall : true,
-		leftargs : Vec::new(),
-	};
-
-	retv.cmdpaths.push(maincmd.clone());
-	retv.longprefix = optattr.get_string(OPT_LONG_PREFIX);
-	retv.shortprefix = optattr.get_string(OPT_SHORT_PREFIX);
-
-	if retv.longprefix.len() == 0 || 
-	retv.shortprefix.len() == 0 || 
-	retv.longprefix == retv.shortprefix {
-		retv.bundlemode = true;
-	} else {
-		retv.bundlemode = false;
-	}
-	retv.parseall = optattr.get_bool(OPT_PARSE_ALL);
-	retv.args = args.clone();
-	retv
-}
-
+#[allow(dead_code)]
 impl ParserState {
+	pub (crate) fn new(args :Vec<String>,maincmd :ParserCompat,optattr :ExtArgsOptions) -> ParserState {
+		let mut retv :ParserState = ParserState {
+			cmdpaths : Vec::new(),
+			curidx : 0,
+			curcharidx : -1,
+			shortcharargs : -1,
+			longargs : -1,
+			keyidx : -1,
+			validx : -1,
+			args : Vec::new(),
+			ended : 0,
+			longprefix : "--".to_string(),
+			shortprefix : "-".to_string(),
+			bundlemode : false,
+			parseall : true,
+			leftargs : Vec::new(),
+		};
+
+		retv.cmdpaths.push(maincmd.clone());
+		retv.longprefix = optattr.get_string(OPT_LONG_PREFIX);
+		retv.shortprefix = optattr.get_string(OPT_SHORT_PREFIX);
+
+		if retv.longprefix.len() == 0 || 
+		retv.shortprefix.len() == 0 || 
+		retv.longprefix == retv.shortprefix {
+			retv.bundlemode = true;
+		} else {
+			retv.bundlemode = false;
+		}
+		retv.parseall = optattr.get_bool(OPT_PARSE_ALL);
+		retv.args = args.clone();
+		retv
+	}
 	pub (crate) fn format_cmd_name_path(&self,cmdpaths :Vec<ParserCompat>) -> String {
 		let mut rets :String = "".to_string();
 		let mut curparser :Vec<ParserCompat> = cmdpaths.clone();
@@ -301,136 +303,136 @@ impl ParserState {
 					not bundle mode ,it means that the long prefix and short prefix are the same
 					so we should test one by one
 					first to check for the long opt
-				*/
-				idx = (self.cmdpaths.len() - 1) as i32;
-				curarg = format!("{}",self.args[oldidx as usize]);
-				while idx >= 0 {
-					let cmd = self.cmdpaths[idx as usize].clone();
-					for opt in cmd.cmdopts.iter() {
-						if ! opt.is_flag() {
-							continue;
-						}
-						if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
-							continue;
-						}
-						extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.long_opt(), curarg);
+					*/
+					idx = (self.cmdpaths.len() - 1) as i32;
+					curarg = format!("{}",self.args[oldidx as usize]);
+					while idx >= 0 {
+						let cmd = self.cmdpaths[idx as usize].clone();
+						for opt in cmd.cmdopts.iter() {
+							if ! opt.is_flag() {
+								continue;
+							}
+							if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+								continue;
+							}
+							extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.long_opt(), curarg);
 
-						if opt.long_opt().eq(&curarg) {
-							self.keyidx = oldidx;
-							self.validx = oldidx + 1;
-							self.shortcharargs = -1;
-							self.longargs = -1;
-							extargs_log_info!("oldidx {} (len {})", oldidx, self.args.len());
-							self.curidx = oldidx + 1;
-							self.curcharidx = -1;
-							retv = Some(opt.clone());
-							return Ok(retv);
+							if opt.long_opt().eq(&curarg) {
+								self.keyidx = oldidx;
+								self.validx = oldidx + 1;
+								self.shortcharargs = -1;
+								self.longargs = -1;
+								extargs_log_info!("oldidx {} (len {})", oldidx, self.args.len());
+								self.curidx = oldidx + 1;
+								self.curcharidx = -1;
+								retv = Some(opt.clone());
+								return Ok(retv);
+							}
 						}
+						idx -= 1;
 					}
-					idx -= 1;
-				}
 
-				idx = (self.cmdpaths.len() - 1) as i32;
-				while idx >= 0 {
-					let cmd = self.cmdpaths[idx as usize].clone();
-					for opt in cmd.cmdopts.iter() {
-						if !opt.is_flag() {
-							continue;
+					idx = (self.cmdpaths.len() - 1) as i32;
+					while idx >= 0 {
+						let cmd = self.cmdpaths[idx as usize].clone();
+						for opt in cmd.cmdopts.iter() {
+							if !opt.is_flag() {
+								continue;
+							}
+							if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+								continue;
+							}
+							extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.short_opt(), curarg);
+							if opt.short_opt().eq(&curarg) {
+								self.keyidx = oldidx;
+								self.validx = oldidx + 1;
+								self.shortcharargs = -1;
+								self.longargs = -1;
+								self.curidx = oldidx;
+								self.curcharidx = opt.short_opt().len() as i32;
+								retv = Some(opt.clone());
+								return Ok(retv);
+							}
 						}
-						if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
-							continue;
-						}
-						extargs_log_info!("[{}]({}) curarg [{}]", idx, opt.short_opt(), curarg);
-						if opt.short_opt().eq(&curarg) {
-							self.keyidx = oldidx;
-							self.validx = oldidx + 1;
-							self.shortcharargs = -1;
-							self.longargs = -1;
-							self.curidx = oldidx;
-							self.curcharidx = opt.short_opt().len() as i32;
-							retv = Some(opt.clone());
-							return Ok(retv);
-						}
+						idx -= 1;
 					}
-					idx -= 1;
 				}
 			}
-		}
 
-		let name = format!("{}",self.args[oldidx as usize]);
-		let kopt = 	self.find_sub_command(&name);
-		if kopt.is_some() {
-			let keycls = kopt.unwrap();
-			extargs_log_info!("find {}", self.args[oldidx as usize]);
-			self.keyidx = oldidx;
-			self.curidx = oldidx + 1;
-			self.validx = oldidx + 1;
-			self.curcharidx = -1;
-			self.shortcharargs = -1;
-			self.longargs = -1;
-			retv = Some(keycls.clone());
-			return Ok(retv);
-		}
-
-		if self.parseall {
-			self.leftargs.push(format!("{}",self.args[oldidx as usize]));
-			oldidx += 1;
-			self.keyidx = -1;
-			self.validx = oldidx;
-			self.curidx = oldidx;
-			self.curcharidx = -1;
-			self.shortcharargs = -1;
-			self.longargs = -1;
-			return self.find_key_cls();
-		} else {
-			self.ended = 1;
-			idx = oldidx;
-			while idx < self.args.len() as i32 {
-				self.leftargs.push(format!("{}",self.args[idx as usize]));
-				idx += 1;
+			let name = format!("{}",self.args[oldidx as usize]);
+			let kopt = 	self.find_sub_command(&name);
+			if kopt.is_some() {
+				let keycls = kopt.unwrap();
+				extargs_log_info!("find {}", self.args[oldidx as usize]);
+				self.keyidx = oldidx;
+				self.curidx = oldidx + 1;
+				self.validx = oldidx + 1;
+				self.curcharidx = -1;
+				self.shortcharargs = -1;
+				self.longargs = -1;
+				retv = Some(keycls.clone());
+				return Ok(retv);
 			}
-			self.keyidx = -1;
-			self.curidx = oldidx;
-			self.curcharidx = -1;
-			self.shortcharargs = -1;
-			self.longargs = -1;
-		}
-		retv = None;
-		Ok(retv)
-	}
 
-	pub (crate) fn step_one(&mut self) -> Result<(i32,Option<StateOptVal>,Option<ExtKeyParse>),Box<dyn Error>> {
-		let mut validx :i32 = 0;
-		let mut optval :Option<StateOptVal> = None;
-		let mut keycls : Option<ExtKeyParse> = None;
-		if self.ended > 0 {
+			if self.parseall {
+				self.leftargs.push(format!("{}",self.args[oldidx as usize]));
+				oldidx += 1;
+				self.keyidx = -1;
+				self.validx = oldidx;
+				self.curidx = oldidx;
+				self.curcharidx = -1;
+				self.shortcharargs = -1;
+				self.longargs = -1;
+				return self.find_key_cls();
+			} else {
+				self.ended = 1;
+				idx = oldidx;
+				while idx < self.args.len() as i32 {
+					self.leftargs.push(format!("{}",self.args[idx as usize]));
+					idx += 1;
+				}
+				self.keyidx = -1;
+				self.curidx = oldidx;
+				self.curcharidx = -1;
+				self.shortcharargs = -1;
+				self.longargs = -1;
+			}
+			retv = None;
+			Ok(retv)
+		}
+
+		pub (crate) fn step_one(&mut self) -> Result<(i32,Option<StateOptVal>,Option<ExtKeyParse>),Box<dyn Error>> {
+			let validx :i32;
+			let mut optval :Option<StateOptVal> = None;
+			let keycls : Option<ExtKeyParse>;
+			if self.ended > 0 {
+				validx = self.curidx;
+				optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
+				keycls = None;
+				return Ok((validx,optval,keycls));
+			}
+
+			keycls = self.find_key_cls()?;
+			if keycls.is_none() {
+				validx = self.curidx;
+				optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
+				return Ok((validx,optval,keycls));
+			}
+
+			let kopt = keycls.as_ref().unwrap().clone();
+			if !kopt.is_cmd() {
+				optval = Some(StateOptVal::OptDest(format!("{}",kopt.opt_dest())));
+			} else if kopt.is_cmd() {
+				let cmdpaths = self.cmdpaths.clone();
+				let r = self.format_cmd_name_path(cmdpaths);
+				optval = Some(StateOptVal::CmdPaths(r));
+			}
 			validx = self.curidx;
-			optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
-			keycls = None;
 			return Ok((validx,optval,keycls));
 		}
 
-		keycls = self.find_key_cls()?;
-		if keycls.is_none() {
-			validx = self.curidx;
-			optval = Some(StateOptVal::LeftArgs(self.leftargs.clone()));
-			return Ok((validx,optval,keycls));
+		pub (crate) fn get_cmd_paths(&self) -> Vec<ParserCompat> {
+			return self.cmdpaths.clone();
 		}
-
-		let kopt = keycls.as_ref().unwrap().clone();
-		if !kopt.is_cmd() {
-			optval = Some(StateOptVal::OptDest(format!("{}",kopt.opt_dest())));
-		} else if kopt.is_cmd() {
-			let cmdpaths = self.cmdpaths.clone();
-			let r = self.format_cmd_name_path(cmdpaths);
-			optval = Some(StateOptVal::CmdPaths(r));
-		}
-		validx = self.curidx;
-		return Ok((validx,optval,keycls));
 	}
-
-	pub (crate) fn get_cmd_paths(&self) -> Vec<ParserCompat> {
-		return self.cmdpaths.clone();
-	}
-}
 

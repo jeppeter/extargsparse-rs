@@ -7,10 +7,12 @@ use std::fmt::{Debug};
 use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use super::{error_class,new_error};
 use super::logger::{extargs_debug_out};
-use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
+use super::{extargs_log_trace};
 
 
 
@@ -88,20 +90,12 @@ impl Clone for Nargs {
 	}
 }
 
-
-#[allow(dead_code)]
-enum BoolNone {
-	BoolVal(bool),
-	None,
-}
-
 pub struct KeyAttr {
 	__splitchar :char,
 	__obj :HashMap<String,String>,
 }
 
 
-#[allow(dead_code)]
 impl KeyAttr {
 	fn new_json(val :&Value) -> Result<KeyAttr, Box<dyn Error>> {
 		let mut kattr = KeyAttr {
@@ -337,16 +331,11 @@ const KEYWORD_BLANK :&str  = "";
 
 const KEYWORD_NOCHANGE :&str  = "nochange";
 
-#[allow(dead_code)]
-const FLAGSPECIAL : &'static [&'static str] = &[KEYWORD_VALUE,KEYWORD_PREFIX];
-#[allow(dead_code)]
-const FLAGWORDS :&'static [&'static str] = &[KEYWORD_FLAGNAME,KEYWORD_HELPINFO,KEYWORD_SHORTFLAG,KEYWORD_NARGS,KEYWORD_VARNAME];
-#[allow(dead_code)]
-const CMDWORDS :&'static [&'static str] = &[KEYWORD_CMDNAME,KEYWORD_FUNCTION,KEYWORD_HELPINFO];
-#[allow(dead_code)]
-const OTHERWORDS :&'static [&'static str] = &[KEYWORD_ORIGKEY,KEYWORD_ISCMD,KEYWORD_ISFLAG,KEYWORD_TYPE,KEYWORD_ATTR,KEYWORD_LONGPREFIX,KEYWORD_SHORTPREFIX];
-#[allow(dead_code)]
-const FORMWORDS :&'static [&'static str] = &[KEYWORD_LONGOPT,KEYWORD_SHORTOPT,KEYWORD_OPTDEST,KEYWORD_NEEDARG];
+pub const FLAGSPECIAL : &'static [&'static str] = &[KEYWORD_VALUE,KEYWORD_PREFIX];
+pub const FLAGWORDS :&'static [&'static str] = &[KEYWORD_FLAGNAME,KEYWORD_HELPINFO,KEYWORD_SHORTFLAG,KEYWORD_NARGS,KEYWORD_VARNAME];
+pub const CMDWORDS :&'static [&'static str] = &[KEYWORD_CMDNAME,KEYWORD_FUNCTION,KEYWORD_HELPINFO];
+pub const OTHERWORDS :&'static [&'static str] = &[KEYWORD_ORIGKEY,KEYWORD_ISCMD,KEYWORD_ISFLAG,KEYWORD_TYPE,KEYWORD_ATTR,KEYWORD_LONGPREFIX,KEYWORD_SHORTPREFIX];
+pub const FORMWORDS :&'static [&'static str] = &[KEYWORD_LONGOPT,KEYWORD_SHORTOPT,KEYWORD_OPTDEST,KEYWORD_NEEDARG];
 
 
 fn in_array_word( key :&str, sarr :&[&str]) -> bool {
@@ -402,12 +391,11 @@ impl KeyVal {
 }
 
 #[derive(Clone)]
-pub struct KeyData {
+struct KeyData {
 	data :HashMap<String,KeyVal>,
 }
 
 impl KeyData {
-
 	pub fn reset(&mut self) {
 		let typeval = TypeClass::new(&(Value::Null));
 		self.data.clear();
@@ -444,6 +432,7 @@ impl KeyData {
 		return retval;
 	}
 
+	#[allow(dead_code)]
 	pub fn set_mute_type(&self,v :&mut TypeClass, c:&str) {
 		v.set_type(c);
 	}
@@ -776,6 +765,7 @@ impl KeyData {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn get_keyattr_value(&self,key :&str) -> Result<KeyAttr,Box<dyn Error>> {
 		let ks :String = String::from(key);
 		let mut retattr :KeyAttr = KeyAttr::new(KEYWORD_BLANK)?;
@@ -808,8 +798,7 @@ impl KeyData {
 	}
 }
 
-#[derive(Clone)]
-pub struct ExtKeyParse {
+pub struct InnerExtKeyParse {
 	keydata : KeyData,
 	__helpexpr :Regex,
 	__cmdexpr : Regex,
@@ -832,7 +821,7 @@ fn compile_regex(expr :&str) -> Result<Regex,Box<dyn Error>> {
 
 }
 
-impl ExtKeyParse {
+impl InnerExtKeyParse {
 	fn __reset(&mut self) {
 		self.keydata = KeyData::new();
 		return;
@@ -974,7 +963,7 @@ impl ExtKeyParse {
 		return Ok(retval);
 	}
 
-	fn __eq_name__(&self,other :&ExtKeyParse,name :&str) -> bool {
+	fn __eq_name__(&self,other :&InnerExtKeyParse,name :&str) -> bool {
 		let mut ret :bool = false;
 		let sjval  :Value;
 		let ojval :Value;
@@ -1869,9 +1858,9 @@ impl ExtKeyParse {
 		value :&Value,isflag :bool,
 		ishelp :bool,isjsonfile :bool,
 		longprefix :&str,shortprefix :&str,
-		nochange :bool) -> Result<ExtKeyParse,Box<dyn Error>> {
-		let mut key :ExtKeyParse;
-		key = ExtKeyParse {
+		nochange :bool) -> Result<InnerExtKeyParse,Box<dyn Error>> {
+		let mut key :InnerExtKeyParse;
+		key = InnerExtKeyParse {
 			 keydata : KeyData::new(),
 			 __helpexpr : compile_regex("##([^#]+)##$")?,
 			 __cmdexpr : compile_regex("^([^#<>\\+\\$!]+)")?,
@@ -1980,7 +1969,7 @@ impl ExtKeyParse {
 
 }
 
-impl PartialEq for ExtKeyParse {
+impl PartialEq for InnerExtKeyParse {
 	fn eq(&self, other :&Self) -> bool {
 		if !self.__eq_name__(other,KEYWORD_TYPE) {
 			return false;
@@ -2015,6 +2004,112 @@ impl PartialEq for ExtKeyParse {
 	}
 }
 
+type RcExtKeyParse = Rc<RefCell<InnerExtKeyParse>>;
+
+#[derive(Clone)]
+pub struct ExtKeyParse {
+	innerrc :RcExtKeyParse,
+}
+
+impl ExtKeyParse {
+	pub fn new(prefix :&str, key1 :&str,
+		value :&Value,isflag :bool,
+		ishelp :bool,isjsonfile :bool,
+		longprefix :&str,shortprefix :&str,
+		nochange :bool) -> Result<ExtKeyParse,Box<dyn Error>>{
+		let k = InnerExtKeyParse::new(prefix,key1,value,isflag,ishelp,isjsonfile,longprefix,shortprefix,nochange)?;
+		let b = ExtKeyParse {
+			innerrc : Rc::new(RefCell::new(k)),
+		};
+		Ok(b)
+	}
+
+	pub fn is_cmd(&self) -> bool {
+		return self.innerrc.borrow().is_cmd();
+	}
+	pub fn string(&self) -> String {
+		return self.innerrc.borrow().string();
+	}
+
+	pub fn cmd_name(&self) -> String {
+		return self.innerrc.borrow().cmd_name();
+	}
+
+	pub fn help_info(&self) -> String {
+		return self.innerrc.borrow().help_info();
+	}
+
+	pub fn func_name(&self) -> String {
+		return self.innerrc.borrow().func_name();
+	}
+
+	pub fn get_keyattr(&self,key :&str) -> Option<KeyAttr> {
+		return self.innerrc.borrow().get_keyattr(key);
+	}
+
+	pub fn type_name(&self) -> String {
+		return self.innerrc.borrow().type_name();
+	}
+
+	pub fn get_bool_v(&self, k :&str) -> bool {
+		return self.innerrc.borrow().get_bool_v(k);
+	}
+
+	pub fn opt_dest(&self) -> String {
+		return self.innerrc.borrow().opt_dest();
+	}
+
+	pub fn get_string_v(&self, k :&str) -> String {
+		return self.innerrc.borrow().get_string_v(k);
+	}
+
+	pub fn is_flag(&self) -> bool {
+		return self.innerrc.borrow().is_flag();
+	}
+
+	pub	 fn value(&self) -> Value {
+		return self.innerrc.borrow().value();
+	}
+
+	pub fn get_value_v(&self) -> Value {
+		return self.innerrc.borrow().get_value_v();
+	}
+
+	pub fn long_opt(&self) -> String {
+		return self.innerrc.borrow().long_opt();
+	}
+
+	pub fn short_opt(&self) -> String {
+		return self.innerrc.borrow().short_opt();
+	}
+
+	pub fn var_name(&self) -> String {
+		return self.innerrc.borrow().var_name();
+	}
+
+	pub fn get_nargs_v(&self) -> Nargs {
+		return self.innerrc.borrow().get_nargs_v();
+	}
+
+	pub fn flag_name(&self) -> String {
+		return self.innerrc.borrow().flag_name();
+	}
+
+	pub fn short_flag(&self) -> String {
+		return self.innerrc.borrow().short_flag();
+	}
+}
+
+impl PartialEq for ExtKeyParse {
+	fn eq(&self, other :&Self) -> bool {
+		return self.innerrc.borrow().eq(&(other.innerrc.borrow()));
+	}
+
+	fn ne(&self,other :&Self) -> bool {
+		return ! self.eq(other);
+	}
+}
+
 
 #[cfg(test)]
 mod debug_key_test_case {
@@ -2034,10 +2129,10 @@ mod debug_key_test_case {
     	let jsonv :Value = serde_json::from_str(data).unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
 
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+    	assert!(flags.flag_name() == "flag");
+    	assert!(flags.long_opt() == "--type-flag");
+    	assert!(flags.short_opt() == "-f");
+    	assert!(flags.opt_dest() == "type_flag");
     	assert!(flags.get_value_v() == Value::String(String::from("string")));
     	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
     	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
