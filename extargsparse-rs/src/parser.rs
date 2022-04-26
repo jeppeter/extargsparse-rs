@@ -11,6 +11,8 @@ use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 use serde_json::Value;
+use std::rc::Rc;
+use std::cell::RefCell;
 //use super::logger::{extargs_debug_out};
 use super::{extargs_assert};
 
@@ -22,7 +24,7 @@ error_class!{ParserError}
 
 #[allow(dead_code)]
 #[derive(Clone)]
-pub struct ExtArgsParser {
+struct InnerExtArgsParser {
 	options :Option<ExtArgsOptions>,
 	maincmd :Option<ParserCompat>,
 	arg_state :Option<ParserState>,
@@ -61,62 +63,64 @@ fn is_valid_priority (k :i32) -> bool {
 }
 
 
-pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<ExtArgsParser,Box<dyn Error>> {
-	let mut retv :ExtArgsParser = ExtArgsParser {
-		options : None,
-		maincmd : None,
-		arg_state : None,
-		error_handler : "".to_string(),
-		help_handler : "".to_string(),
-		output_mode : Vec::new(),
-		ended : 0,
-		long_prefix : "".to_string(),
-		short_prefix : "".to_string(),
-		no_help_option : false,
-		no_json_option : false,
-		help_long : "".to_string(),
-		help_short : "".to_string(),
-		json_long : "".to_string(),
-		cmd_prefix_added : true,
-		load_priority : Vec::new(),
-	};
-	let mut setopt = ExtArgsOptions::new("{}")?.clone();
-	let mut setpriority = PARSER_PRIORITY_ARGS.clone();
-	if opt.is_some() {
-		setopt = opt.as_ref().unwrap().clone();
-	}
-
-	if priority.is_some() {
-		setpriority = priority.as_ref().unwrap().clone();
-	}
-	for v in setpriority.iter() {
-		if !is_valid_priority(*v) {
-			new_error!{ParserError,"unknown type [{}]",  *v}
-		}
-	}
-
-	retv.options = Some(setopt.clone());
-	retv.maincmd = Some(ParserCompat::new(None,Some(setopt.clone())));
-	retv.arg_state = None;
-	retv.help_handler = format!("{}",setopt.get_string(OPT_HELP_HANDLER));
-	retv.output_mode = Vec::new();
-	retv.ended = 0;
-	retv.long_prefix = setopt.get_string(OPT_LONG_PREFIX);
-	retv.short_prefix = setopt.get_string(OPT_SHORT_PREFIX);
-	retv.no_help_option = setopt.get_bool(OPT_NO_HELP_OPTION);
-	retv.no_json_option = setopt.get_bool(OPT_NO_JSON_OPTION);
-	retv.help_long = setopt.get_string(OPT_HELP_LONG);
-	retv.help_short = setopt.get_string(OPT_HELP_SHORT);
-	retv.json_long = setopt.get_string(OPT_JSON_LONG);
-	retv.cmd_prefix_added = setopt.get_bool(OPT_CMD_PREFIX_ADDED);
-	retv.load_priority = setpriority.clone();
-	
-
-	Ok(retv)
-}
 
 #[allow(dead_code)]
-impl ExtArgsParser {
+impl InnerExtArgsParser {
+
+	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
+		let mut retv :InnerExtArgsParser = InnerExtArgsParser {
+			options : None,
+			maincmd : None,
+			arg_state : None,
+			error_handler : "".to_string(),
+			help_handler : "".to_string(),
+			output_mode : Vec::new(),
+			ended : 0,
+			long_prefix : "".to_string(),
+			short_prefix : "".to_string(),
+			no_help_option : false,
+			no_json_option : false,
+			help_long : "".to_string(),
+			help_short : "".to_string(),
+			json_long : "".to_string(),
+			cmd_prefix_added : true,
+			load_priority : Vec::new(),
+		};
+		let mut setopt = ExtArgsOptions::new("{}")?.clone();
+		let mut setpriority = PARSER_PRIORITY_ARGS.clone();
+		if opt.is_some() {
+			setopt = opt.as_ref().unwrap().clone();
+		}
+
+		if priority.is_some() {
+			setpriority = priority.as_ref().unwrap().clone();
+		}
+		for v in setpriority.iter() {
+			if !is_valid_priority(*v) {
+				new_error!{ParserError,"unknown type [{}]",  *v}
+			}
+		}
+
+		retv.options = Some(setopt.clone());
+		retv.maincmd = Some(ParserCompat::new(None,Some(setopt.clone())));
+		retv.arg_state = None;
+		retv.help_handler = format!("{}",setopt.get_string(OPT_HELP_HANDLER));
+		retv.output_mode = Vec::new();
+		retv.ended = 0;
+		retv.long_prefix = setopt.get_string(OPT_LONG_PREFIX);
+		retv.short_prefix = setopt.get_string(OPT_SHORT_PREFIX);
+		retv.no_help_option = setopt.get_bool(OPT_NO_HELP_OPTION);
+		retv.no_json_option = setopt.get_bool(OPT_NO_JSON_OPTION);
+		retv.help_long = setopt.get_string(OPT_HELP_LONG);
+		retv.help_short = setopt.get_string(OPT_HELP_SHORT);
+		retv.json_long = setopt.get_string(OPT_JSON_LONG);
+		retv.cmd_prefix_added = setopt.get_bool(OPT_CMD_PREFIX_ADDED);
+		retv.load_priority = setpriority.clone();
+
+
+		Ok(retv)
+	}
+
 	fn check_flag_insert(&mut self,keycls :ExtKeyParse,parsers :&mut Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let lastparser :ParserCompat;
 		let mut parserclone :i32 = 0;
@@ -216,8 +220,30 @@ impl ExtArgsParser {
 	}
 
 	fn  find_subparser_inner(&self,_name :&str, _oparser :Option<ParserCompat>) -> Option<ParserCompat> {
-		let retv :Option<ParserCompat> = None;
-		retv
+		let sparser :ParserCompat;
+		if _oparser.is_none() {
+			sparser = self.maincmd.as_ref().unwrap().clone();
+		} else {
+			sparser = _oparser.as_ref().unwrap().clone();
+		}
+
+		if _name.len() == 0 {
+			return Some(sparser.clone());
+		}
+
+		let bname :String = format!("{}",_name);
+		let sarr : Vec<&str> = bname.split(".").collect();
+		for v in sparser.sub_cmds().iter() {
+			if  sarr.len() > 0 && v.cmd_name().eq(sarr[0]) {
+				let sname = sarr[1..sarr.len()].join(".");
+				let f = self.find_subparser_inner(&sname,Some(v.clone()));
+				if f.is_some() {
+					return f;
+				}
+			}
+		}
+
+		return None;
 	}
 
 	fn get_subparser_inner(&self,_keycls :ExtKeyParse,_parsers :&mut Vec<ParserCompat>) -> Option<ParserCompat> {
@@ -231,12 +257,27 @@ impl ExtArgsParser {
 
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :&mut Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		if prefix == KEYWORD_STRING || prefix == KEYWORD_INT || prefix == KEYWORD_FLOAT ||
-			prefix == KEYWORD_LIST || prefix == KEYWORD_BOOL || prefix == KEYWORD_COUNT ||
-			prefix == KEYWORD_HELP || prefix == KEYWORD_JSONFILE {
-				return self.load_commandline_base(prefix,keycls,parsers);
+		prefix == KEYWORD_LIST || prefix == KEYWORD_BOOL || prefix == KEYWORD_COUNT ||
+		prefix == KEYWORD_HELP || prefix == KEYWORD_JSONFILE {
+			return self.load_commandline_base(prefix,keycls,parsers);
 		}  else if prefix == KEYWORD_ARGS {
 			return self.load_commandline_args(prefix,keycls,parsers);
 		}
 		new_error!{ParserError,"not {} prefix parse",prefix}
+	}
+}
+
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct ExtArgsParser {
+	innerrc : Rc<RefCell<InnerExtArgsParser>>,
+}
+
+impl  ExtArgsParser {
+	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<ExtArgsParser,Box<dyn Error>> {
+		let k = InnerExtArgsParser::new(opt,priority)?;
+		Ok(ExtArgsParser {
+			innerrc : Rc::new(RefCell::new(k)),
+		})
 	}
 }
