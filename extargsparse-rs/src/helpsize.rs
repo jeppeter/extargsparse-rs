@@ -1,6 +1,9 @@
 
 use std::collections::HashMap;
 use lazy_static::lazy_static;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 
 pub const OPT_NAME_SIZE :&str = "optnamesize";
 pub const OPT_EXPR_SIZE :&str = "optexprsize";
@@ -14,15 +17,13 @@ lazy_static! {
 	};
 }
 
-#[allow(dead_code)]
-pub (crate) struct HelpSize {
+struct InnerHelpSize {
 	intvalue :HashMap<String,i32>,
 }
 
-#[allow(dead_code)]
-impl HelpSize {
-	pub (crate) fn new() -> HelpSize {
-		let mut retv :HelpSize = HelpSize {
+impl InnerHelpSize {
+	pub (crate) fn new() -> InnerHelpSize {
+		let mut retv :InnerHelpSize = InnerHelpSize {
 			intvalue :HashMap::new(),
 		};
 		for k in HELP_SIZE_KEYWORDS.iter() {
@@ -66,4 +67,32 @@ impl HelpSize {
 
 		rets
 	}
+}
+
+#[derive(Clone)]
+pub struct HelpSize {
+	innerrc : Rc<RefCell<InnerHelpSize>>,
+}
+
+#[allow(dead_code)]
+impl HelpSize {
+	pub (crate) fn new() -> HelpSize {
+		HelpSize {
+			innerrc : Rc::new(RefCell::new(InnerHelpSize::new())),
+		}
+	}
+
+	pub (crate) fn set_value(&self,k :&str, v :i32) {
+		self.innerrc.borrow_mut().set_value(k,v);
+		return;
+	}
+
+	pub (crate) fn get_value(&self,k :&str) -> i32 {
+		return self.innerrc.borrow().get_value(k);
+	}
+
+	pub (crate) fn string(&self) -> String {
+		return self.innerrc.borrow().string();
+	}
+
 }

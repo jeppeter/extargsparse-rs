@@ -1,8 +1,11 @@
 
 use super::key::{ExtKeyParse};
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-type ExtArgsParseHelpFunc = fn(&ExtKeyParse) -> String;
+
+pub type ExtArgsParseHelpFunc = fn(&ExtKeyParse) -> String;
 
 #[derive(Clone)]
 pub enum ExtArgsParseFunc {
@@ -11,18 +14,19 @@ pub enum ExtArgsParseFunc {
 
 #[allow(dead_code)]
 #[derive(Clone)]
-pub struct ExtArgsMatchFuncMap {
+pub struct InnerExtArgsMatchFuncMap {
 	data :HashMap<String,ExtArgsParseFunc>,
 }
 
-pub fn new() -> ExtArgsMatchFuncMap {
-	ExtArgsMatchFuncMap {
-		data : HashMap::new(),
-	}
-}
 
-impl ExtArgsMatchFuncMap {
-	#[allow(dead_code)]
+#[allow(dead_code)]
+impl InnerExtArgsMatchFuncMap {
+	pub fn new() -> InnerExtArgsMatchFuncMap {
+		InnerExtArgsMatchFuncMap {
+			data : HashMap::new(),
+		}
+	}
+
 	pub (crate) fn get_help_func(&self,k :&str) -> Option<ExtArgsParseHelpFunc> {
 		let mut retv :Option<ExtArgsParseHelpFunc> = None;
 		match self.data.get(k) {
@@ -36,5 +40,22 @@ impl ExtArgsMatchFuncMap {
 			_ => {}
 		}
 		retv
+	}
+}
+
+#[derive(Clone)]
+pub struct ExtArgsMatchFuncMap {
+	innerrc : Rc<RefCell<InnerExtArgsMatchFuncMap>>,
+}
+
+impl ExtArgsMatchFuncMap {
+	pub fn new() -> ExtArgsMatchFuncMap {
+		ExtArgsMatchFuncMap {
+			innerrc : Rc::new(RefCell::new(InnerExtArgsMatchFuncMap::new())),
+		}
+	}
+
+	pub (crate) fn get_help_func(&self,k :&str) -> Option<ExtArgsParseHelpFunc> {
+		return self.innerrc.borrow().get_help_func(k);
 	}
 }

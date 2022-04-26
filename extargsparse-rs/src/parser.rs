@@ -1,6 +1,5 @@
 
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED};
-use super::parser_compat;
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS};
@@ -97,7 +96,7 @@ pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<Ext
 	}
 
 	retv.options = Some(setopt.clone());
-	retv.maincmd = Some(parser_compat::new(None,Some(setopt.clone())));
+	retv.maincmd = Some(ParserCompat::new(None,Some(setopt.clone())));
 	retv.arg_state = None;
 	retv.help_handler = format!("{}",setopt.get_string(OPT_HELP_HANDLER));
 	retv.output_mode = Vec::new();
@@ -128,7 +127,7 @@ impl ExtArgsParser {
 			lastparser = self.maincmd.as_ref().unwrap().clone();
 		}
 
-		for opt in lastparser.cmdopts.iter() {
+		for opt in lastparser.get_cmdopts().iter() {
 			if opt.flag_name() != KEYWORD_DOLLAR_SIGN && keycls.flag_name() != KEYWORD_DOLLAR_SIGN {
 				if opt.type_name() != KEYWORD_HELP && keycls.type_name() != KEYWORD_HELP {
 					if opt.opt_dest().eq(&keycls.opt_dest()) {
@@ -144,10 +143,10 @@ impl ExtArgsParser {
 
 		if parserclone > 0 {
 			let uc = parsers.len() -1;
-			parsers[uc].cmdopts.push(keycls);
+			parsers[uc].push_cmdopts(keycls);
 		} else {
 			if self.maincmd.is_some() {
-				self.maincmd.as_mut().unwrap().cmdopts.push(keycls);
+				self.maincmd.as_mut().unwrap().push_cmdopts(keycls);
 			} else {
 				new_error!{ParserError,"no maincmd set"}
 			}
@@ -162,7 +161,7 @@ impl ExtArgsParser {
 			if rets.len() > 0 {
 				rets.push_str(".");
 			}
-			rets.push_str(&v.cmdname);
+			rets.push_str(&v.cmd_name());
 		}
 		rets
 	}
