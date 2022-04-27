@@ -1,8 +1,8 @@
 
-use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED};
+use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -25,8 +25,8 @@ error_class!{ParserError}
 #[allow(dead_code)]
 #[derive(Clone)]
 struct InnerExtArgsParser {
-	options :Option<ExtArgsOptions>,
-	maincmd :Option<ParserCompat>,
+	options :ExtArgsOptions,
+	maincmd :ParserCompat,
 	arg_state :Option<ParserState>,
 	error_handler :String,
 	help_handler :String,
@@ -36,6 +36,7 @@ struct InnerExtArgsParser {
 	short_prefix :String,
 	no_help_option : bool,
 	no_json_option : bool,
+	opt_flag_no_change : bool,
 	help_long :String,
 	help_short : String,
 	json_long :String,
@@ -82,8 +83,8 @@ impl InnerExtArgsParser {
 			}
 		}
 		let retv :InnerExtArgsParser = InnerExtArgsParser {
-			options : Some(setopt.clone()),
-			maincmd : Some(ParserCompat::new(None,Some(setopt.clone()))),
+			options : setopt.clone(),
+			maincmd : ParserCompat::new(None,Some(setopt.clone())),
 			arg_state : None,
 			error_handler : "".to_string(),
 			help_handler : format!("{}",setopt.get_string(OPT_HELP_HANDLER)),
@@ -93,6 +94,7 @@ impl InnerExtArgsParser {
 			short_prefix : setopt.get_string(OPT_SHORT_PREFIX),
 			no_help_option : setopt.get_bool(OPT_NO_HELP_OPTION),
 			no_json_option : setopt.get_bool(OPT_NO_JSON_OPTION),
+			opt_flag_no_change : setopt.get_bool(OPT_FLAG_NO_CHANGE),
 			help_long : setopt.get_string(OPT_HELP_LONG),
 			help_short : setopt.get_string(OPT_HELP_SHORT),
 			json_long : setopt.get_string(OPT_JSON_LONG),
@@ -109,7 +111,7 @@ impl InnerExtArgsParser {
 			lastparser = parsers[parsers.len() - 1].clone();
 			parserclone = 1;
 		} else {
-			lastparser = self.maincmd.as_ref().unwrap().clone();
+			lastparser = self.maincmd.clone();
 		}
 
 		for opt in lastparser.get_cmdopts().iter() {
@@ -130,11 +132,7 @@ impl InnerExtArgsParser {
 			let uc = parsers.len() -1;
 			parsers[uc].push_cmdopts(keycls);
 		} else {
-			if self.maincmd.is_some() {
-				self.maincmd.as_mut().unwrap().push_cmdopts(keycls);
-			} else {
-				new_error!{ParserError,"no maincmd set"}
-			}
+			self.maincmd.push_cmdopts(keycls);
 		}
 
 		Ok(())
@@ -203,7 +201,7 @@ impl InnerExtArgsParser {
 	fn  find_subparser_inner(&self,_name :&str, _oparser :Option<ParserCompat>) -> Option<ParserCompat> {
 		let sparser :ParserCompat;
 		if _oparser.is_none() {
-			sparser = self.maincmd.as_ref().unwrap().clone();
+			sparser = self.maincmd.clone();
 		} else {
 			sparser = _oparser.as_ref().unwrap().clone();
 		}
@@ -228,7 +226,7 @@ impl InnerExtArgsParser {
 	}
 
 	fn get_subparser_inner(&self, keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Option<ParserCompat> {
-		let mut retv :Option<ParserCompat> = None;
+		let retv :Option<ParserCompat>;
 		let mut cmdname :String = "".to_string();
 		let parentname :String;
 		let cparser :ParserCompat;
@@ -243,10 +241,8 @@ impl InnerExtArgsParser {
 		if oparser.is_some() {
 			return oparser;
 		}
-		let mut setopt :Option<ExtArgsOptions> = None;
-		if self.options.is_some() {
-			setopt = Some(self.options.as_ref().unwrap().clone());
-		}
+		let setopt :Option<ExtArgsOptions>;
+		setopt = Some(self.options.clone());
 		cparser = ParserCompat::new(Some(keycls.clone()),setopt);
 		extargs_log_info!("{}",cparser.string());
 		if parsers.len() > 0 {
@@ -254,17 +250,68 @@ impl InnerExtArgsParser {
 			curparser.push_subcmds(cparser.clone());
 			retv= Some(cparser.clone());
 		} else {
-			if self.maincmd.is_some() {
-				curparser = self.maincmd.as_ref().unwrap().clone();
-				curparser.push_subcmds(cparser.clone());
-				retv = Some(cparser.clone());
-			}
+			curparser = self.maincmd.clone();
+			curparser.push_subcmds(cparser.clone());
+			retv = Some(cparser.clone());
 		}
 		retv
 	}
 
-	fn load_commandline_subparser(&mut self,_prefix :String, _keycls :ExtKeyParse, _parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+
+	fn load_commandline_inner(&mut self, prefix :String, vmap :Value, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		if !self.no_json_option && self.json_long.len() > 0 {
+			self.load_commandline_json_added(parsers.clone())?;
+		}
+
+		if !self.no_help_option && self.help_long.len() > 0 {
+			self.load_commandline_help_added(parsers.clone())?;
+		}
+
+
+		if !vmap.is_object() {
+			new_error!{ParserError,"{:?} not object", vmap}
+		}
+		for (k, v) in vmap.as_object().unwrap() {
+			extargs_log_info!("{} , {} , {:?} , False",prefix,k,v);
+			let curkeycls = ExtKeyParse::new(&prefix,k,v,false,false,false,&self.long_prefix,&self.short_prefix,self.opt_flag_no_change)?;
+			self.call_load_command_map_func(format!("{}",prefix),curkeycls.clone(),parsers.clone())?;
+		}
 		Ok(())
+	}
+
+	fn load_command_subparser(&mut self, prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		let mut newprefix :String;
+		if keycls.type_name() != KEYWORD_COMMAND {
+			new_error!{ParserError,"{} not valid command", keycls.string()}
+		}
+		if keycls.cmd_name().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.cmd_name())) {
+			new_error!{ParserError,"{} in reserved {}", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+		}
+		extargs_log_info!("load [{}]",keycls.string());
+
+		let oparser = self.get_subparser_inner(keycls.clone(),parsers.clone());
+		if oparser.is_none() {
+			new_error!{ParserError,"can not find [{}] ", keycls.string()}
+		}
+
+		let mut nextparsers :Vec<ParserCompat>;
+		if parsers.len() > 0 {
+			nextparsers = parsers.clone();
+		} else {
+			nextparsers = Vec::new();
+			nextparsers.push(self.maincmd.clone());
+		}
+		nextparsers.push(oparser.unwrap().clone());
+		newprefix = "".to_string();
+		if self.cmd_prefix_added {
+			newprefix.push_str(&prefix);
+			if newprefix.len() > 0 {
+				newprefix.push_str("_");
+			}
+			newprefix.push_str(&(keycls.cmd_name()));
+		}
+
+		return self.load_commandline_inner(newprefix,keycls.value().clone(),nextparsers);
 	}
 
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
