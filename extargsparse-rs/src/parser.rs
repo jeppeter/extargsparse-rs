@@ -2,7 +2,7 @@
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -279,7 +279,7 @@ impl InnerExtArgsParser {
 		Ok(())
 	}
 
-	fn load_command_subparser(&mut self, prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+	fn load_command_subparser(&mut self,prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let mut newprefix :String;
 		if keycls.type_name() != KEYWORD_COMMAND {
 			new_error!{ParserError,"{} not valid command", keycls.string()}
@@ -314,6 +314,13 @@ impl InnerExtArgsParser {
 		return self.load_commandline_inner(newprefix,keycls.value().clone(),nextparsers);
 	}
 
+	fn load_command_prefix(&mut self,_prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		if keycls.prefix().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.prefix())) {
+			new_error!{ParserError,"prefix [{}] in [{}]", keycls.prefix(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+		}
+		return self.load_commandline_inner(keycls.prefix(),keycls.value().clone(),parsers.clone());
+	}
+
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		if prefix == KEYWORD_STRING || prefix == KEYWORD_INT || prefix == KEYWORD_FLOAT ||
 		prefix == KEYWORD_LIST || prefix == KEYWORD_BOOL || prefix == KEYWORD_COUNT ||
@@ -321,6 +328,10 @@ impl InnerExtArgsParser {
 			return self.load_commandline_base(prefix,keycls,parsers);
 		}  else if prefix == KEYWORD_ARGS {
 			return self.load_commandline_args(prefix,keycls,parsers);
+		} else if prefix == KEYWORD_COMMAND {
+			return self.load_command_subparser(prefix,keycls,parsers);
+		} else if prefix == KEYWORD_PREFIX {
+			return self.load_command_prefix(prefix,keycls,parsers);
 		}
 		new_error!{ParserError,"not {} prefix parse",prefix}
 	}

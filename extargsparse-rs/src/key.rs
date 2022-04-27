@@ -307,7 +307,7 @@ impl TypeClass {
 }
 
 pub const KEYWORD_VALUE :&str = "value";
-const KEYWORD_PREFIX :&str = "prefix";
+pub const KEYWORD_PREFIX :&str = "prefix";
 const KEYWORD_FLAGNAME :&str = "flagname";
 const KEYWORD_HELPINFO :&str = "helpinfo";
 const KEYWORD_SHORTFLAG :&str = "shortflag";
@@ -1967,6 +1967,10 @@ impl InnerExtKeyParse {
 		return self.get_string_v(KEYWORD_SHORTFLAG);
 	}
 
+	pub fn prefix(&self) -> String {
+		return self.get_string_v(KEYWORD_PREFIX);
+	}
+
 }
 
 impl PartialEq for InnerExtKeyParse {
@@ -2096,6 +2100,10 @@ impl ExtKeyParse {
 
 	pub fn short_flag(&self) -> String {
 		return self.innerrc.borrow().short_flag();
+	}
+
+	pub fn prefix(&self) -> String {
+		return self.innerrc.borrow().prefix();
 	}
 }
 
