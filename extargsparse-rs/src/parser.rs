@@ -1,3 +1,13 @@
+use std::fmt;
+use std::error::Error;
+use std::boxed::Box;
+
+use serde_json::Value;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::sync::Arc;
+use std::collections::HashMap;
+
 
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
@@ -7,20 +17,24 @@ use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIR
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
 
-use std::fmt;
-use std::error::Error;
-use std::boxed::Box;
-use serde_json::Value;
-use std::rc::Rc;
-use std::cell::RefCell;
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_info};
+use super::namespace::{NameSpaceEx};
 
 
 use super::{error_class,new_error};
 
 
 error_class!{ParserError}
+
+#[allow(dead_code)]
+#[derive(Clone)]
+enum ExtArgsFunc {
+	LoadFunc(Rc<dyn Fn(String,ExtKeyParse,Vec<ParserCompat>) -> Result<(),Box<dyn Error>>>),
+	ActionFunc(Rc<dyn Fn(NameSpaceEx,i32,ExtKeyParse,Vec<String>) -> Result<i32,Box<dyn Error>>>),
+	LoadJsonFunc(Rc<dyn Fn(NameSpaceEx) -> Result<(),Box<dyn Error>>>),
+	JsonFunc(Rc<dyn Fn(NameSpaceEx,ExtKeyParse,Value) -> Result<(),Box<dyn Error>>>),	
+}
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -42,6 +56,7 @@ struct InnerExtArgsParser {
 	json_long :String,
 	cmd_prefix_added :bool,
 	load_priority :Vec<i32>,
+	extfuncs :Rc<RefCell<HashMap<String,Rc<RefCell<ExtArgsFunc>>>>>,
 }
 
 lazy_static ! {
@@ -67,6 +82,32 @@ fn is_valid_priority (k :i32) -> bool {
 
 #[allow(dead_code)]
 impl InnerExtArgsParser {
+	fn insert_load_command_funcs(&mut self)  {
+		let b = Arc::new(RefCell::new(self.clone()));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_STRING),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_INT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_FLOAT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_LIST),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_BOOL),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_ARGS),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_args(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_COMMAND),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_command_subparser(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_PREFIX),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_command_prefix(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_COUNT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_HELP),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		let s1 = b.clone();
+		self.extfuncs.borrow_mut().insert(format!("{}",KEYWORD_JSONFILE),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
+		return;
+	}
 	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
 		let mut setopt = ExtArgsOptions::new("{}")?.clone();
 		let mut setpriority = PARSER_PRIORITY_ARGS.clone();
@@ -82,7 +123,7 @@ impl InnerExtArgsParser {
 				new_error!{ParserError,"unknown type [{}]",  *v}
 			}
 		}
-		let retv :InnerExtArgsParser = InnerExtArgsParser {
+		let mut retv :InnerExtArgsParser = InnerExtArgsParser {
 			options : setopt.clone(),
 			maincmd : ParserCompat::new(None,Some(setopt.clone())),
 			arg_state : None,
@@ -100,7 +141,10 @@ impl InnerExtArgsParser {
 			json_long : setopt.get_string(OPT_JSON_LONG),
 			cmd_prefix_added : setopt.get_bool(OPT_CMD_PREFIX_ADDED),
 			load_priority : setpriority.clone(),
+			extfuncs : Rc::new(RefCell::new(HashMap::new())),
 		};
+		retv.insert_load_command_funcs();
+
 		Ok(retv)
 	}
 
@@ -321,19 +365,34 @@ impl InnerExtArgsParser {
 		return self.load_commandline_inner(keycls.prefix(),keycls.value().clone(),parsers.clone());
 	}
 
-	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
-		if prefix == KEYWORD_STRING || prefix == KEYWORD_INT || prefix == KEYWORD_FLOAT ||
-		prefix == KEYWORD_LIST || prefix == KEYWORD_BOOL || prefix == KEYWORD_COUNT ||
-		prefix == KEYWORD_HELP || prefix == KEYWORD_JSONFILE {
-			return self.load_commandline_base(prefix,keycls,parsers);
-		}  else if prefix == KEYWORD_ARGS {
-			return self.load_commandline_args(prefix,keycls,parsers);
-		} else if prefix == KEYWORD_COMMAND {
-			return self.load_command_subparser(prefix,keycls,parsers);
-		} else if prefix == KEYWORD_PREFIX {
-			return self.load_command_prefix(prefix,keycls,parsers);
+	fn get_ext_func(&mut self, k :&str) -> Option<ExtArgsFunc> {
+		let mut retv : Option<ExtArgsFunc> = None;
+		match self.extfuncs.borrow().get(k) {
+			Some(f1) => {
+				let f2 :&ExtArgsFunc = &f1.borrow();
+				retv = Some(f2.clone());
+			},
+			None => {}
 		}
-		new_error!{ParserError,"not {} prefix parse",prefix}
+		retv
+	}
+
+	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		let fnptr :Option<ExtArgsFunc>;
+		fnptr = self.get_ext_func(&prefix);
+		if fnptr.is_some() {
+			let f2 = fnptr.unwrap();
+			match f2 {
+				ExtArgsFunc::LoadFunc(f) => {
+					return f(prefix,keycls.clone(),parsers.clone());
+				},
+				_ => {
+					new_error!{ParserError,"return [{}] not load function", prefix}
+				}
+			}
+		} else {
+			new_error!{ParserError,"can not found [{}] load command map function", prefix}
+		}
 	}
 }
 
