@@ -6,6 +6,14 @@ use serde_json::{Value};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use std::fmt;
+use std::error::Error;
+use std::boxed::Box;
+
+use super::{error_class,new_error};
+
+error_class!{NameSpaceError}
+
 #[allow(dead_code)]
 #[derive(Clone)]
 struct InnerNameSpaceEx {
@@ -212,4 +220,16 @@ impl NameSpaceEx {
 		}
 	}
 	
+	pub (crate) fn set_string(&self,k :String, v :String) -> Result<(),Box<dyn Error>> {
+		let s :String = format!("\"{}\"", v);
+		match serde_json::from_str(&s) {
+			Ok(v) => {
+				self.innerrc.borrow_mut().set_value(&k,v);
+			},
+			Err(e) => {
+				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
+			}
+		}
+		Ok(())
+	}
 }

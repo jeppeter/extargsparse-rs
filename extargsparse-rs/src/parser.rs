@@ -18,7 +18,7 @@ use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
 
 use super::logger::{extargs_debug_out};
-use super::{extargs_assert,extargs_log_info};
+use super::{extargs_assert,extargs_log_info,extargs_log_trace};
 use super::namespace::{NameSpaceEx};
 
 
@@ -393,6 +393,17 @@ impl InnerExtArgsParser {
 		} else {
 			new_error!{ParserError,"can not found [{}] load command map function", prefix}
 		}
+	}
+
+	fn string_action(&self,ns :NameSpaceEx,validx :i32,keycls :ExtKeyParse,params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		if validx >= params.len() as i32 {
+			new_error!{ParserError,"need args [{}] [{}] [{:?}]", validx, keycls.string(), params}
+		}
+		extargs_log_trace!("set [{}] [{}]",keycls.opt_dest(),params[validx as usize]);
+		let n = format!("{}",keycls.opt_dest());
+		let v = format!("{}",params[validx as usize]);
+		ns.set_string(n,v)?;
+		Ok(1)
 	}
 }
 
