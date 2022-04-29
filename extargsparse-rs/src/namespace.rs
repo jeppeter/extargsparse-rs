@@ -232,4 +232,15 @@ impl NameSpaceEx {
 		}
 		Ok(())
 	}
+
+	pub (crate) fn set_bool(&self,k :String, b :bool) -> Result<(),Box<dyn Error>> {
+		let setv :Value;
+		if b {
+			setv = serde_json::from_str("true").unwrap();
+		} else {
+			setv = serde_json::from_str("false").unwrap();
+		}
+		self.innerrc.borrow_mut().set_value(&k,setv);
+		Ok(())
+	}
 }

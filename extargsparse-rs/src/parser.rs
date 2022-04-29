@@ -18,7 +18,7 @@ use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
 
 use super::logger::{extargs_debug_out};
-use super::{extargs_assert,extargs_log_info,extargs_log_trace};
+use super::{extargs_assert,extargs_log_info,extargs_log_trace,extargs_log_warn};
 use super::namespace::{NameSpaceEx};
 
 
@@ -404,6 +404,20 @@ impl InnerExtArgsParser {
 		let v = format!("{}",params[validx as usize]);
 		ns.set_string(n,v)?;
 		Ok(1)
+	}
+
+	fn bool_action(&self,ns :NameSpaceEx, _validx :i32 , keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		let mut b :bool = false;
+		match keycls.value() {
+			Value::Bool(bv) => {
+				b = bv;
+			},
+			_ => {
+				extargs_log_warn!("[{}] not set true|false", keycls.string());
+			}
+		}
+		ns.set_bool(keycls.opt_dest(),b)?;
+		Ok(0)
 	}
 }
 
