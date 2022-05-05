@@ -1,14 +1,14 @@
 mod errors;
 pub mod const_value;
-pub mod util;
-pub mod logger;
+pub (crate) mod util;
+pub (crate) mod logger;
 pub mod key;
 pub mod options;
 pub mod funccall;
 pub mod namespace;
-pub mod helpsize;
-pub mod parser_compat;
-pub mod parser_state;
+pub (crate) mod helpsize;
+pub (crate) mod parser_compat;
+pub (crate) mod parser_state;
 pub mod parser;
 
 

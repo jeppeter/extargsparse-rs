@@ -480,6 +480,41 @@ impl InnerExtArgsParser {
 		return curcmd.get_help_info_ex(HelpSize::new(),cmdpaths,self.outfuncs.clone());
 	}
 
+	fn set_commandline_self_args_inner(&mut self,paths :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		let mut parentpaths :Vec<ParserCompat> = Vec::new();
+		let mut setted :bool;
+		let ilen :usize;
+		if paths.len() > 0 {
+			parentpaths = paths.clone();
+			ilen = parentpaths.len() - 1;
+		} else {
+			parentpaths.push(self.maincmd.clone());
+			ilen = 0;
+		}
+		setted = false;
+		for opt in parentpaths[ilen].get_cmdopts() {
+			if opt.is_flag() && opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+				setted = true;
+				break;
+			}
+		}
+
+		if !setted {
+			let cmdname = self.format_cmd_from_cmd_array(parentpaths.clone());
+			let prefix = cmdname.replace(".","_");
+			let vstart = serde_json::from_str("\"*\"").unwrap();
+			let curkey = ExtKeyParse::new("","$",&vstart,true,false,false,&(self.long_prefix),&(self.short_prefix),self.opt_flag_no_change)?;
+			self.load_commandline_args(prefix,curkey,parentpaths.clone())?;
+		}
+
+		for chld in parentpaths[ilen].sub_cmds() {
+			let mut curparsers : Vec<ParserCompat> = parentpaths.clone();
+			curparsers.push(chld);
+			self.set_commandline_self_args_inner(curparsers)?;
+		}
+		Ok(())
+	}
+
 }
 
 #[allow(dead_code)]
