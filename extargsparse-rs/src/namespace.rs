@@ -223,6 +223,10 @@ impl NameSpaceEx {
 	pub fn get_array(&self, k :&str) -> Vec<String> {
 		return self.innerrc.borrow().get_array(k);
 	}
+
+	pub fn get_int(&self,k :&str) -> i64 {
+		return self.innerrc.borrow().get_int(k);
+	}
 	
 	pub (crate) fn set_string(&self,k :String, v :String) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("\"{}\"", v);
@@ -248,11 +252,11 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_int(&self,k :String, v :i64) -> Result<(),Box<dyn Error>> {
+	pub (crate) fn set_int(&self,k :&str, v :i64) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("{}", v);
 		match serde_json::from_str(&s) {
 			Ok(iv) => {
-				self.innerrc.borrow_mut().set_value(&k,iv);
+				self.innerrc.borrow_mut().set_value(k,iv);
 			},
 			Err(e) => {
 				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]",s,e}

@@ -402,7 +402,7 @@ impl InnerExtArgsParser {
 		}
 	}
 
-	fn string_action(&self,ns :NameSpaceEx,validx :i32,keycls :ExtKeyParse,params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+	fn string_action(&mut self,ns :NameSpaceEx,validx :i32,keycls :ExtKeyParse,params :Vec<String>) -> Result<i32,Box<dyn Error>> {
 		if validx >= params.len() as i32 {
 			new_error!{ParserError,"need args [{}] [{}] [{:?}]", validx, keycls.string(), params}
 		}
@@ -413,7 +413,7 @@ impl InnerExtArgsParser {
 		Ok(1)
 	}
 
-	fn bool_action(&self,ns :NameSpaceEx, _validx :i32 , keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+	fn bool_action(&mut self,ns :NameSpaceEx, _validx :i32 , keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
 		let mut b :bool = false;
 		match keycls.value() {
 			Value::Bool(bv) => {
@@ -427,7 +427,7 @@ impl InnerExtArgsParser {
 		Ok(0)
 	}
 
-	fn int_action(&self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
+	fn int_action(&mut self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
 		let mut base : u32 = 10;
 		let mut cparse :String;
 		if validx >= params.len() as i32 {
@@ -444,7 +444,7 @@ impl InnerExtArgsParser {
 
 		match i64::from_str_radix(&cparse,base) {
 			Ok(v) => {
-				ns.set_int(keycls.opt_dest(),v)?;
+				ns.set_int(&(keycls.opt_dest()),v)?;
 			},
 			Err(e) => {
 				new_error!{ParserError, "parse [{}] error [{:?}]", params[ validx as usize], e}
@@ -453,7 +453,7 @@ impl InnerExtArgsParser {
 		Ok(1)
 	}
 
-	fn append_action(&self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
+	fn append_action(&mut self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
 		let mut carr :Vec<String>;
 		if validx >= params.len() as i32 {
 			new_error!{ParserError,"[{}] >= [{}]", validx,params.len()}
@@ -662,6 +662,23 @@ impl InnerExtArgsParser {
 
 		let totallen = iowriter.write(s.as_bytes())?;
 		Ok(totallen)
+	}
+
+	fn help_action(&mut self,_ns :NameSpaceEx,_valid :i32, _keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
+		if params.len() == 0 {
+			new_error!{ParserError,"no params in help action"}
+		}
+		let mut of = std::io::stdout();
+		_ = self.print_help_ex(&mut of,format!("{}",params[0]))?;
+		std::process::exit(0);
+	}
+
+	fn inc_action(&mut self, ns :NameSpaceEx, _validx :i32, keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		let mut iv :i64;
+		iv = ns.get_int(&(keycls.opt_dest()));
+		iv += 1;
+		ns.set_int(&(keycls.opt_dest()),iv)?;
+		Ok(0)
 	}
 
 }
