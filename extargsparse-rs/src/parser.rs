@@ -1,4 +1,5 @@
 use std::fmt;
+use std::i64;
 use std::error::Error;
 use std::boxed::Box;
 
@@ -419,6 +420,33 @@ impl InnerExtArgsParser {
 		ns.set_bool(keycls.opt_dest(),b)?;
 		Ok(0)
 	}
+
+	fn int_action(&self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
+		let mut base : u32 = 10;
+		let mut cparse :String;
+		if validx >= params.len() as i32 {
+			new_error!{ParserError, "[{}] >= [{}]", validx, params.len()}
+		}
+		cparse = format!("{}",params[validx as usize]);
+		if cparse.starts_with("0x") || cparse.starts_with("0X") {
+			cparse = cparse[2..].to_string();
+			base = 16;
+		} else if cparse.starts_with("x") || cparse.starts_with("X") {
+			cparse = cparse[1..].to_string();
+			base = 16;
+		}
+
+		match i64::from_str_radix(&cparse,base) {
+			Ok(v) => {
+				ns.set_int(keycls.opt_dest(),v)?;
+			},
+			Err(e) => {
+				new_error!{ParserError, "parse [{}] error [{:?}]", params[ validx as usize], e}
+			}
+		}
+		Ok(1)
+	}
+
 }
 
 #[allow(dead_code)]
