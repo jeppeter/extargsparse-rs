@@ -613,6 +613,32 @@ impl InnerExtArgsParser {
 		None
 	}
 
+	fn find_command_in_path(&self, cmdname :String, _parsers :Vec<ParserCompat>) -> Vec<ParserCompat> {
+		let mut sarr :Vec<&str> = Vec::new();
+		let mut commands :Vec<ParserCompat> = Vec::new();
+		let mut i :i32;
+		if cmdname.len() > 0 {
+			sarr = cmdname.split(".").collect();
+		}
+		extargs_log_trace!("append [{}]",self.maincmd.string());
+		commands.push(self.maincmd.clone());
+
+		i = 0;
+		while i <= sarr.len() as i32 && cmdname.len() > 0 {
+			if i > 0 {
+				let curcommand = self.find_command_inner(format!("{}",sarr[(i-1) as usize]),commands.clone());
+				if curcommand.is_none() {
+					break;
+				}
+				let cmd = curcommand.unwrap();
+				extargs_log_trace!("append [{}]",cmd.string());
+				commands.push(cmd.clone());
+			}
+			i += 1;
+		}
+		return commands;
+	}
+
 }
 
 #[allow(dead_code)]
