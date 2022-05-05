@@ -2,6 +2,7 @@ use std::fmt;
 use std::i64;
 use std::error::Error;
 use std::boxed::Box;
+use std::io::Write;
 
 use serde_json::Value;
 use std::rc::Rc;
@@ -637,6 +638,30 @@ impl InnerExtArgsParser {
 			i += 1;
 		}
 		return commands;
+	}
+
+	pub (crate) fn print_help_ex<T : std::io::Write>(&mut self, iowriter :&mut T,cmdname :String) -> Result<usize,Box<dyn Error>> {
+		let mut parsers :Vec<ParserCompat>;
+		self.set_commandline_self_args()?;
+		parsers = Vec::new();
+		parsers = self.find_command_in_path(format!("{}",cmdname),parsers.clone());
+		if parsers.len() == 0 {
+			new_error!{ParserError,"can not find [{}] for help", cmdname}
+		}
+
+		let s = self.print_help(parsers.clone());
+		if self.output_mode.len() > 0 {
+			let ilen :usize = self.output_mode.len() - 1;
+			if self.output_mode[ilen] == "bash" {
+				let outs = format!("cat <<EOFMM\n{}\nEOFMM\nexit 0", s);
+				let mut of = std::io::stdout();
+				of.write(outs.as_bytes()).unwrap();
+				std::process::exit(0);
+			}
+		}
+
+		let totallen = iowriter.write(s.as_bytes())?;
+		Ok(totallen)
 	}
 
 }
