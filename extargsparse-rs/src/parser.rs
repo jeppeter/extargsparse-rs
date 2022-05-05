@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -372,7 +372,7 @@ impl InnerExtArgsParser {
 		return self.load_commandline_inner(keycls.prefix(),keycls.value().clone(),parsers.clone());
 	}
 
-	fn get_ext_func(&mut self, k :&str) -> Option<ExtArgsFunc> {
+	fn get_ext_func(&self, k :&str) -> Option<ExtArgsFunc> {
 		let mut retv : Option<ExtArgsFunc> = None;
 		match self.extfuncs.borrow().get(k) {
 			Some(f1) => {
@@ -383,6 +383,7 @@ impl InnerExtArgsParser {
 		}
 		retv
 	}
+
 
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let fnptr :Option<ExtArgsFunc>;
@@ -409,7 +410,7 @@ impl InnerExtArgsParser {
 		extargs_log_trace!("set [{}] [{}]",keycls.opt_dest(),params[validx as usize]);
 		let n = format!("{}",keycls.opt_dest());
 		let v = format!("{}",params[validx as usize]);
-		ns.set_string(n,v)?;
+		ns.set_string(&n,v)?;
 		Ok(1)
 	}
 
@@ -698,6 +699,157 @@ impl InnerExtArgsParser {
 			}
 		}
 		Ok(1)
+	}
+
+	fn json_value_base(&self,ns :NameSpaceEx,opt :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
+		let mut idx :i32;
+		match val {
+			Value::String(ref _s) => {
+				if opt.type_name() != KEYWORD_STRING && opt.type_name() != KEYWORD_JSONFILE {
+					new_error!{ParserError, "[{}] [{}] not for [{:?}] set", opt.type_name(), opt.opt_dest(), val.clone()}
+				}
+				extargs_log_trace!("set [{}] [{:?}]", opt.opt_dest(), val);
+				ns.set_value(&(opt.opt_dest()),val.clone());
+			},
+			Value::Object(ref _o) => {
+				new_error!{ParserError,"could not set [{}] for object [{:?}]", opt.opt_dest(),val}
+			},
+			Value::Array(ref a) => {
+				let mut narr :Vec<String> = Vec::new();
+				if opt.type_name() != KEYWORD_LIST {
+					new_error!{ParserError,"[{}] not for list [{:?}]", opt.opt_dest(),val}
+				}
+
+				idx = 0;
+				for s in a.iter() {
+					match s {
+						Value::String(s) => {
+							narr.push(format!("{}",s));
+						},
+						_ => {
+							new_error!{ParserError,"at [{}] not string  [{:?}]", idx, s}
+						}
+					}
+					idx += 1;
+				}
+				ns.set_value(&(opt.opt_dest()),val.clone());
+			},
+			Value::Bool(_b) => {
+				if opt.type_name() != KEYWORD_BOOL {
+					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+				}
+				ns.set_value(&(opt.opt_dest()),val.clone());
+			},
+			Value::Number(ref n) =>  {
+				if opt.type_name() == KEYWORD_INT {
+					if n.is_i64() || n.is_u64() {
+						ns.set_value(&(opt.opt_dest()),val.clone());
+					} else {
+						new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+					}
+				} else if opt.type_name() == KEYWORD_FLOAT {
+					if n.is_f64() {
+						ns.set_value(&(opt.opt_dest()), val.clone());
+					} else {
+						new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+					}
+				} else {
+					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+				}
+			},
+			Value::Null => {
+				if opt.type_name() == KEYWORD_JSONFILE || opt.type_name() == KEYWORD_STRING {
+					ns.set_string(&(opt.opt_dest()), "".to_string())?;
+				} else {
+					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}	
+				}
+			}
+		}
+		Ok(())
+	}
+
+	fn json_value_error(&self,_ns :NameSpaceEx,opt :ExtKeyParse, _val :Value) -> Result<(),Box<dyn Error>> {
+		new_error!{ParserError,"set [{}]", opt.opt_dest()}
+	}
+
+
+	fn call_json_bind_map(&self,ns :NameSpaceEx,keycls :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
+		let fnptr :Option<ExtArgsFunc>;
+		let typename = keycls.type_name();
+		fnptr = self.get_ext_func(&(typename));
+		if fnptr.is_some() {
+			let f2 = fnptr.unwrap();
+			match f2 {
+				ExtArgsFunc::JsonFunc(f) => {
+					return f(ns.clone(),keycls.clone(),val.clone());
+				},
+				_ => {
+					new_error!{ParserError,"return [{}] not load function", typename}
+				}
+			}
+		} else {
+			new_error!{ParserError,"can not found [{}] load command map function", typename}
+		}		
+	}
+
+	fn call_json_value(&self,ns :NameSpaceEx, keycls :ExtKeyParse,val :Value) -> Result<(),Box<dyn Error>> {
+		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
+		if oattr.is_some() {
+			let attr = oattr.unwrap();
+			let funcname = attr.get_attr("jsonfunc");
+			if funcname.len() > 0 {
+				let fo = self.outfuncs.get_json_func(&funcname);
+				if fo.is_some() {
+					let jsonfunc = fo.unwrap();
+					return jsonfunc(ns.clone(),keycls.clone(),val.clone());
+				}
+			}
+		}
+		return self.call_json_bind_map(ns.clone(),keycls.clone(),val.clone());
+	}
+
+	fn set_json_value_not_defined(&self,ns :NameSpaceEx,parser :ParserCompat,dest :&str,val :Value) -> Result<(),Box<dyn Error>> {
+		for c in parser.sub_cmds() {
+			self.set_json_value_not_defined(ns.clone(),c,dest,val.clone())?;
+		}
+
+		for opt in parser.get_cmdopts() {
+			if opt.is_flag() && opt.flag_name() != KEYWORD_PREFIX && opt.type_name() != KEYWORD_ARGS && 
+				opt.type_name() != KEYWORD_HELP {
+					if opt.opt_dest() == dest && !ns.is_accessed(dest) {
+						self.call_json_value(ns.clone(),opt.clone(),val.clone())?;
+					}
+				}
+		}
+		Ok(())
+	}
+
+	fn load_json_value(&self, ns :NameSpaceEx,prefix :String,vmap :serde_json::Map<String,Value>) -> Result<(),Box<dyn Error>> {
+		let mut newprefix :String;
+		for (k,v) in vmap.clone() {
+			match v {
+				Value::Object(ref _o) => {
+					newprefix = "".to_string();
+					if prefix.len() > 0 {
+						newprefix.push_str(&prefix);
+						newprefix.push_str("_");
+					}
+					newprefix.push_str(&k);
+					self.load_json_value(ns.clone(),format!("{}",newprefix),_o.clone())?;
+				},
+				_ => {
+					newprefix = "".to_string();
+					if prefix.len() > 0 {
+						newprefix.push_str(&prefix);
+						newprefix.push_str("_");
+					}
+					newprefix.push_str(&k);
+					self.set_json_value_not_defined(ns.clone(),self.maincmd.clone(),&newprefix,v.clone())?;
+				},
+			}
+		}
+
+		Ok(())
 	}
 
 }

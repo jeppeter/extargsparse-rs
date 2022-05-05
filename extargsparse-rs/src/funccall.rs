@@ -1,15 +1,25 @@
 
 use super::key::{ExtKeyParse};
+use super::namespace::{NameSpaceEx};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use serde_json::Value;
+
+
+use std::error::Error;
+use std::boxed::Box;
+
+
 
 
 pub type ExtArgsParseHelpFunc = fn(&ExtKeyParse) -> String;
+pub type ExtArgsJsonFunc = fn(NameSpaceEx,ExtKeyParse,Value)  -> Result<(),Box<dyn Error>> ;
 
 #[derive(Clone)]
 pub enum ExtArgsParseFunc {
 	HelpFunc(ExtArgsParseHelpFunc),
+	JsonFunc(ExtArgsJsonFunc),
 }
 
 #[allow(dead_code)]
@@ -34,13 +44,31 @@ impl InnerExtArgsMatchFuncMap {
 				match v1 {
 					ExtArgsParseFunc::HelpFunc(f1) => {
 						retv = Some(*f1);
-					}
+					},
+					_ => {}
 				}
 			},
 			_ => {}
 		}
 		retv
 	}
+
+	pub (crate) fn get_json_func(&self,k :&str) -> Option<ExtArgsJsonFunc> {
+		let mut retv :Option<ExtArgsJsonFunc> = None;
+		match self.data.get(k) {
+			Some(v1) => {
+				match v1 {
+					ExtArgsParseFunc::JsonFunc(f1) => {
+						retv = Some(*f1);
+					},
+					_ => {}
+				}
+			},
+			_ => {}
+		}
+		retv
+	}
+
 }
 
 #[derive(Clone)]
@@ -57,5 +85,9 @@ impl ExtArgsMatchFuncMap {
 
 	pub (crate) fn get_help_func(&self,k :&str) -> Option<ExtArgsParseHelpFunc> {
 		return self.innerrc.borrow().get_help_func(k);
+	}
+
+	pub (crate) fn get_json_func(&self, k :&str) -> Option<ExtArgsJsonFunc> {
+		return self.innerrc.borrow().get_json_func(k);
 	}
 }
