@@ -500,4 +500,13 @@ impl ParserCompat {
 	pub (crate) fn string(&self) -> String {
 		return self.innerrc.borrow().string();
 	}
+
+	pub (crate) fn get_help_info_ex(&self,hs :HelpSize, cmdpaths :Vec<ParserCompat>, mapv :ExtArgsMatchFuncMap) -> String {
+		let mut innerpaths :Vec<Rc<RefCell<InnerParserCompat>>> = Vec::new();
+
+		for v in cmdpaths {
+			innerpaths.push(v.innerrc.clone());
+		}
+		return self.innerrc.borrow().get_help_info_ex(hs,innerpaths,mapv);
+	}
 }

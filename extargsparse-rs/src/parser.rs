@@ -21,6 +21,8 @@ use lazy_static::lazy_static;
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_info,extargs_log_trace,extargs_log_warn};
 use super::namespace::{NameSpaceEx};
+use super::funccall::{ExtArgsMatchFuncMap};
+use super::helpsize::{HelpSize};
 
 
 use super::{error_class,new_error};
@@ -58,6 +60,7 @@ struct InnerExtArgsParser {
 	cmd_prefix_added :bool,
 	load_priority :Vec<i32>,
 	extfuncs :Rc<RefCell<HashMap<String,Rc<RefCell<ExtArgsFunc>>>>>,
+	outfuncs :ExtArgsMatchFuncMap,
 }
 
 lazy_static ! {
@@ -143,6 +146,7 @@ impl InnerExtArgsParser {
 			cmd_prefix_added : setopt.get_bool(OPT_CMD_PREFIX_ADDED),
 			load_priority : setpriority.clone(),
 			extfuncs : Rc::new(RefCell::new(HashMap::new())),
+			outfuncs : ExtArgsMatchFuncMap::new(),
 		};
 		retv.insert_load_command_funcs();
 
@@ -456,6 +460,24 @@ impl InnerExtArgsParser {
 		carr.push(format!("{}",params[validx as usize]));
 		ns.set_array(keycls.opt_dest(), carr)?;
 		Ok(1)
+	}
+
+	fn print_help(&self,parsers :Vec<ParserCompat>) -> String {
+		let mut curcmd :ParserCompat;
+		let mut cmdpaths :Vec<ParserCompat> = Vec::new();
+		if self.help_handler == "nohelp" {
+			return format!("no help information");
+		}
+		curcmd = self.maincmd.clone();
+		if parsers.len() > 0 {
+			let ilen :usize = parsers.len() - 1;
+			curcmd = parsers[ilen].clone();
+			for i in 0..ilen {
+				cmdpaths.push(parsers[i].clone());
+			}
+		}
+
+		return curcmd.get_help_info_ex(HelpSize::new(),cmdpaths,self.outfuncs.clone());
 	}
 
 }
