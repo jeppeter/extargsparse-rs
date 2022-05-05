@@ -219,6 +219,10 @@ impl NameSpaceEx {
 			innerrc : Rc::new(RefCell::new(InnerNameSpaceEx::new())),
 		}
 	}
+
+	pub fn get_array(&self, k :&str) -> Vec<String> {
+		return self.innerrc.borrow().get_array(k);
+	}
 	
 	pub (crate) fn set_string(&self,k :String, v :String) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("\"{}\"", v);
@@ -252,6 +256,28 @@ impl NameSpaceEx {
 			},
 			Err(e) => {
 				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]",s,e}
+			}
+		}
+		Ok(())
+	}
+
+	pub (crate) fn set_array(&self, k :String, narr :Vec<String>) -> Result<(),Box<dyn Error>> {
+		let mut s :String = "[".to_string();
+		let mut idx :i32 = 0;
+		for c in narr {
+			if idx > 0 {
+				s.push_str(",");
+			}
+			s.push_str(&(format!("\"{}\"",c)));
+			idx += 1;
+		}
+		s.push_str("]");
+		match serde_json::from_str(&s) {
+			Ok(v) => {
+				self.innerrc.borrow_mut().set_value(&k,v);
+			},
+			Err(e) => {
+				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
 			}
 		}
 		Ok(())

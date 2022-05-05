@@ -447,6 +447,17 @@ impl InnerExtArgsParser {
 		Ok(1)
 	}
 
+	fn append_action(&self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
+		let mut carr :Vec<String>;
+		if validx >= params.len() as i32 {
+			new_error!{ParserError,"[{}] >= [{}]", validx,params.len()}
+		}
+		carr = ns.get_array(&(keycls.opt_dest()));
+		carr.push(format!("{}",params[validx as usize]));
+		ns.set_array(keycls.opt_dest(), carr)?;
+		Ok(1)
+	}
+
 }
 
 #[allow(dead_code)]
