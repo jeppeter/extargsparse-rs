@@ -115,6 +115,30 @@ impl InnerExtArgsParser {
 		self.loadfuncs.borrow_mut().insert(format!("{}",KEYWORD_JSONFILE),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  s1.borrow_mut().load_commandline_base(n,k,v) } )))));
 		return;
 	}
+
+	fn insert_json_funcs(&mut self) {
+		let b = Arc::new(RefCell::new(self.clone()));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_STRING),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_BOOL),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_INT),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_LIST),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_COUNT),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_JSONFILE),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_FLOAT),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_base(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_COMMAND),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_error(n,k,v) })))));
+		let s1 = b.clone();
+		self.jsonfuncs.borrow_mut().insert(format!("{}",KEYWORD_HELP),Rc::new(RefCell::new(ExtArgsFunc::JsonFunc(Rc::new(move |n,k,v| { s1.borrow_mut().json_value_error(n,k,v) })))));
+		return;
+	}
+
 	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
 		let mut setopt = ExtArgsOptions::new("{}")?.clone();
 		let mut setpriority = PARSER_PRIORITY_ARGS.clone();
@@ -153,6 +177,7 @@ impl InnerExtArgsParser {
 			outfuncs : ExtArgsMatchFuncMap::new(),
 		};
 		retv.insert_load_command_funcs();
+		retv.insert_json_funcs();
 
 		Ok(retv)
 	}
