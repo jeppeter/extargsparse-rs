@@ -460,7 +460,7 @@ impl InnerExtArgsParser {
 		}
 		carr = ns.get_array(&(keycls.opt_dest()));
 		carr.push(format!("{}",params[validx as usize]));
-		ns.set_array(keycls.opt_dest(), carr)?;
+		ns.set_array(&(keycls.opt_dest()), carr)?;
 		Ok(1)
 	}
 
@@ -679,6 +679,25 @@ impl InnerExtArgsParser {
 		iv += 1;
 		ns.set_int(&(keycls.opt_dest()),iv)?;
 		Ok(0)
+	}
+
+	fn command_action(&mut self, _ns :NameSpaceEx, _validx :i32, _keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn float_action(&mut self, _ns :NameSpaceEx, _validx :i32, _keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		if _validx >= _params.len() as i32  {
+			new_error!{ParserError,"need args [{}] [{}] [{:?}]",_validx, _keycls.string(),_params}
+		}
+		match _params[_validx as usize].parse::<f64>() {
+			Ok(fv) => {
+				_ns.set_float(&(_keycls.opt_dest()),fv)?;
+			},
+			Err(e) => {
+				new_error!{ParserError,"parse [{}] not float [{:?}]", _params[_validx as usize], e}
+			}
+		}
+		Ok(1)
 	}
 
 }

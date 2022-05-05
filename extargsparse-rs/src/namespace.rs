@@ -265,7 +265,7 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_array(&self, k :String, narr :Vec<String>) -> Result<(),Box<dyn Error>> {
+	pub (crate) fn set_array(&self, k :&str, narr :Vec<String>) -> Result<(),Box<dyn Error>> {
 		let mut s :String = "[".to_string();
 		let mut idx :i32 = 0;
 		for c in narr {
@@ -278,10 +278,23 @@ impl NameSpaceEx {
 		s.push_str("]");
 		match serde_json::from_str(&s) {
 			Ok(v) => {
-				self.innerrc.borrow_mut().set_value(&k,v);
+				self.innerrc.borrow_mut().set_value(k,v);
 			},
 			Err(e) => {
 				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
+			}
+		}
+		Ok(())
+	}
+
+	pub (crate) fn set_float(&self, k :&str, fv :f64) -> Result<(),Box<dyn Error>> {
+		let s :String = format!("{}",fv);
+		match serde_json::from_str(&s) {
+			Ok(v) => {
+				self.innerrc.borrow_mut().set_value(k,v);
+			},
+			Err(e) => {
+				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s, e}
 			}
 		}
 		Ok(())
