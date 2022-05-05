@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -23,6 +23,7 @@ use super::{extargs_assert,extargs_log_info,extargs_log_trace,extargs_log_warn};
 use super::namespace::{NameSpaceEx};
 use super::funccall::{ExtArgsMatchFuncMap};
 use super::helpsize::{HelpSize};
+use super::optchk::{OptChk};
 
 
 use super::{error_class,new_error};
@@ -511,6 +512,55 @@ impl InnerExtArgsParser {
 			let mut curparsers : Vec<ParserCompat> = parentpaths.clone();
 			curparsers.push(chld);
 			self.set_commandline_self_args_inner(curparsers)?;
+		}
+		Ok(())
+	}
+
+	fn check_var_name_inner(&self,paths :Vec<ParserCompat>,optchk :OptChk) -> Result<(),Box<dyn Error>> {
+		let mut parentpaths :Vec<ParserCompat>;
+		let ilen :usize;
+		let mut retb : bool;
+
+		if paths.len() > 0 {
+			parentpaths = paths.clone();
+		} else {
+			parentpaths = Vec::new();
+			parentpaths.push(self.maincmd.clone());
+		}
+
+		ilen = parentpaths.len() - 1;
+		for opt in parentpaths[ilen].get_cmdopts().iter() {
+			if opt.is_flag() {
+				if opt.type_name() == KEYWORD_HELP || opt.type_name() == KEYWORD_ARGS {
+					continue;
+				}
+				retb = optchk.add_and_check(format!("{}",KEYWORD_VARNAME),&(opt.var_name()));
+				if !retb {
+					new_error!{ParserError,"opt varname[{}] is already", opt.var_name()}
+				}
+
+				retb = optchk.add_and_check(format!("{}",KEYWORD_LONGOPT),&(opt.long_opt()));
+				if !retb {
+					new_error!{ParserError,"opt longopt[{}] is already", opt.long_opt()}
+				}
+
+				if opt.short_opt().len() > 0 {
+					retb = optchk.add_and_check(format!("{}",KEYWORD_SHORTOPT),&(opt.short_opt()));
+					if !retb {
+						new_error!{ParserError,"opt shortopt[{}] is already",opt.short_opt()}
+					}
+				}
+			}
+		}
+
+		for c in parentpaths[ilen].sub_cmds() {
+			let mut curpaths :Vec<ParserCompat>;
+			let cpychk :OptChk;
+			curpaths = parentpaths.clone();
+			curpaths.push(c);
+			cpychk = OptChk::new();
+			cpychk.copy(&optchk);
+			self.check_var_name_inner(curpaths,cpychk)?;
 		}
 		Ok(())
 	}

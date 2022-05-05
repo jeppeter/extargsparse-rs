@@ -65,10 +65,12 @@ impl InnerOptChk {
 	}
 }
 
+#[allow(dead_code)]
 pub (crate) struct OptChk {
 	innerrc : Rc<RefCell<InnerOptChk>>,
 }
 
+#[allow(dead_code)]
 impl  OptChk {
 	pub (crate) fn new() -> OptChk {
 		OptChk {
