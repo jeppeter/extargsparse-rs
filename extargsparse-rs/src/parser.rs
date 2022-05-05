@@ -565,6 +565,54 @@ impl InnerExtArgsParser {
 		Ok(())
 	}
 
+	fn set_commandline_self_args(&mut self) -> Result<(),Box<dyn Error>> {
+		if self.ended != 0 {
+			return Ok(());
+		}
+		let paths :Vec<ParserCompat> = Vec::new();
+		self.set_commandline_self_args_inner(paths.clone())?;
+		self.check_var_name_inner(paths.clone(),OptChk::new())?;
+		Ok(())
+	}
+
+	fn find_command_inner(&self,cmdname :String,parsers :Vec<ParserCompat>) -> Option<ParserCompat> {
+		let sarr :Vec<&str> = cmdname.split(".").collect();
+		let curroot : ParserCompat;
+		let mut nextparsers :Vec<ParserCompat>;
+		let ilen :usize;
+		if parsers.len() > 0 {
+			nextparsers = parsers.clone();
+			ilen = nextparsers.len() - 1;
+			curroot = nextparsers[ilen].clone();
+		} else {
+			nextparsers = Vec::new();
+			nextparsers.push(self.maincmd.clone());
+			curroot = self.maincmd.clone();
+		}
+
+		if sarr.len() > 1 {
+			nextparsers.push(curroot.clone());
+			for c in curroot.sub_cmds() {
+				if c.cmd_name().eq(sarr[0]) {
+					let sname = sarr[1..sarr.len()].join(".");
+					nextparsers = Vec::new();
+					if parsers.len() > 0 {
+						nextparsers = parsers.clone();
+					}
+					nextparsers.push(c);
+					return self.find_command_inner(sname,nextparsers);
+				}
+			}
+		} else if sarr.len() == 1 {
+			for c in curroot.sub_cmds() {
+				if c.cmd_name().eq(sarr[0]) {
+					return Some(c.clone());
+				}
+			}
+		}
+		None
+	}
+
 }
 
 #[allow(dead_code)]
