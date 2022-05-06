@@ -3,6 +3,9 @@ use std::i64;
 use std::error::Error;
 use std::boxed::Box;
 use std::io::Write;
+use std::fs::File;
+use std::io::prelude::*;
+
 
 use serde_json::Value;
 use std::rc::Rc;
@@ -890,6 +893,48 @@ impl InnerExtArgsParser {
 		}
 
 		Ok(())
+	}
+
+	fn read_file(&self, fname :&str) -> Result<String,Box<dyn Error>> {
+		let mut content :String = String::new();
+		match File::open(fname) {
+			Ok(mut f) => {
+				match f.read_to_string(&mut content) {
+					Ok(_s) => {
+						return Ok(content);
+					},
+					Err(e) => {
+						new_error!{ParserError,"read [{}] error[{:?}]", fname,e}
+					}
+				}
+			},
+			Err(e) => {
+				new_error!{ParserError,"open [{}] error[{:?}]", fname,e}
+			}
+		}
+	}
+
+	fn load_json_file(&self,ns :NameSpaceEx,cmdname :String,jsonfile :String) -> Result<(),Box<dyn Error>> {
+		let mut prefix : String = "".to_string();
+		if cmdname.len() > 0 {
+			prefix.push_str(&cmdname);
+		}
+		prefix = prefix.replace(".","_");
+		extargs_log_trace!("load json file [{}]", jsonfile);
+		let jsoncontent = self.read_file(&jsonfile)?;
+		let jres = serde_json::from_str(&jsoncontent);
+		if jres.is_err() {
+			new_error!{ParserError,"parse jsonfile [{}] erorr[{:?}]\n{}", jsonfile,jres,jsoncontent}
+		}
+		let vobj :Value = jres.unwrap();
+		match vobj {
+			Value::Object(ref _obj) => {
+				return self.load_json_value(ns,prefix,_obj.clone());
+			}
+			_ => {
+				new_error!{ParserError,"[{}] not object\n{}",jsonfile,jsoncontent}
+			}
+		}
 	}
 
 }
