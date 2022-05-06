@@ -448,4 +448,8 @@ impl ParserState {
 			innerrc : Rc::new(RefCell::new(InnerParserState::new(args,maincmd,optattr))),
 		}
 	}
+
+	pub (crate) fn get_cmd_paths(&self) -> Vec<ParserCompat> {
+		return self.innerrc.borrow().get_cmd_paths();
+	}
 }

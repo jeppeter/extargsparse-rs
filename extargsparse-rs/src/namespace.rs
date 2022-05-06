@@ -227,6 +227,10 @@ impl NameSpaceEx {
 	pub fn get_int(&self,k :&str) -> i64 {
 		return self.innerrc.borrow().get_int(k);
 	}
+
+	pub fn get_string(&self, k :&str) -> String {
+		return self.innerrc.borrow().get_string(k);
+	}
 	
 	pub (crate) fn set_string(&self,k :&str, v :String) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("\"{}\"", v);

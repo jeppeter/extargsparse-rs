@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -75,7 +75,7 @@ lazy_static ! {
 	};
 
 	static ref PARSER_RESERVE_ARGS :Vec<String> = {
-		vec![String::from("subcommand"),String::from("subnargs"),String::from("nargs")]
+		vec![String::from(KEYWORD_SUBCOMMAND),String::from(KEYWORD_SUBNARGS),String::from(KEYWORD_NARGS)]
 	};
 }
 
@@ -935,6 +935,33 @@ impl InnerExtArgsParser {
 				new_error!{ParserError,"[{}] not object\n{}",jsonfile,jsoncontent}
 			}
 		}
+	}
+
+	fn parse_subcommand_json_set(&self, ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
+		let s = ns.get_string(KEYWORD_SUBNARGS);
+		if s.len() > 0 && !self.no_json_option {
+			if self.arg_state.is_some() {
+				let cmds = self.arg_state.as_ref().unwrap().get_cmd_paths();
+				let mut idx :usize = cmds.len();
+				while idx >= 2 {
+					let mut curcmds :Vec<ParserCompat> = Vec::new();
+					let mut i :usize =0;
+					while i < idx {
+						curcmds.push(cmds[i].clone());
+						i += 1;
+					}
+					let subname = self.format_cmd_from_cmd_array(curcmds);
+					let prefix = subname.replace(".","_");
+					let jsondest = format!("{}_{}",prefix,self.json_long);
+					let jsonfile = ns.get_string(&jsondest);
+					if jsonfile.len() > 0 {
+						self.load_json_file(ns.clone(),subname,jsonfile)?;
+					}
+					idx -= 1;
+				}				
+			}
+		}
+		Ok(())
 	}
 
 }
