@@ -1417,6 +1417,10 @@ impl InnerExtArgsParser {
 		}
 		Ok(())
 	}
+
+	fn set_default_value(&self,ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
+		return self.set_parser_default_value(ns, self.maincmd.clone());
+	}
 }
 
 #[allow(dead_code)]
