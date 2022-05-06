@@ -1243,6 +1243,65 @@ impl InnerExtArgsParser {
 
 		Ok(())
 	}
+
+	fn get_opt_func(&self, k :&str) -> Option<ExtArgsFunc> {
+		let mut retv : Option<ExtArgsFunc> = None;
+		match self.optfuncs.borrow().get(k) {
+			Some(f1) => {
+				let f2 :&ExtArgsFunc = &f1.borrow();
+				retv = Some(f2.clone());
+			},
+			None => {}
+		}
+		retv
+	}
+
+
+	fn call_opt_method_func(&self,ns :NameSpaceEx,validx :i32 ,keycls :ExtKeyParse,params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		let fnptr = self.get_opt_func(&(keycls.type_name()));
+		if fnptr.is_some() {
+			let f2 = fnptr.unwrap();
+			match f2 {
+				ExtArgsFunc::ActionFunc(f) => {
+					return f(ns,validx,keycls.clone(),params);
+				},
+				_ => {
+					new_error!{ParserError,"return [{}] not action function", keycls.type_name()}
+				}
+			}
+		} else {
+			new_error!{ParserError,"can not found [{}] load command map function", keycls.string()}
+		}
+	}
+
+	fn call_key_opt_method_func(&self,ns :NameSpaceEx,validx :i32, keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
+		if oattr.is_some() {
+			let attr = oattr.unwrap();
+			let funcname = attr.get_attr("optparse");
+			if funcname.len() > 0 {
+				extargs_log_trace!("get [{}]",funcname);
+				let fo = self.outfuncs.get_action_func(&funcname);
+				if fo.is_some() {
+					let actfunc = fo.unwrap();
+					return actfunc(ns.clone(),validx,keycls.clone(),params.clone());
+				}
+			}
+		}
+		new_error!{ParserError,"internal error on [{}]", keycls.string()}
+	}
+
+	fn call_opt_method(&self, ns :NameSpaceEx,validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
+		if oattr.is_some() {
+			let attr = oattr.unwrap();
+			let funcname = attr.get_attr("optparse");
+			if funcname.len() > 0 {
+				return self.call_key_opt_method_func(ns,validx,keycls,params);
+			}
+		} 
+		return self.call_opt_method_func(ns,validx,keycls,params);
+	}
 }
 
 #[allow(dead_code)]
