@@ -14,6 +14,7 @@ use std::cell::RefCell;
 
 error_class!{ParseStateError}
 
+#[derive(Debug)]
 #[derive(Clone)]
 pub (crate) enum StateOptVal {
 	LeftArgs(Vec<String>),

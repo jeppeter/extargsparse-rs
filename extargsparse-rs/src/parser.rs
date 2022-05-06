@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState,StateOptVal};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS,Nargs};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
 use lazy_static::lazy_static;
@@ -1148,10 +1148,72 @@ impl InnerExtArgsParser {
 		val = ov.unwrap();
 		return self.load_commandline(val);
 	}
-
-	fn set_args(&self,_ns :NameSpaceEx, cmdpaths :Vec<ParserCompat>,_optval :Option<StateOptVal>) -> Result<(),Box<dyn Error>> {
+	
+	#[allow(unused_assignments)]
+	fn set_args(&self,ns :NameSpaceEx, cmdpaths :Vec<ParserCompat>,optval :Option<StateOptVal>) -> Result<(),Box<dyn Error>> {
 		let ilen :usize ;
+		let mut argskeycls :Option<ExtKeyParse> = None;
+		extargs_assert!(cmdpaths.len() > 0 , "cmdpaths [0]");
+		let cmdname = self.format_cmd_from_cmd_array(cmdpaths.clone());
+		let  mut params :Vec<String> = Vec::new();
 		ilen = cmdpaths.len() - 1;
+		for c in cmdpaths[ilen].clone().get_cmdopts() {
+			if c.flag_name() == KEYWORD_DOLLAR_SIGN {
+				argskeycls = Some(c.clone());
+				break;
+			}
+		}
+
+		if argskeycls.is_none() {
+			new_error!{ParserError, "can not find [{}]", cmdname}
+		}
+		let argskey = argskeycls.unwrap();
+
+		match optval {
+			Some(v) => {
+				match v {
+					StateOptVal::LeftArgs(_lv) => {
+						params = _lv.clone();
+					},
+					_ => {
+						new_error!{ParserError,"StateOptVal {:?}",v.clone()}
+					}
+				}
+			},
+			None => {
+				new_error!{ParserError,"optval is none"}
+			}
+		}
+
+		match argskey.get_nargs_v() {
+			Nargs::Argtype(_s) => {
+				let s  = format!("{}",_s);
+				if s == "+" {
+					if params.len() == 0 {
+						new_error!{ParserError,"[{}] args [{}] < 1", cmdname, params.len()}
+					}
+				} else if s == "?" {
+					if params.len() > 1 {
+						new_error!{ParserError,"[{}] args [{}] > 1", cmdname,params.len()}
+					}
+				} else if s != "*" {
+					new_error!{ParserError, "[{}] args [{}] not valid",cmdname,s}
+				}
+			},
+			Nargs::Argnum(n) => {
+				if params.len() as i32 != n {
+					new_error!{ParserError,"[{}] args [{}] != [{}]", cmdname,params.len(), n}
+				}
+			}
+		}
+
+		if cmdname.len() > 0 {
+			ns.set_array(KEYWORD_SUBNARGS,params)?;
+			ns.set_string(KEYWORD_SUBCOMMAND,cmdname)?;
+		} else {
+			ns.set_array(KEYWORD_ARGS,params)?;
+		}
+
 		Ok(())
 	}
 }
