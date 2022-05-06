@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
 use super::parser_compat::{ParserCompat};
-use super::parser_state::{ParserState};
+use super::parser_state::{ParserState,StateOptVal};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
@@ -1147,6 +1147,12 @@ impl InnerExtArgsParser {
 		}
 		val = ov.unwrap();
 		return self.load_commandline(val);
+	}
+
+	fn set_args(&self,_ns :NameSpaceEx, cmdpaths :Vec<ParserCompat>,_optval :Option<StateOptVal>) -> Result<(),Box<dyn Error>> {
+		let ilen :usize ;
+		ilen = cmdpaths.len() - 1;
+		Ok(())
 	}
 }
 

@@ -14,7 +14,7 @@ use std::cell::RefCell;
 
 error_class!{ParseStateError}
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub (crate) enum StateOptVal {
 	LeftArgs(Vec<String>),
 	OptDest(String),
