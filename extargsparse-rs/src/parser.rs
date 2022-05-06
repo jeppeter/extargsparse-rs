@@ -1302,6 +1302,38 @@ impl InnerExtArgsParser {
 		} 
 		return self.call_opt_method_func(ns,validx,keycls,params);
 	}
+
+	fn parse_args(&mut self,params :Vec<String>) -> Result<NameSpaceEx,Box<dyn Error>> {
+		let pstate = ParserState::new(params.clone(),self.maincmd.clone(),self.options.clone());
+		let ns = NameSpaceEx::new();
+
+		loop {
+			let (validx,optval,okey) = pstate.step_one()?;
+			let step :i32;
+			if okey.is_none() {
+				let cmdpaths = pstate.get_cmd_paths();
+				self.set_args(ns.clone(),cmdpaths,optval)?;
+				break;
+			} else {
+				let keycls = okey.unwrap();
+				if keycls.type_name() == KEYWORD_HELP {
+					let cmdpaths = pstate.get_cmd_paths();
+					let helpcmdname = self.format_cmd_from_cmd_array(cmdpaths);
+					let mut helpparams : Vec<String> = Vec::new();
+					helpparams.push(format!("{}",helpcmdname));
+					step = self.call_opt_method(ns.clone(),validx,keycls.clone(),helpparams)?;
+				} else {
+					step = self.call_opt_method(ns.clone(),validx,keycls.clone(),params.clone())?;
+				}
+			}
+
+			pstate.add_parse_args(step)?;
+		}
+
+
+		self.arg_state = Some(pstate.clone());
+		Ok(ns)
+	}
 }
 
 #[allow(dead_code)]

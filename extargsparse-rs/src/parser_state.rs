@@ -453,4 +453,12 @@ impl ParserState {
 	pub (crate) fn get_cmd_paths(&self) -> Vec<ParserCompat> {
 		return self.innerrc.borrow().get_cmd_paths();
 	}
+
+	pub (crate) fn step_one(&self) -> Result<(i32,Option<StateOptVal>,Option<ExtKeyParse>),Box<dyn Error>> {
+		return self.innerrc.borrow_mut().step_one();
+	}
+
+	pub (crate) fn add_parse_args(&self,nargs :i32) -> Result<(),Box<dyn Error>> {
+		return self.innerrc.borrow_mut().add_parse_args(nargs);
+	}
 }
