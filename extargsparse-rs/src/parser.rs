@@ -1352,6 +1352,35 @@ impl InnerExtArgsParser {
 		self.arg_state = Some(pstate.clone());
 		Ok(ns)
 	}
+
+	fn get_setmap_func(&self, val :i32) -> Option<ExtArgsFunc> {
+		let mut retv : Option<ExtArgsFunc> = None;
+		match self.setmapfuncs.borrow().get(&val) {
+			Some(f1) => {
+				let f2 :&ExtArgsFunc = &f1.borrow();
+				retv = Some(f2.clone());
+			},
+			None => {}
+		}
+		retv
+	}
+
+	fn call_parse_setmap_func(&self,idx :i32,ns:NameSpaceEx) -> Result<(),Box<dyn Error>> {
+		let fnptr = self.get_setmap_func(idx);
+		if fnptr.is_some() {
+			let f2 = fnptr.unwrap();
+			match f2 {
+				ExtArgsFunc::LoadJsonFunc(f) => {
+					return f(ns);
+				},
+				_ => {
+					new_error!{ParserError,"return [{}] not LoadJsonFunc", idx}
+				}
+			}
+		} else {
+			new_error!{ParserError,"can not found [{}] load json  function", idx}
+		}
+	}
 }
 
 #[allow(dead_code)]
