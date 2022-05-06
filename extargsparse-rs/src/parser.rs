@@ -68,6 +68,7 @@ struct InnerExtArgsParser {
 	loadfuncs :Rc<RefCell<HashMap<String,Rc<RefCell<ExtArgsFunc>>>>>,
 	jsonfuncs :Rc<RefCell<HashMap<String,Rc<RefCell<ExtArgsFunc>>>>>,
 	optfuncs :Rc<RefCell<HashMap<String,Rc<RefCell<ExtArgsFunc>>>>>,
+	setmapfuncs :Rc<RefCell<HashMap<i32,Rc<RefCell<ExtArgsFunc>>>>>,
 	outfuncs :ExtArgsMatchFuncMap,
 }
 
@@ -167,6 +168,21 @@ impl InnerExtArgsParser {
 		return;
 	}
 
+	fn insert_setmap_funcs(&mut self) {
+		let b = Arc::new(RefCell::new(self.clone()));
+		let s1 = b.clone();
+		self.setmapfuncs.borrow_mut().insert(SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_subcommand_json_set(n) })))));
+		let s1 = b.clone();
+		self.setmapfuncs.borrow_mut().insert(COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_command_json_set(n) })))));
+		let s1 = b.clone();
+		self.setmapfuncs.borrow_mut().insert(ENVIRONMENT_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_environment_set(n) })))));
+		let s1 = b.clone();
+		self.setmapfuncs.borrow_mut().insert(ENV_SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_env_subcommand_json_set(n) })))));
+		let s1 = b.clone();
+		self.setmapfuncs.borrow_mut().insert(ENV_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_env_command_json_set(n) })))));
+		return;
+	}
+
 
 	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
 		let mut setopt = ExtArgsOptions::new("{}")?.clone();
@@ -204,11 +220,13 @@ impl InnerExtArgsParser {
 			loadfuncs : Rc::new(RefCell::new(HashMap::new())),
 			jsonfuncs : Rc::new(RefCell::new(HashMap::new())),
 			optfuncs : Rc::new(RefCell::new(HashMap::new())),
+			setmapfuncs :Rc::new(RefCell::new(HashMap::new())),
 			outfuncs : ExtArgsMatchFuncMap::new(),
 		};
 		retv.insert_load_command_funcs();
 		retv.insert_json_funcs();
 		retv.insert_opt_funcs();
+		retv.insert_setmap_funcs();
 
 		Ok(retv)
 	}
