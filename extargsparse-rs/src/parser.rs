@@ -666,57 +666,6 @@ impl InnerExtArgsParser {
 		Ok(1)
 	}
 
-	fn call_json_bind_map(&self,ns :NameSpaceEx,keycls :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
-		let fnptr :Option<ExtArgsFunc>;
-		let typename = keycls.type_name();
-		fnptr = self.get_json_func(&(typename));
-		if fnptr.is_some() {
-			let f2 = fnptr.unwrap();
-			match f2 {
-				ExtArgsFunc::JsonFunc(f) => {
-					return f(ns.clone(),keycls.clone(),val.clone());
-				},
-				_ => {
-					new_error!{ParserError,"return [{}] not load function", typename}
-				}
-			}
-		} else {
-			new_error!{ParserError,"can not found [{}] load command map function", typename}
-		}		
-	}
-
-	fn call_json_value(&self,ns :NameSpaceEx, keycls :ExtKeyParse,val :Value) -> Result<(),Box<dyn Error>> {
-		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
-		if oattr.is_some() {
-			let attr = oattr.unwrap();
-			let funcname = attr.get_attr("jsonfunc");
-			if funcname.len() > 0 {
-				let fo = self.outfuncs.get_json_func(&funcname);
-				if fo.is_some() {
-					let jsonfunc = fo.unwrap();
-					return jsonfunc(ns.clone(),keycls.clone(),val.clone());
-				}
-			}
-		}
-		return self.call_json_bind_map(ns.clone(),keycls.clone(),val.clone());
-	}
-
-	fn set_json_value_not_defined(&self,ns :NameSpaceEx,parser :ParserCompat,dest :&str,val :Value) -> Result<(),Box<dyn Error>> {
-		for c in parser.sub_cmds() {
-			self.set_json_value_not_defined(ns.clone(),c,dest,val.clone())?;
-		}
-
-		for opt in parser.get_cmdopts() {
-			if opt.is_flag() && opt.flag_name() != KEYWORD_PREFIX && opt.type_name() != KEYWORD_ARGS && 
-			opt.type_name() != KEYWORD_HELP {
-				if opt.opt_dest() == dest && !ns.is_accessed(dest) {
-					self.call_json_value(ns.clone(),opt.clone(),val.clone())?;
-				}
-			}
-		}
-		Ok(())
-	}
-
 	fn load_json_value(&self, ns :NameSpaceEx,prefix :String,vmap :serde_json::Map<String,Value>) -> Result<(),Box<dyn Error>> {
 		let mut newprefix :String;
 		for (k,v) in vmap.clone() {
@@ -1380,6 +1329,93 @@ impl InnerExtArgsParser {
 		} else {
 			new_error!{ParserError,"can not found [{}] load json  function", idx}
 		}
+	}
+
+	fn set_float_value(&self,ns :NameSpaceEx,opt :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
+		if opt.type_name() != KEYWORD_FLOAT  && opt.type_name() != KEYWORD_COUNT && opt.type_name() != KEYWORD_INT{
+			new_error!{ParserError,"[{}] not for [{:?}] set", opt.type_name(), val}
+		}
+		if opt.type_name() == KEYWORD_FLOAT {
+			ns.set_value(&(opt.opt_dest()), val);
+		} else if opt.type_name() == KEYWORD_INT || opt.type_name() == KEYWORD_COUNT {
+			let s = format!("{:?}",val);
+			let vi = s.parse::<i64>().unwrap();
+			ns.set_int(&(opt.opt_dest()),vi)?;
+		}
+		Ok(())
+	}
+
+	fn set_int_value(&self,ns :NameSpaceEx,opt :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
+		if opt.type_name() != KEYWORD_COUNT && opt.type_name() != KEYWORD_INT{
+			new_error!{ParserError,"[{}] not for [{:?}] set", opt.type_name(), val}
+		}
+		ns.set_value(&(opt.opt_dest()),val);
+		Ok(())
+	}
+
+	fn call_json_bind_map(&self,ns :NameSpaceEx,keycls :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
+		let fnptr :Option<ExtArgsFunc>;
+		let typename = keycls.type_name();
+		fnptr = self.get_json_func(&(typename));
+		if fnptr.is_some() {
+			let f2 = fnptr.unwrap();
+			match f2 {
+				ExtArgsFunc::JsonFunc(f) => {
+					return f(ns.clone(),keycls.clone(),val.clone());
+				},
+				_ => {
+					new_error!{ParserError,"return [{}] not load function", typename}
+				}
+			}
+		} else {
+			new_error!{ParserError,"can not found [{}] load command map function", typename}
+		}		
+	}
+
+	fn call_json_value(&self,ns :NameSpaceEx, keycls :ExtKeyParse,val :Value) -> Result<(),Box<dyn Error>> {
+		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
+		if oattr.is_some() {
+			let attr = oattr.unwrap();
+			let funcname = attr.get_attr("jsonfunc");
+			if funcname.len() > 0 {
+				let fo = self.outfuncs.get_json_func(&funcname);
+				if fo.is_some() {
+					let jsonfunc = fo.unwrap();
+					return jsonfunc(ns.clone(),keycls.clone(),val.clone());
+				}
+			}
+		}
+		return self.call_json_bind_map(ns.clone(),keycls.clone(),val.clone());
+	}
+
+	fn set_json_value_not_defined(&self,ns :NameSpaceEx,parser :ParserCompat,dest :&str,val :Value) -> Result<(),Box<dyn Error>> {
+		for c in parser.sub_cmds() {
+			self.set_json_value_not_defined(ns.clone(),c,dest,val.clone())?;
+		}
+
+		for opt in parser.get_cmdopts() {
+			if opt.is_flag() && opt.flag_name() != KEYWORD_PREFIX && opt.type_name() != KEYWORD_ARGS && 
+			opt.type_name() != KEYWORD_HELP {
+				if opt.opt_dest() == dest && !ns.is_accessed(dest) {
+					self.call_json_value(ns.clone(),opt.clone(),val.clone())?;
+				}
+			}
+		}
+		Ok(())
+	}
+
+	fn set_parser_default_value(&self, ns:NameSpaceEx, parser :ParserCompat) -> Result<(),Box<dyn Error>> {
+		for c in parser.sub_cmds() {
+			self.set_parser_default_value(ns.clone(),c.clone())?;
+		}
+
+		for opt in parser.get_cmdopts() {
+			if opt.is_flag() && opt.type_name() != KEYWORD_PREFIX && 
+				opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_ARGS {
+					self.set_json_value_not_defined(ns.clone(),parser.clone(),&(opt.opt_dest()),opt.value())?;
+				}
+		}
+		Ok(())
 	}
 }
 
