@@ -1615,6 +1615,69 @@ impl InnerExtArgsParser {
 	pub (crate) fn parse_commandline(&mut self,params : Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>) -> Result<NameSpaceEx,Box<dyn Error>> {
 		return self.parse_commandline_ex(params,context,None,None);
 	}
+
+	fn get_sub_commands(&self,name :String,cmdpaths :Vec<ParserCompat>) -> Vec<String> {
+		let mut retv :Vec<String> = Vec::new();
+		let mut curpaths :Vec<ParserCompat> = cmdpaths.clone();
+		if curpaths.len() == 0 {
+			curpaths.push(self.maincmd.clone());
+		}
+		let ilen :usize = curpaths.len() - 1;
+
+		if name.len() == 0 {
+			for c in curpaths[ilen].sub_cmds() {
+				retv.push(format!("{}",c.cmd_name()));
+			}
+			retv.sort();
+			return retv;
+		}
+
+		let sarr : Vec<&str> = name.split(".").collect();
+		for c in curpaths[ilen].sub_cmds() {
+			if c.cmd_name() == sarr[0] {
+				curpaths.push(c.clone());
+				return self.get_sub_commands(sarr[1..sarr.len()].join("."),curpaths);
+			}
+		}
+
+		return retv;
+	}
+
+	pub (crate) fn get_sub_commands_ex(&mut self,name :String) -> Result<Vec<String>,Box<dyn Error>> {
+		self.set_commandline_self_args()?;
+		let cmdpaths :Vec<ParserCompat> = Vec::new();
+		let retv = self.get_sub_commands(name,cmdpaths);
+		return Ok(retv);
+	}
+
+	fn get_cmd_key(&self,cmdname :String,cmdpaths :Vec<ParserCompat>) -> Option<ExtKeyParse> {
+		let mut curpaths :Vec<ParserCompat> = cmdpaths.clone();
+		let ilen :usize ;
+		if curpaths.len() == 0 {
+			curpaths.push(self.maincmd.clone());
+		}
+
+		ilen = curpaths.len() - 1;
+		if cmdname.len() == 0 {
+			return curpaths[ilen].get_keycls();
+		}
+
+		let sarr :Vec<&str> = cmdname.split(".").collect();
+		for c in curpaths[ilen].sub_cmds() {
+			if c.cmd_name() == sarr[0] {
+				curpaths.push(c.clone());
+				return self.get_cmd_key(sarr[1..sarr.len()].join("."), curpaths);
+			}
+		}
+		return None;
+	}
+
+	pub (crate) fn get_cmd_key_ex(&mut self,cmdname :String) -> Result<Option<ExtKeyParse>,Box<dyn Error>> {
+		self.set_commandline_self_args()?;
+		let cmdpaths :Vec<ParserCompat>= Vec::new();
+		let retv = self.get_cmd_key(cmdname,cmdpaths);
+		return Ok(retv);
+	}
 }
 
 #[allow(dead_code)]
@@ -1643,4 +1706,11 @@ impl  ExtArgsParser {
 		return self.innerrc.borrow_mut().parse_commandline(args,context);
 	}
 
+	pub fn get_sub_commands_ex(&self,name :String) -> Result<Vec<String>,Box<dyn Error>> {
+		return self.innerrc.borrow_mut().get_sub_commands_ex(name);
+	}
+
+	pub fn get_cmd_key_ex(&self,name :String) -> Result<Option<ExtKeyParse>,Box<dyn Error>> {
+		return self.innerrc.borrow_mut().get_cmd_key_ex(name);
+	}
 }

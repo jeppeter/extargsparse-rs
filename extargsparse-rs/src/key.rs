@@ -9,6 +9,7 @@ use std::error::Error;
 use std::boxed::Box;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 
 use super::{error_class,new_error};
 use super::logger::{extargs_debug_out};
@@ -2009,6 +2010,27 @@ impl PartialEq for InnerExtKeyParse {
 	}
 }
 
+impl Eq for InnerExtKeyParse {}
+
+impl PartialOrd for InnerExtKeyParse {
+	fn partial_cmp(&self,other :&Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl Ord for InnerExtKeyParse {
+	fn cmp(&self, other :&Self) -> Ordering {
+		if self.type_name() == KEYWORD_ARGS {
+			return Ordering::Less;
+		}
+		if other.type_name() == KEYWORD_ARGS {
+			return Ordering::Greater;
+		}
+
+		return self.flag_name().cmp(&(other.flag_name()));
+	}
+}
+
 
 #[derive(Clone)]
 pub struct ExtKeyParse {
@@ -2115,6 +2137,21 @@ impl PartialEq for ExtKeyParse {
 
 	fn ne(&self,other :&Self) -> bool {
 		return ! self.eq(other);
+	}
+}
+
+
+impl Eq for ExtKeyParse {}
+
+impl PartialOrd for ExtKeyParse {
+	fn partial_cmp(&self,other :&Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl Ord for ExtKeyParse {
+	fn cmp(&self, other :&Self) -> Ordering {
+		return self.innerrc.borrow().cmp(&(other.innerrc.borrow()));
 	}
 }
 
