@@ -31,7 +31,6 @@ struct InnerParserCompat {
 
 
 
-#[allow(dead_code)]
 impl InnerParserCompat {
 
 	pub (crate) fn new(_cls :Option<ExtKeyParse> , _opt :Option<ExtArgsOptions>) -> InnerParserCompat {
@@ -259,6 +258,7 @@ impl InnerParserCompat {
 
 	pub (crate) fn get_help_info_ex(&self,hs :HelpSize,parentcmds :Vec<Rc<RefCell<InnerParserCompat>>>,mapv :ExtArgsMatchFuncMap) -> String {
 		let mut rets :String = "".to_string();
+		self.get_help_size(hs.clone(),0,mapv.clone());
 		if self.usage.len() > 0 {
 			rets.push_str(&(format!("{}",self.usage)));
 		} else {
@@ -334,6 +334,8 @@ impl InnerParserCompat {
 		if self.description.len() > 0 {
 			rets.push_str(&(format!("{}\n",self.description)));
 		}
+
+		extargs_log_trace!("hs [{}]",hs.string());
 
 		rets.push_str(&(format!("\n")));
 		if self.cmdopts.len() > 0 {

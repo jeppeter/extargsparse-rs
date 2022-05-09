@@ -263,13 +263,7 @@ pub struct TypeClass {
 	typeval : String,
 }
 
-#[allow(dead_code)]
 impl TypeClass {
-	fn new2(s :&str) -> TypeClass {
-		let tv2 :String;
-		tv2 = format!("{}",s);
-		return TypeClass{typeval : tv2,};		
-	}
 	fn new(v :&Value) -> TypeClass {
 		let tv :String;
 		match v {
@@ -289,9 +283,6 @@ impl TypeClass {
 		return TypeClass{typeval : tv,};
 	}
 
-	fn clone(&self) -> TypeClass {
-		TypeClass{typeval : format!("{}",self.typeval)}
-	}
 
 	fn set_type(&mut self,val :&str) {
 		self.typeval = String::from(val);
@@ -432,11 +423,6 @@ impl KeyData {
 		self.data.insert(ks,KeyVal::StrVal(Some(vs)));
 		
 		return retval;
-	}
-
-	#[allow(dead_code)]
-	pub fn set_mute_type(&self,v :&mut TypeClass, c:&str) {
-		v.set_type(c);
 	}
 
 	pub fn get_type(&self,key :&str) -> String {
@@ -765,32 +751,6 @@ impl KeyData {
 				return None;
 			}
 		}
-	}
-
-	#[allow(dead_code)]
-	pub fn get_keyattr_value(&self,key :&str) -> Result<KeyAttr,Box<dyn Error>> {
-		let ks :String = String::from(key);
-		let mut retattr :KeyAttr = KeyAttr::new(KEYWORD_BLANK)?;
-
-		match self.data.get(&ks) {
-			Some(v) => {
-				match v {
-					KeyVal::KeyAttrVal(kv2) => {
-						match kv2 {
-							Some(kv3) => {
-								retattr = kv3.clone();
-							},
-							_ => {
-							}
-						}						
-					},
-					_ => {},
-				}
-			},
-			_ =>  {
-			}
-		}
-		return Ok(retattr);
 	}
 
 	pub fn new() -> KeyData {
@@ -1513,11 +1473,11 @@ impl InnerExtKeyParse {
 		}
 		Ok(true)
 	}
-	#[allow(unused_assignments)]
+
 	fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
 			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
-		let mut flagmode : bool = false;
-		let mut cmdmode : bool = false;
+		let mut flagmode : bool;
+		let mut cmdmode : bool;
 		let mut flags :String;
 		let mut s :String;
 		let mut idx :usize;
@@ -1527,7 +1487,7 @@ impl InnerExtKeyParse {
 		let mut newprefix :String;
 		let vtrue :bool = true;
 		let vfalse :bool  = false;
-		let mut bmatch : bool = false;
+		let mut bmatch : bool;
 
 		flagmode = false;
 		cmdmode = false;
@@ -1685,6 +1645,7 @@ impl InnerExtKeyParse {
 				},
 			}
 		}
+		flagmode = flagmode;
 
 		match self.__helpexpr.captures(origkey) {
 			Some(m) => {
@@ -1754,7 +1715,7 @@ impl InnerExtKeyParse {
 
 		if cmdmode && s != KEYWORD_DICT {
 			flagmode = true;
-			cmdmode = false;
+			//cmdmode = false;
 			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
 			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
 			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
@@ -1822,7 +1783,7 @@ impl InnerExtKeyParse {
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
 			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && 
 			self.keydata.get_string_value(KEYWORD_FLAGNAME).len() > 0 {
-			bmatch = self.__set_flag(prefix,origkey,value)?;
+			_ = self.__set_flag(prefix,origkey,value)?;
 		}
 
 		match self.__attrexpr.captures(origkey) {
@@ -2815,14 +2776,13 @@ mod debug_key_test_case {
     	return;
     }
 
-    #[allow(unused_assignments)]
     #[test]
     fn test_a035() {
     	let data = r#""+""#;
     	let jsonv :Value = serde_json::from_str(data).unwrap();
     	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let mut val :i32 = 0;
+    	let val :i32;
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
     	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
     	assert!(flags.get_value_v() == cmpjsonv);
@@ -2846,14 +2806,13 @@ mod debug_key_test_case {
     	return;
     }
 
-    #[allow(unused_assignments)]
     #[test]
     fn test_a036() {
     	let data = r#""+""#;
     	let jsonv :Value = serde_json::from_str(data).unwrap();
     	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let mut val :i32 = 0;
+    	let val :i32;
     	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
     	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
@@ -2881,14 +2840,13 @@ mod debug_key_test_case {
     	return;
     }
 
-    #[allow(unused_assignments)]
     #[test]
     fn test_a037() {
     	let data = r#"null"#;
     	let jsonv :Value = serde_json::from_str(data).unwrap();
     	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
     	let flags :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	let mut val :i32 = 0;
+    	let val :i32;
     	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
     	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "help");
     	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");

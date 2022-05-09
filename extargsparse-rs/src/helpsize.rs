@@ -74,7 +74,6 @@ pub struct HelpSize {
 	innerrc : Rc<RefCell<InnerHelpSize>>,
 }
 
-#[allow(dead_code)]
 impl HelpSize {
 	pub (crate) fn new() -> HelpSize {
 		HelpSize {

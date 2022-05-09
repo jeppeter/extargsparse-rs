@@ -38,7 +38,6 @@ use super::{error_class,new_error};
 
 error_class!{ParserError}
 
-#[allow(dead_code)]
 #[derive(Clone)]
 enum ExtArgsFunc {
 	LoadFunc(Rc<dyn Fn(String,ExtKeyParse,Vec<ParserCompat>) -> Result<(),Box<dyn Error>>>),
@@ -48,13 +47,12 @@ enum ExtArgsFunc {
 }
 
 
-#[allow(dead_code)]
 #[derive(Clone)]
 struct InnerExtArgsParser {
 	options :ExtArgsOptions,
 	maincmd :ParserCompat,
 	arg_state :Option<ParserState>,
-	error_handler :String,
+	//error_handler :String,
 	help_handler :String,
 	output_mode :Vec<String>,
 	ended : i32,
@@ -96,9 +94,6 @@ fn is_valid_priority (k :i32) -> bool {
 	return false;
 }
 
-
-
-#[allow(dead_code)]
 impl InnerExtArgsParser {
 	fn insert_load_command_funcs(&mut self)  {
 		let b = Arc::new(RefCell::new(self.clone()));
@@ -208,7 +203,7 @@ impl InnerExtArgsParser {
 			options : setopt.clone(),
 			maincmd : ParserCompat::new(None,Some(setopt.clone())),
 			arg_state : None,
-			error_handler : "".to_string(),
+			//error_handler : "".to_string(),
 			help_handler : format!("{}",setopt.get_string(OPT_HELP_HANDLER)),
 			output_mode : Vec::new(),
 			ended : 0,
@@ -977,7 +972,7 @@ impl InnerExtArgsParser {
 				ns.set_value(&(opt.opt_dest()),val.clone());
 			},
 			Value::Number(ref n) =>  {
-				if opt.type_name() == KEYWORD_INT {
+				if opt.type_name() == KEYWORD_INT || opt.type_name() == KEYWORD_COUNT {
 					if n.is_i64() || n.is_u64() {
 						ns.set_value(&(opt.opt_dest()),val.clone());
 					} else {
@@ -1193,7 +1188,7 @@ impl InnerExtArgsParser {
 					}
 				} else if s == "?" {
 					if params.len() > 1 {
-						new_error!{ParserError,"[{}] args [{}] > 1", cmdname,params.len()}
+						new_error!{ParserError,"[{}] args [{}] [{}] > 1", cmdname, params[0],params.len()}
 					}
 				} else if s != "*" {
 					new_error!{ParserError, "[{}] args [{}] not valid",cmdname,s}
@@ -1336,27 +1331,6 @@ impl InnerExtArgsParser {
 		}
 	}
 
-	fn set_float_value(&self,ns :NameSpaceEx,opt :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
-		if opt.type_name() != KEYWORD_FLOAT  && opt.type_name() != KEYWORD_COUNT && opt.type_name() != KEYWORD_INT{
-			new_error!{ParserError,"[{}] not for [{:?}] set", opt.type_name(), val}
-		}
-		if opt.type_name() == KEYWORD_FLOAT {
-			ns.set_value(&(opt.opt_dest()), val);
-		} else if opt.type_name() == KEYWORD_INT || opt.type_name() == KEYWORD_COUNT {
-			let s = format!("{:?}",val);
-			let vi = s.parse::<i64>().unwrap();
-			ns.set_int(&(opt.opt_dest()),vi)?;
-		}
-		Ok(())
-	}
-
-	fn set_int_value(&self,ns :NameSpaceEx,opt :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
-		if opt.type_name() != KEYWORD_COUNT && opt.type_name() != KEYWORD_INT{
-			new_error!{ParserError,"[{}] not for [{:?}] set", opt.type_name(), val}
-		}
-		ns.set_value(&(opt.opt_dest()),val);
-		Ok(())
-	}
 
 	fn call_json_bind_map(&self,ns :NameSpaceEx,keycls :ExtKeyParse, val :Value) -> Result<(),Box<dyn Error>> {
 		let fnptr :Option<ExtArgsFunc>;
@@ -1716,7 +1690,6 @@ impl InnerExtArgsParser {
 	}
 }
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ExtArgsParser {
 	innerrc : Rc<RefCell<InnerExtArgsParser>>,

@@ -14,14 +14,12 @@ use super::{error_class,new_error};
 
 error_class!{NameSpaceError}
 
-#[allow(dead_code)]
 #[derive(Clone)]
 struct InnerNameSpaceEx {
 	values :HashMap<String,Value>,
 }
 
 
-#[allow(dead_code)]
 impl InnerNameSpaceEx {
 	pub (crate) fn new() -> InnerNameSpaceEx {
 		InnerNameSpaceEx {
@@ -206,13 +204,11 @@ impl InnerNameSpaceEx {
 	}
 }
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct NameSpaceEx {
 	innerrc : Rc<RefCell<InnerNameSpaceEx>>,
 }
 
-#[allow(dead_code)]
 impl NameSpaceEx {
 	pub (crate) fn new() -> NameSpaceEx {
 		NameSpaceEx {
@@ -230,6 +226,22 @@ impl NameSpaceEx {
 
 	pub fn get_string(&self, k :&str) -> String {
 		return self.innerrc.borrow().get_string(k);
+	}
+
+	pub fn get_bool(&self, k :&str) -> bool {
+		return self.innerrc.borrow().get_bool(k);
+	}
+
+	pub fn get_float(&self, k :&str) -> f64 {
+		return self.innerrc.borrow().get_float(k);
+	}
+
+	pub fn get_keys(&self) -> Vec<String> {
+		return self.innerrc.borrow().get_keys();
+	}
+
+	pub fn string(&self) -> String {
+		return self.innerrc.borrow().string();
 	}
 	
 	pub (crate) fn set_string(&self,k :&str, v :String) -> Result<(),Box<dyn Error>> {

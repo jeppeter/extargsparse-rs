@@ -29,14 +29,12 @@ pub enum ExtArgsParseFunc {
 	CallbackFunc(ExtArgsCallbackFunc),
 }
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct InnerExtArgsMatchFuncMap {
 	data :HashMap<String,ExtArgsParseFunc>,
 }
 
 
-#[allow(dead_code)]
 impl InnerExtArgsMatchFuncMap {
 	pub fn new() -> InnerExtArgsMatchFuncMap {
 		InnerExtArgsMatchFuncMap {

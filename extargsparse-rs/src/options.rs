@@ -122,7 +122,6 @@ struct InnerExtArgsOptions {
 }
 
 
-#[allow(dead_code)]
 impl InnerExtArgsOptions {
 	pub (crate) fn new(s :&str) -> Result<InnerExtArgsOptions,Box<dyn Error>> {
 		let mut retv :InnerExtArgsOptions = InnerExtArgsOptions {
@@ -251,25 +250,29 @@ pub struct ExtArgsOptions {
 }
 
 impl ExtArgsOptions {
-	pub (crate) fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
+	pub fn new(s :&str) -> Result<ExtArgsOptions,Box<dyn Error>> {
 		let k :InnerExtArgsOptions = InnerExtArgsOptions::new(s)?;
 		Ok(ExtArgsOptions {
 			innerrc : Rc::new(RefCell::new(k)),
 		})
 	}
-	pub (crate) fn get_value(&self, k :&str) -> Option<Value> {
+	pub fn get_value(&self, k :&str) -> Option<Value> {
 		return self.innerrc.borrow().get_value(k);
 	}
 
-	pub (crate) fn get_int(&self,k :&str) -> i32 {
+	pub fn get_int(&self,k :&str) -> i32 {
 		return self.innerrc.borrow().get_int(k);
 	}
 
-	pub (crate) fn get_string(&self,k :&str) -> String {
+	pub fn get_string(&self,k :&str) -> String {
 		return self.innerrc.borrow().get_string(k);
 	}
 
-	pub (crate) fn get_bool(&self,k :&str) -> bool {
+	pub fn get_bool(&self,k :&str) -> bool {
 		return self.innerrc.borrow().get_bool(k);
+	}
+
+	pub fn string(&self) -> String {
+		return self.innerrc.borrow().string();
 	}
 }

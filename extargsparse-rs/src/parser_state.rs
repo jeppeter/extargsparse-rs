@@ -22,7 +22,6 @@ pub (crate) enum StateOptVal {
 	CmdPaths(String),
 }
 
-#[allow(dead_code)]
 #[derive(Clone)]
 struct InnerParserState {
 	cmdpaths :Vec<ParserCompat>,
@@ -41,7 +40,6 @@ struct InnerParserState {
 	leftargs :Vec<String>,
 }
 
-#[allow(dead_code)]
 impl InnerParserState {
 	pub (crate) fn new(args :Vec<String>,maincmd :ParserCompat,optattr :ExtArgsOptions) -> InnerParserState {
 		let mut retv :InnerParserState = InnerParserState {
@@ -436,13 +434,11 @@ impl InnerParserState {
 }
 
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ParserState {
 	innerrc : Rc<RefCell<InnerParserState>>,
 }
 
-#[allow(dead_code)]
 impl ParserState {
 	pub (crate) fn new(args :Vec<String>,maincmd :ParserCompat,optattr :ExtArgsOptions) -> ParserState {
 		ParserState {
