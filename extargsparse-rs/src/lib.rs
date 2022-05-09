@@ -10,6 +10,7 @@ pub (crate) mod helpsize;
 pub (crate) mod parser_compat;
 pub (crate) mod parser_state;
 pub (crate) mod optchk;
+pub mod argset;
 pub mod parser;
 
 

@@ -21,6 +21,7 @@ use super::parser_state::{ParserState,StateOptVal};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS,Nargs};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 use super::util::{check_in_array,format_array_string};
+use super::argset::{ArgSetImpl};
 use lazy_static::lazy_static;
 
 use super::logger::{extargs_debug_out};
@@ -1411,15 +1412,61 @@ impl InnerExtArgsParser {
 
 		for opt in parser.get_cmdopts() {
 			if opt.is_flag() && opt.type_name() != KEYWORD_PREFIX && 
-				opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_ARGS {
-					self.set_json_value_not_defined(ns.clone(),parser.clone(),&(opt.opt_dest()),opt.value())?;
-				}
+			opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_ARGS {
+				self.set_json_value_not_defined(ns.clone(),parser.clone(),&(opt.opt_dest()),opt.value())?;
+			}
 		}
 		Ok(())
 	}
 
 	fn set_default_value(&self,ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
 		return self.set_parser_default_value(ns, self.maincmd.clone());
+	}
+
+	fn set_struct_part_for_single<T : ArgSetImpl>(&self,ns:NameSpaceEx, ostruct :&mut T,parser :ParserCompat,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		let name :String;
+		name = self.format_cmd_from_cmd_array(parsers.clone());
+		for opt in parser.get_cmdopts() {
+			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE {
+				if name.len() > 0 {
+					let mut curname :String = format!("{}",name);
+					curname.push_str(".");
+					if opt.type_name() != KEYWORD_ARGS {
+						curname.push_str(&opt.flag_name());
+					} else {
+						if parsers.len() > 1 {
+							curname.push_str(KEYWORD_SUBNARGS);
+						} else {
+							curname.push_str(KEYWORD_ARGS);
+						}
+					}
+					extargs_log_trace!("set [{}]", curname);
+					ostruct.set_value(&curname,ns.clone())?;	
+				}
+			}
+		}
+		Ok(())
+	}
+
+	fn set_struct_part_inner<T : ArgSetImpl>(&self, ns :NameSpaceEx,ostruct :&mut T ,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		let mut curparsers :Vec<ParserCompat>;
+		let curparser :ParserCompat;
+		let ilen :usize;
+		if parsers.len() > 0 {
+			curparsers = parsers.clone();
+		} else {
+			curparsers = Vec::new();
+			curparsers.push(self.maincmd.clone());
+		}
+		ilen = curparsers.len() - 1;
+		curparser = curparsers[ilen].clone();
+		self.set_struct_part_for_single(ns.clone(),ostruct, curparser.clone(), curparsers.clone())?;
+		for parser in curparser.sub_cmds() {
+			let mut nparsers :Vec<ParserCompat> = curparsers.clone();
+			nparsers.push(parser);
+			self.set_struct_part_inner(ns.clone(),ostruct,nparsers)?;
+		}
+		Ok(())
 	}
 }
 
