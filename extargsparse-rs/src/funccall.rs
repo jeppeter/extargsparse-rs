@@ -1,10 +1,13 @@
 
 use super::key::{ExtKeyParse};
 use super::namespace::{NameSpaceEx};
+use super::argset::{ArgSetImpl};
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use serde_json::Value;
+use std::any::Any;
 
 
 use std::error::Error;
@@ -16,12 +19,14 @@ use std::boxed::Box;
 pub type ExtArgsParseHelpFunc = fn(&ExtKeyParse) -> String;
 pub type ExtArgsJsonFunc = fn(NameSpaceEx,ExtKeyParse,Value)  -> Result<(),Box<dyn Error>> ;
 pub type ExtArgsActionFunc = fn(NameSpaceEx,i32,ExtKeyParse,Vec<String>) -> Result<i32,Box<dyn Error>>;
+pub type ExtArgsCallbackFunc = fn(NameSpaceEx,Option<Arc<RefCell<dyn ArgSetImpl>>>,Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>>;
 
 #[derive(Clone)]
 pub enum ExtArgsParseFunc {
 	HelpFunc(ExtArgsParseHelpFunc),
 	JsonFunc(ExtArgsJsonFunc),
 	ActionFunc(ExtArgsActionFunc),
+	CallbackFunc(ExtArgsCallbackFunc),
 }
 
 #[allow(dead_code)]

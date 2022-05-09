@@ -1423,7 +1423,7 @@ impl InnerExtArgsParser {
 		return self.set_parser_default_value(ns, self.maincmd.clone());
 	}
 
-	fn set_struct_part_for_single<T : ArgSetImpl>(&self,ns:NameSpaceEx, ostruct :&mut T,parser :ParserCompat,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+	fn set_struct_part_for_single(&self,ns:NameSpaceEx, ostruct :Arc<RefCell<dyn ArgSetImpl>>,parser :ParserCompat,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let name :String;
 		name = self.format_cmd_from_cmd_array(parsers.clone());
 		for opt in parser.get_cmdopts() {
@@ -1441,14 +1441,14 @@ impl InnerExtArgsParser {
 						}
 					}
 					extargs_log_trace!("set [{}]", curname);
-					ostruct.set_value(&curname,ns.clone())?;	
+					ostruct.borrow_mut().set_value(&curname,ns.clone())?;	
 				}
 			}
 		}
 		Ok(())
 	}
 
-	fn set_struct_part_inner<T : ArgSetImpl>(&self, ns :NameSpaceEx,ostruct :&mut T ,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+	fn set_struct_part_inner(&self, ns :NameSpaceEx,ostruct :Arc<RefCell<dyn ArgSetImpl>> ,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let mut curparsers :Vec<ParserCompat>;
 		let curparser :ParserCompat;
 		let ilen :usize;
@@ -1460,16 +1460,16 @@ impl InnerExtArgsParser {
 		}
 		ilen = curparsers.len() - 1;
 		curparser = curparsers[ilen].clone();
-		self.set_struct_part_for_single(ns.clone(),ostruct, curparser.clone(), curparsers.clone())?;
+		self.set_struct_part_for_single(ns.clone(),ostruct.clone(), curparser.clone(), curparsers.clone())?;
 		for parser in curparser.sub_cmds() {
 			let mut nparsers :Vec<ParserCompat> = curparsers.clone();
 			nparsers.push(parser);
-			self.set_struct_part_inner(ns.clone(),ostruct,nparsers)?;
+			self.set_struct_part_inner(ns.clone(),ostruct.clone(),nparsers)?;
 		}
 		Ok(())
 	}
 
-	fn set_struct_part<T :ArgSetImpl>(&self,ns :NameSpaceEx,ostruct1 :Option<&mut T>) -> Result<(),Box<dyn Error>> {
+	fn set_struct_part<T :ArgSetImpl>(&self,ns :NameSpaceEx,ostruct1 :Option<Arc<RefCell<dyn ArgSetImpl>>>) -> Result<(),Box<dyn Error>> {
 		if self.arg_state.is_none() {
 			new_error!{ParserError,"not parse args yet"}
 		}
@@ -1479,14 +1479,14 @@ impl InnerExtArgsParser {
 		}
 		let ostruct = ostruct1.unwrap();
 		let mut parsers :Vec<ParserCompat> = Vec::new();
-		self.set_struct_part_inner(ns.clone(),ostruct,parsers.clone())?;
+		self.set_struct_part_inner(ns.clone(),ostruct.clone(),parsers.clone())?;
 		let argstate = self.arg_state.as_ref().unwrap().clone();
 		parsers = argstate.get_cmd_paths();
 		let mut curparsers :Vec<ParserCompat> = Vec::new();
 		let mut idx :usize = 0;
 		while idx < parsers.len() {
 			curparsers.push(parsers[idx].clone());
-			self.set_struct_part_for_single(ns.clone(),ostruct,curparsers[idx].clone(),curparsers.clone())?;
+			self.set_struct_part_for_single(ns.clone(),ostruct.clone(),curparsers[idx].clone(),curparsers.clone())?;
 			idx += 1;
 		}
 		Ok(())
