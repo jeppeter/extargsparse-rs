@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::collections::HashMap;
+use std::any::Any;
 
 
 use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
@@ -46,6 +47,7 @@ enum ExtArgsFunc {
 	JsonFunc(Rc<dyn Fn(NameSpaceEx,ExtKeyParse,Value) -> Result<(),Box<dyn Error>>>),	
 }
 
+
 #[allow(dead_code)]
 #[derive(Clone)]
 struct InnerExtArgsParser {
@@ -72,6 +74,8 @@ struct InnerExtArgsParser {
 	setmapfuncs :Rc<RefCell<HashMap<i32,Rc<RefCell<ExtArgsFunc>>>>>,
 	outfuncs :ExtArgsMatchFuncMap,
 }
+
+
 
 lazy_static ! {
 	static ref PARSER_PRIORITY_ARGS :Vec<i32> = {
@@ -1469,7 +1473,7 @@ impl InnerExtArgsParser {
 		Ok(())
 	}
 
-	fn set_struct_part<T :ArgSetImpl>(&self,ns :NameSpaceEx,ostruct1 :Option<Arc<RefCell<dyn ArgSetImpl>>>) -> Result<(),Box<dyn Error>> {
+	fn set_struct_part(&self,ns :NameSpaceEx,ostruct1 :Option<Arc<RefCell<dyn ArgSetImpl>>>) -> Result<(),Box<dyn Error>> {
 		if self.arg_state.is_none() {
 			new_error!{ParserError,"not parse args yet"}
 		}
@@ -1491,6 +1495,126 @@ impl InnerExtArgsParser {
 		}
 		Ok(())
 	}
+
+	fn call_back_func(&self, funcname :&str,ns :NameSpaceEx,ostruct :Option<Arc<RefCell<dyn ArgSetImpl>>>, context :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+		let fo = self.outfuncs.get_callback_func(funcname);
+		if fo.is_some() {
+			let callbackfunc = fo.unwrap();
+			return callbackfunc(ns.clone(),ostruct,context);
+		}
+		new_error!{ParserError,"can not get callback [{}]",funcname}
+	}
+
+	fn set_mode_resume(&mut self, setmode :i32) {
+		if setmode > 0 {
+			let mut ccmode :Vec<String> = Vec::new();
+			let mut ii :usize = 0;
+			while ii < (self.output_mode.len() - 1) {
+				ccmode.push(format!("{}",self.output_mode[ii]));
+				ii += 1;
+			}
+			self.output_mode = ccmode.clone();
+		}
+		return;
+	}
+
+	pub (crate) fn parse_commandline_ex(&mut self,args :Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>, ostruct : Option<Arc<RefCell<dyn ArgSetImpl>>>,mode :Option<String>) -> Result<NameSpaceEx,Box<dyn Error>> {
+		let ns :NameSpaceEx;
+		let mut setmode :i32 = 0;
+		let realargs :Vec<String>;
+		let mut ctx :Option<Arc<RefCell<dyn Any>>> = None;
+		let mut stx :Option<Arc<RefCell<dyn ArgSetImpl>>> = None;
+		let mut stx1 :Option<Arc<RefCell<dyn ArgSetImpl>>> = None;
+
+		if mode.is_some() {
+			/*that is */
+			let s = mode.unwrap();
+			self.output_mode.push(format!("{}",s));
+			setmode = 1;
+		}
+		let c = self.set_commandline_self_args();
+		if c.is_err() {
+			self.set_mode_resume(setmode);
+			return Err(c.err().unwrap());
+		}
+
+		if args.is_none() {
+			realargs = env::args().collect();
+		} else {
+			realargs = args.unwrap();
+		}
+
+		let c = self.parse_args(realargs.clone());
+		if c.is_err() {
+			self.set_mode_resume(setmode);
+			return Err(c.err().unwrap());
+		}
+		ns = c.unwrap();
+
+		for idx in self.load_priority.clone() {
+			let c = self.call_parse_setmap_func(idx,ns.clone());
+			if c.is_err() {
+				self.set_mode_resume(setmode);
+				return Err(c.err().unwrap());
+			}
+		}
+
+		let c = self.set_default_value(ns.clone());
+		if c.is_err() {
+			self.set_mode_resume(setmode);
+			return Err(c.err().unwrap());
+		}
+
+		if ostruct.is_some() {
+			let cv = ostruct.unwrap();
+			stx = Some(cv.clone());
+			stx1 = Some(cv.clone());
+		}
+
+		if context.is_some() {
+			ctx = Some(context.unwrap().clone());
+		}
+
+		let c = self.set_struct_part(ns.clone(),stx);
+		if c.is_err() {
+			self.set_mode_resume(setmode);
+			return Err(c.err().unwrap());
+		}
+
+		let subcmd = ns.get_string(KEYWORD_SUBCOMMAND);
+		if subcmd.len() > 0 {
+			let cmds = self.arg_state.as_ref().unwrap().get_cmd_paths();
+			if cmds.len() > 0 {
+				let ilen :usize = cmds.len() - 1;
+				let funcname :String = cmds[ilen].get_keycls().unwrap().func_name();
+				extargs_log_trace!("[{}] funcname [{}]", cmds[ilen].get_keycls().unwrap().string(), funcname);
+				if funcname.len() > 0 {
+					let cclen :usize = self.output_mode.len() - 1;
+					let mut valid :i32 = 0;
+					if self.output_mode.len() == 0 {
+						valid = 1;
+					} else if self.output_mode[cclen] == "" {
+						valid = 1;
+					}
+
+					if valid > 0 {
+
+						let c = self.call_back_func(&funcname,ns.clone(),stx1,ctx);
+						if c.is_err() {
+							self.set_mode_resume(setmode);
+							return Err(c.err().unwrap());
+						}
+					}
+				}
+			}
+		}
+		self.set_mode_resume(setmode);
+		return Ok(ns);
+	}
+
+	pub (crate) fn parse_commandline(&mut self,params : Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>) -> Result<NameSpaceEx,Box<dyn Error>> {
+		return self.parse_commandline_ex(params,context,None,None);
+	}
 }
 
 #[allow(dead_code)]
@@ -1510,4 +1634,13 @@ impl  ExtArgsParser {
 	pub fn load_commandline_string(&self,s :String) -> Result<(),Box<dyn Error>> {
 		return self.innerrc.borrow_mut().load_commandline_string(s);
 	}
+
+	pub fn parse_commandline_ex(&self,args :Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>, ostruct : Option<Arc<RefCell<dyn ArgSetImpl>>>,mode :Option<String>) -> Result<NameSpaceEx,Box<dyn Error>> {
+		return self.innerrc.borrow_mut().parse_commandline_ex(args,context,ostruct,mode);
+	}
+
+	pub fn parse_commandline(&self,args :Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>) -> Result<NameSpaceEx,Box<dyn Error>> {
+		return self.innerrc.borrow_mut().parse_commandline(args,context);
+	}
+
 }

@@ -92,6 +92,23 @@ impl InnerExtArgsMatchFuncMap {
 		retv
 	}
 
+	pub (crate) fn get_callback_func(&self,k :&str) -> Option<ExtArgsCallbackFunc> {
+		let mut retv :Option<ExtArgsCallbackFunc> = None;
+		match self.data.get(k) {
+			Some(v1) => {
+				match v1 {
+					ExtArgsParseFunc::CallbackFunc(f1) => {
+						retv = Some(*f1);
+					},
+					_ => {}
+				}
+			},
+			_ => {}
+		}
+		retv
+	}
+
+
 }
 
 #[derive(Clone)]
@@ -117,4 +134,7 @@ impl ExtArgsMatchFuncMap {
 		return self.innerrc.borrow().get_action_func(k);
 	}
 
+	pub (crate) fn get_callback_func(&self, k :&str) -> Option<ExtArgsCallbackFunc> {
+		return self.innerrc.borrow().get_callback_func(k);
+	}
 }
