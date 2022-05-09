@@ -1468,6 +1468,29 @@ impl InnerExtArgsParser {
 		}
 		Ok(())
 	}
+
+	fn set_struct_part<T :ArgSetImpl>(&self,ns :NameSpaceEx,ostruct1 :Option<&mut T>) -> Result<(),Box<dyn Error>> {
+		if self.arg_state.is_none() {
+			new_error!{ParserError,"not parse args yet"}
+		}
+
+		if ostruct1.is_none() {
+			return Ok(());
+		}
+		let ostruct = ostruct1.unwrap();
+		let mut parsers :Vec<ParserCompat> = Vec::new();
+		self.set_struct_part_inner(ns.clone(),ostruct,parsers.clone())?;
+		let argstate = self.arg_state.as_ref().unwrap().clone();
+		parsers = argstate.get_cmd_paths();
+		let mut curparsers :Vec<ParserCompat> = Vec::new();
+		let mut idx :usize = 0;
+		while idx < parsers.len() {
+			curparsers.push(parsers[idx].clone());
+			self.set_struct_part_for_single(ns.clone(),ostruct,curparsers[idx].clone(),curparsers.clone())?;
+			idx += 1;
+		}
+		Ok(())
+	}
 }
 
 #[allow(dead_code)]
