@@ -28,7 +28,7 @@ use lazy_static::lazy_static;
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_info,extargs_log_trace,extargs_log_warn};
 use super::namespace::{NameSpaceEx};
-use super::funccall::{ExtArgsMatchFuncMap};
+use super::funccall::{ExtArgsMatchFuncMap,ExtArgsParseFunc};
 use super::helpsize::{HelpSize};
 use super::optchk::{OptChk};
 
@@ -1133,13 +1133,16 @@ impl InnerExtArgsParser {
 		return self.load_commandline_inner("".to_string(),vmap.clone(),parsers);
 	}
 
-	pub (crate) fn load_commandline_string(&mut self, s :String) -> Result<(),Box<dyn Error>> {
+	pub (crate) fn load_commandline_string(&mut self, s :&str, fnptrs :HashMap<String,ExtArgsParseFunc>) -> Result<(),Box<dyn Error>> {
 		let val :Value;
-		let ov = serde_json::from_str(&s);
+		let ov = serde_json::from_str(s);
 		if ov.is_err() {
 			new_error!{ParserError,"parse [{}] error[{:?}]", s,ov}
 		}
 		val = ov.unwrap();
+		for (k,v) in fnptrs.clone().iter() {
+			self.outfuncs.insert_map(k,v.clone());
+		}
 		return self.load_commandline(val);
 	}
 
@@ -1703,8 +1706,8 @@ impl  ExtArgsParser {
 		})
 	}
 
-	pub fn load_commandline_string(&self,s :String) -> Result<(),Box<dyn Error>> {
-		return self.innerrc.borrow_mut().load_commandline_string(s);
+	pub fn load_commandline_string(&self,s :&str, fnptrs :HashMap<String,ExtArgsParseFunc>) -> Result<(),Box<dyn Error>> {
+		return self.innerrc.borrow_mut().load_commandline_string(s,fnptrs);
 	}
 
 	pub fn parse_commandline_ex(&self,args :Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>, ostruct : Option<Arc<RefCell<dyn ArgSetImpl>>>,mode :Option<String>) -> Result<NameSpaceEx,Box<dyn Error>> {

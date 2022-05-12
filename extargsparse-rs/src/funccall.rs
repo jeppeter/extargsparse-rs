@@ -34,7 +34,6 @@ pub struct InnerExtArgsMatchFuncMap {
 	data :HashMap<String,ExtArgsParseFunc>,
 }
 
-
 impl InnerExtArgsMatchFuncMap {
 	pub fn new() -> InnerExtArgsMatchFuncMap {
 		InnerExtArgsMatchFuncMap {
@@ -106,6 +105,10 @@ impl InnerExtArgsMatchFuncMap {
 		retv
 	}
 
+	pub (crate) fn insert_map(&mut self, k :&str, fnptr :ExtArgsParseFunc) {
+		self.data.insert(format!("{}",k),fnptr);
+		return;
+	}
 
 }
 
@@ -135,4 +138,10 @@ impl ExtArgsMatchFuncMap {
 	pub (crate) fn get_callback_func(&self, k :&str) -> Option<ExtArgsCallbackFunc> {
 		return self.innerrc.borrow().get_callback_func(k);
 	}
+
+	pub (crate) fn insert_map(&self, k :&str, fnptr :ExtArgsParseFunc) {
+		self.innerrc.borrow_mut().insert_map(k,fnptr);
+		return;
+	}
 }
+
