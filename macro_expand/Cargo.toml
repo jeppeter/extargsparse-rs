@@ -12,5 +12,7 @@ proc-macro = true
 syn = { version = "^1", features = ["full", "parsing"] }
 lazy_static = "^1.4.0"
 proc-macro2 = { version = "1.0.32", default-features = false }
+rand = "^0.8.5"
+bytes = "^0.5.3"
 log4rs = "^0.8.3"
 log = "^0.4.8"
