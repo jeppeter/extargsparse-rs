@@ -5,7 +5,7 @@ use syn;
 use std::sync::{Mutex,Arc};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::cmp::Ordering;
+//use std::cmp::Ordering;
 
 use rand::Rng;
 use bytes::{BytesMut,BufMut};

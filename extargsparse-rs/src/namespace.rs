@@ -64,7 +64,36 @@ impl InnerNameSpaceEx {
 
 		match self.values.get(k) {
 			Some(v) => {
-				rets = v.to_string();
+				match v {
+					Value::String(ref _v)	=> {
+						rets = format!("{}",_v);	
+					},
+					Value::Bool(ref _b) => {
+						if *_b {
+							rets = format!("true");
+						} else {
+							rets = format!("false");
+						}
+					},
+					Value::Null => {
+						rets = "null".to_string();
+					},
+					Value::Number(ref _n) => {
+						if _n.is_i64()  {
+							rets = format!("{}",_n.as_i64().unwrap());
+						} else if _n.is_u64() {
+							rets = format!("{}",_n.as_u64().unwrap());
+						} else if _n.is_f64() {
+							rets = format!("{}",_n.as_f64().unwrap());
+						}
+					},
+					Value::Array(ref _a) => {
+						rets = format!("{:?}", _a);
+					},
+					Value::Object(ref _o) => {
+						rets = format!("{:?}", _o);
+					}
+				}
 			},
 			None => {}
 		}

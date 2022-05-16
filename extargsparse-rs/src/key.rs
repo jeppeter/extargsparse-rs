@@ -1535,6 +1535,7 @@ impl InnerExtKeyParse {
 					}
 				},
 			}
+			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 
 			if flags.len() == 0 {
 				match self.__mustflagexpr.captures(origkey) {
@@ -1550,6 +1551,7 @@ impl InnerExtKeyParse {
 					}
 				}
 			}
+			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 
 			if flags.len() == 0  {
 				s = format!("{}", origkey);
@@ -1567,6 +1569,7 @@ impl InnerExtKeyParse {
 				}
 			}
 
+			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 			if flags.len() > 0 {
 				if flags.contains("|") {
 					_splitre = compile_regex("\\|")?;
@@ -1697,6 +1700,7 @@ impl InnerExtKeyParse {
 		}
 
 		self.keydata.set_jsonval(KEYWORD_VALUE,value);
+		extargs_log_trace!("value [{:?}]",value);
 
 		if !ishelp && !isjsonfile {
 			self.keydata.set_type(KEYWORD_TYPE,TypeClass::new(value).get_type().as_str());

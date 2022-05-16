@@ -424,7 +424,7 @@ impl InnerParserState {
 			let r = self.format_cmd_name_path(cmdpaths);
 			optval = Some(StateOptVal::CmdPaths(r));
 		}
-		validx = self.curidx;
+		validx = self.validx;
 		return Ok((validx,optval,keycls));
 	}
 
