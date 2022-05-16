@@ -1,8 +1,14 @@
 use super::parser::{ExtArgsParser};
 use super::logger::{extargs_debug_out};
+use super::argset::{ArgSetImpl};
 use super::{extargs_log_trace};
+use super::{error_class};
+use std::cell::RefCell;
+use std::sync::Arc;
+use std::error::Error;
+use std::boxed::Box;
 
-use extargsparse_codegen::{extargs_load_commandline};
+use extargsparse_codegen::{extargs_load_commandline,ArgSet};
 
 
 fn before_parser() {
@@ -52,6 +58,20 @@ fn check_array_equal(a1 :Vec<String>, a2 :Vec<String>) -> bool {
 	return true;
 }
 
+#[derive(ArgSet)]
+struct depst {
+	list :Vec<String>,
+	string : String,
+	subnargs :Vec<String>,
+}
+
+#[derive(ArgSet)]
+struct parser_test2 {
+	verbose :i32,
+	port :i32,
+	dep :depst,
+}
+
 #[test]
 fn test_a001() {
 	let loads = r#"
@@ -79,5 +99,31 @@ fn test_a001() {
 	assert!(check_array_equal(ns.get_array("list"),format_string_array(vec!["bar1", "bar2"])));
 	assert!(ns.get_string("string") == "string_var");
 	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec!["var1","var2"])));
+	return;
+}
+
+
+
+#[test]
+fn test_a002() {
+	let loads = r#"
+        {
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }
+    "#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "dep", "-l", "arg1", "--dep-list", "arg2", "cc", "dd"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let p :parser_test2 = parser_test2::new();
+	let pi :Arc<RefCell<parser_test2>> = Arc::new(RefCell::new(p));
+	let _ns = parser.parse_commandline(Some(params.clone()),Some(pi.clone())).unwrap();
+	assert!(p.verbose == 4);
 	return;
 }

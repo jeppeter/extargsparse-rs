@@ -27,13 +27,13 @@ macro_rules! error_class {
 		}
 	}
 
-	impl fmt::Display for $type {
-		fn fmt(&self,f :&mut fmt::Formatter) -> fmt::Result {
+	impl std::fmt::Display for $type {
+		fn fmt(&self,f :&mut std::fmt::Formatter) -> std::fmt::Result {
 			write!(f,"{}",self.msg)
 		}
 	}
 
-	impl Error for $type {}
+	impl std::error::Error for $type {}
 	};
 }
 

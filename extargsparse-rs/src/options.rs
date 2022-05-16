@@ -7,7 +7,6 @@ use super::{extargs_log_error,extargs_log_info,extargs_log_trace};
 use std::fmt::{Debug};
 
 
-use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 use std::rc::Rc;

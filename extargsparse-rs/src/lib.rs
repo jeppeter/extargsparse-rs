@@ -1,4 +1,5 @@
-mod errors;
+#[macro_use]
+pub mod errors;
 pub mod const_value;
 pub (crate) mod util;
 pub (crate) mod logger;
