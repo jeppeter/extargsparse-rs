@@ -12,4 +12,4 @@ regex = "1"
 log4rs = "^0.8.3"
 log = "^0.4.8"
 lazy_static = "^1.4.0"
-extargsparse-codegen = { path = "../extargsparse-codegen"}
+extargsparse_codegen = { path = "../extargsparse_codegen"}

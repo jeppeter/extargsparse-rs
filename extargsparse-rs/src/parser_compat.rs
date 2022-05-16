@@ -68,7 +68,7 @@ impl InnerParserCompat {
 				retc.callfunction = tmps;
 			}
 		} else {
-			tmps = r#"{{}}"#.to_string();
+			tmps = format!("{{}}");
 			jsonv = serde_json::from_str(&tmps).unwrap();
 			match ExtKeyParse::new("","main",&jsonv,false,false,false,"--","-",false) {
 				Ok(_cv) => {

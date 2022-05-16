@@ -40,7 +40,7 @@ const RAND_NAME_STRING :[u8; 62]= *b"abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG
 
 lazy_static! {
 	static ref LINK_NAMES :Arc<Mutex<HashMap<String,String>>> = Arc::new(Mutex::new(HashMap::new()));
-	static ref EXTARGS_FUNC_MAP_NAME : Arc<Mutex<String>> = Arc::new(Mutex::new(String::from("FUNC_CALL")));
+	static ref EXTARGS_FUNC_MAP_NAME : Arc<Mutex<String>> = Arc::new(Mutex::new(String::from("")));
 
 	static ref ARGSET_KEYWORDS :Vec<String> = {
 		let mut retv :Vec<String> = Vec::new();
@@ -71,48 +71,6 @@ fn get_random_bytes(num :u32, basevec :&[u8]) -> String {
 	String::from_utf8_lossy(&a).to_string()
 }
 
-
-
-
-#[proc_macro_attribute]
-pub fn print_all_links(_args :TokenStream, input :TokenStream) -> TokenStream {
-	{
-		//let sp = Span::call_site();
-		//let src = sp.source_file();
-		let fname = format!("xxx");
-		//let fname = format!("{}",src.path().to_str().unwrap());
-		let c = LINK_NAMES.clone();
-		let cb = c.lock().unwrap();
-		let mut codes :String = String::from("");
-		let mut outs :String;
-
-		codes += "lazy_static ! {\n";
-		{
-			let mut scb = EXTARGS_FUNC_MAP_NAME.lock().unwrap();
-			let mut funcname :String;
-			funcname = "FUNC_CALL_".to_string();
-			funcname += &(format!("{}",get_random_bytes(15,&RAND_NAME_STRING))[..]);
-			*scb = funcname;
-			codes += &(format!(" static ref {} :Vec<FuncName> = {{\n", *scb)[..]);
-		}
-
-		codes += "        let mut vret :Vec<FuncName> = Vec::new();\n";
-
-		for (_k,v )in cb.iter() {
-			if fname.cmp(v) == Ordering::Equal {
-				codes += &(format!("        vret.push(FuncName::new(String::from(\"{}\"),{}));\n",_k,_k)[..]);
-			}			
-		}
-		codes += "        vret\n";
-		codes += "   };\n";
-		codes += "}";
-		outs = codes;
-		outs += "\n";
-		outs += &(input.to_string()[..]);
-		em_log_info!("outs\n{}",outs);
-		return outs.parse().unwrap();
-	}
-}
 
 #[derive(Debug,Clone)]
 struct FuncAttrs {
@@ -156,7 +114,12 @@ impl FuncAttrs {
 		rets.push_str(&format_tab_space(1));
 		rets.push_str(&format!("static ref {} :HashMap<String,ExtArgsParseFunc> = {{\n",fname));
 		rets.push_str(&format_tab_space(2));
-		rets.push_str(&format!("let mut retv :HashMap<String,ExtArgsParseFunc> = HashMap::new();\n"));
+		if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.actfuncs.len() > 0 || self.callbackfuncs.len() > 0 {
+			rets.push_str(&format!("let mut retv :HashMap<String,ExtArgsParseFunc> = HashMap::new();\n"));	
+		} else {
+			rets.push_str(&format!("let retv :HashMap<String,ExtArgsParseFunc> = HashMap::new();\n"));
+		}
+		
 		if self.jsonfuncs.len() > 0 {
 			for f in self.jsonfuncs.iter() {
 				rets.push_str(&format_tab_space(2));
@@ -194,7 +157,11 @@ impl FuncAttrs {
 		rets.push_str("}\n");
 		{
 			let mut scb = EXTARGS_FUNC_MAP_NAME.lock().unwrap();
-			*scb = format!("{}",fname);
+			if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.actfuncs.len() > 0 || self.callbackfuncs.len() > 0 {
+				*scb = format!("{}",fname);	
+			} else {
+				*scb = format!("");
+			}
 			em_log_trace!("EXTARGS_FUNC_MAP_NAME [{}]",scb);
 		}
 
@@ -585,7 +552,12 @@ impl LoadParserAttr {
 		{
 			let c = EXTARGS_FUNC_MAP_NAME.clone();
 			let sb = c.lock().unwrap();
-			rets.push_str(&format!("{}.load_commandline_string({},{}.clone())\n",self.parserident,self.strident,sb));
+			if sb.len() > 0 {
+				rets.push_str(&format!("{}.load_commandline_string({},Some({}.clone()))\n",self.parserident,self.strident,sb));	
+			} else {
+				rets.push_str(&format!("{}.load_commandline_string({},None)\n",self.parserident,self.strident));
+			}
+			
 		}
 
 		em_log_trace!("rets [{}]", rets);		
@@ -600,14 +572,6 @@ impl syn::parse::Parse for LoadParserAttr {
 			parserident : "".to_string(),
 			strident : "".to_string(),
 		};
-		{
-			let cb = EXTARGS_FUNC_MAP_NAME.clone();
-			let sb = cb.lock().unwrap();
-			if sb.len() == 0 {
-				let c = format!("need call extargs_map_function before\n{}",input.to_string());
-				return Err(syn::Error::new(input.span(),&c));
-			}
-		}
 
 		let mut k :String = "".to_string();
 		loop {

@@ -1133,15 +1133,18 @@ impl InnerExtArgsParser {
 		return self.load_commandline_inner("".to_string(),vmap.clone(),parsers);
 	}
 
-	pub (crate) fn load_commandline_string(&mut self, s :&str, fnptrs :HashMap<String,ExtArgsParseFunc>) -> Result<(),Box<dyn Error>> {
+	pub (crate) fn load_commandline_string(&mut self, s :&str, fnptrs1 :Option<HashMap<String,ExtArgsParseFunc>>) -> Result<(),Box<dyn Error>> {
 		let val :Value;
 		let ov = serde_json::from_str(s);
 		if ov.is_err() {
 			new_error!{ParserError,"parse [{}] error[{:?}]", s,ov}
 		}
 		val = ov.unwrap();
-		for (k,v) in fnptrs.clone().iter() {
-			self.outfuncs.insert_map(k,v.clone());
+		if fnptrs1.is_some() {
+			let fnptrs = fnptrs1.unwrap();
+			for (k,v) in fnptrs.clone().iter() {
+				self.outfuncs.insert_map(k,v.clone());
+			}
 		}
 		return self.load_commandline(val);
 	}
@@ -1706,7 +1709,7 @@ impl  ExtArgsParser {
 		})
 	}
 
-	pub fn load_commandline_string(&self,s :&str, fnptrs :HashMap<String,ExtArgsParseFunc>) -> Result<(),Box<dyn Error>> {
+	pub fn load_commandline_string(&self,s :&str, fnptrs :Option<HashMap<String,ExtArgsParseFunc>>) -> Result<(),Box<dyn Error>> {
 		return self.innerrc.borrow_mut().load_commandline_string(s,fnptrs);
 	}
 
