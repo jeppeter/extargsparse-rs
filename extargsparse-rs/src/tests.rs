@@ -137,5 +137,7 @@ fn test_a002() {
 	assert!(_ns.get_string("subcommand") == "dep" );
 	extargs_log_trace!("list [{:?}]", pi.borrow().dep.list);
 	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(pi.borrow().dep.string == "s_var");
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
 	return;
 }

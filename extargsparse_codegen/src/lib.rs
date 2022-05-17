@@ -23,7 +23,7 @@ mod errors;
 mod logger;
 mod util;
 
-use consts::{KEYWORD_U64,KEYWORD_I64,KEYWORD_F64,KEYWORD_U32,KEYWORD_I32,KEYWORD_F32,KEYWORD_TYPE_STRING,KEYWORD_TYPE_BOOL,KEYWORD_VEC_STRING,KEYWORD_LEFT_ARROW,FUNC_ACTFUNC,FUNC_OPTHELP,FUNC_JSONFUNC,FUNC_CALLBACK};
+use consts::{KEYWORD_U64,KEYWORD_I64,KEYWORD_F64,KEYWORD_U32,KEYWORD_I32,KEYWORD_F32,KEYWORD_TYPE_STRING,KEYWORD_TYPE_BOOL,KEYWORD_VEC_STRING,KEYWORD_LEFT_ARROW,FUNC_ACTFUNC,FUNC_OPTHELP,FUNC_JSONFUNC,FUNC_CALLBACK,KEYWORD_SUBNARGS,KEYWORD_ARGS};
 use logger::{em_debug_out};
 use util::{check_in_array};
 
@@ -430,7 +430,13 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 		} else if v == KEYWORD_TYPE_BOOL {
 			rets.push_str(&format!("self.{} = ns.get_bool(&extk);\n",k));
 		} else if v == KEYWORD_VEC_STRING {
-			rets.push_str(&format!("self.{} = ns.get_array(&extk);\n",k));
+			if k == KEYWORD_SUBNARGS || k == KEYWORD_ARGS {
+				rets.push_str(&(format!("println!(\"will get args[{}]\");\n",k)));
+				rets.push_str(&format_tab_space(3));				
+				rets.push_str(&format!("self.{} = ns.get_array(\"{}\");\n",k,k));
+			} else {				
+				rets.push_str(&format!("self.{} = ns.get_array(&extk);\n",k));
+			}
 		} 
 		i += 1;
 	}
@@ -464,6 +470,8 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 					rets.push_str(&(format!("}}\n")));
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&(format!("extk.push_str(\"{}\");\n",k)));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&(format!("println!(\"will down [{{}}]{{}}\",extk,kn);\n")));
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&format!("self.{}.set_value(&extk,&kn,ns.clone())?;\n",k));
 					break;
