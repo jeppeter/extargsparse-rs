@@ -1456,22 +1456,14 @@ impl InnerExtArgsParser {
 		for opt in parser.get_cmdopts() {
 			let mut curname :String = "".to_string();
 			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
-			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE  {
+			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
 				if name.len() > 0 {
 					curname.push_str(&format!("{}_",name));
 				}
-				if opt.type_name() != KEYWORD_ARGS {
-					curname.push_str(&opt.flag_name());
-				} else {
-					if parsers.len() > 1 {
-						curname.push_str(KEYWORD_SUBNARGS);
-					} else {
-						curname.push_str(KEYWORD_ARGS);
-					}
-				}
+				curname.push_str(&opt.flag_name());
 				extargs_log_trace!("set [{}][{}]",name, curname);
 				ostruct.borrow_mut().set_value("",&curname,ns.clone())?;	
-			} 
+			}
 		}
 		Ok(())
 	}
@@ -1516,7 +1508,7 @@ impl InnerExtArgsParser {
 		let mut idx :usize = 0;
 		while idx < parsers.len() {
 			extargs_log_trace!("[{}] parser [{}]",idx,parsers[idx].string());
-			curparsers.push(parsers[idx].clone());
+			curparsers.push(parsers[idx].clone());			
 			self.set_struct_part_for_single(ns.clone(),ostruct.clone(),curparsers[idx].clone(),curparsers.clone())?;
 			idx += 1;
 		}

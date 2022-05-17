@@ -182,8 +182,9 @@ fn test_a003() {
 	assert!(_ns.get_string("subcommand") == "rdep" );
 	extargs_log_trace!("list [{:?}]", pi.borrow().rdep.list);
 	assert!(check_array_equal(pi.borrow().rdep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
-	assert!(pi.borrow().dep.string == "s_rdep");
-	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	assert!(pi.borrow().rdep.string == "s_rdep");
+	assert!(check_array_equal(pi.borrow().rdep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	extargs_log_trace!("dep.subnargs [{:?}]", pi.borrow().dep.subnargs.clone());
 	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(),format_string_array(vec![])));
 	return;
 }

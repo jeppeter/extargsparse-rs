@@ -474,7 +474,7 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 					rets.push_str(&(format!("println!(\"will down [{{}}]{{}}\",extk,kn);\n")));
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&format!("self.{}.set_value(&extk,&kn,ns.clone())?;\n",k));
-					break;
+					/*no break just for next search*/
 				}
 			}
 			i += 1;
@@ -550,8 +550,10 @@ pub fn argset_impl(item :TokenStream) -> TokenStream {
     					}
 
     					if !check_in_array(ARGSET_KEYWORDS.clone(),&tn) {
-    						em_log_trace!("input typename [{}]",tn);
-    						structnames.push(format!("{}",tn));
+    						if !check_in_array(structnames.clone(), &tn) {
+	    						em_log_trace!("input typename [{}]",tn);
+	    						structnames.push(format!("{}",tn));    							
+    						}
     					}
 
     					names.insert(format!("{}",n),format!("{}",tn));
