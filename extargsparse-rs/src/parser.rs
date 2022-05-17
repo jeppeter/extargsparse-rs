@@ -1458,7 +1458,7 @@ impl InnerExtArgsParser {
 			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
 			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
 				if name.len() > 0 {
-					curname.push_str(&format!("{}_",name));
+					curname.push_str(&format!("{}_",name.replace(".","_").replace("-","_")));
 				}
 				curname.push_str(&opt.flag_name());
 				extargs_log_trace!("set [{}][{}]",name, curname);
@@ -1512,6 +1512,17 @@ impl InnerExtArgsParser {
 			self.set_struct_part_for_single(ns.clone(),ostruct.clone(),curparsers[idx].clone(),curparsers.clone())?;
 			idx += 1;
 		}
+
+		/*now for the command line*/
+		let mut curname :String = "".to_string();
+		name = self.format_cmd_from_cmd_array(parsers);
+		if name.len() > 0 {
+			curname.push_str(&format!("{}_subnargs",name.replace(".","_")));
+		} else {
+			curname.push_str(&format!("args"));
+		}
+		//
+		let _  = ostruct.borrow_mut().set_value("",&curname,ns.clone());
 		Ok(())
 	}
 
