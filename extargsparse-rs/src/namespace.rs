@@ -6,7 +6,6 @@ use serde_json::{Value};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use std::fmt;
 use std::error::Error;
 use std::boxed::Box;
 

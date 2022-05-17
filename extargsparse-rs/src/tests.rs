@@ -3,10 +3,12 @@ use super::logger::{extargs_debug_out};
 use super::argset::{ArgSetImpl};
 use super::{extargs_log_trace};
 use super::{error_class};
+use super::namespace::{NameSpaceEx};
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::error::Error;
 use std::boxed::Box;
+use regex::Regex;
 
 use extargsparse_codegen::{extargs_load_commandline,ArgSet};
 
@@ -59,17 +61,17 @@ fn check_array_equal(a1 :Vec<String>, a2 :Vec<String>) -> bool {
 }
 
 #[derive(ArgSet)]
-struct depst {
+struct Depst {
 	list :Vec<String>,
 	string : String,
 	subnargs :Vec<String>,
 }
 
 #[derive(ArgSet)]
-struct parser_test2 {
+struct ParserTest2 {
 	verbose :i32,
 	port :i32,
-	dep :depst,
+	dep :Depst,
 }
 
 #[test]
@@ -120,10 +122,14 @@ fn test_a002() {
 	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "dep", "-l", "arg1", "--dep-list", "arg2", "cc", "dd"]);
 	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
 	before_parser();
+	extargs_log_trace!(" ");
 	extargs_load_commandline!(parser,loads).unwrap();
-	let p :parser_test2 = parser_test2::new();
-	let pi :Arc<RefCell<parser_test2>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let p :ParserTest2 = ParserTest2::new();
+	let pi :Arc<RefCell<ParserTest2>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
 	let _ns = parser.parse_commandline(Some(params.clone()),Some(pi.clone())).unwrap();
-	assert!(p.verbose == 4);
+	extargs_log_trace!("verbose [{}]",pi.borrow().verbose);
+	assert!(pi.borrow().verbose == 4);
 	return;
 }

@@ -8,7 +8,6 @@ use super::logger::{extargs_debug_out};
 
 use std::error::Error;
 use std::boxed::Box;
-use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 

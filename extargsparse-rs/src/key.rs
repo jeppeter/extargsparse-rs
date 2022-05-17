@@ -1535,7 +1535,6 @@ impl InnerExtKeyParse {
 					}
 				},
 			}
-			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 
 			if flags.len() == 0 {
 				match self.__mustflagexpr.captures(origkey) {
@@ -1551,7 +1550,6 @@ impl InnerExtKeyParse {
 					}
 				}
 			}
-			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 
 			if flags.len() == 0  {
 				s = format!("{}", origkey);
@@ -1569,7 +1567,6 @@ impl InnerExtKeyParse {
 				}
 			}
 
-			extargs_log_trace!("flags [{}] for [{}]", flags,origkey);
 			if flags.len() > 0 {
 				if flags.contains("|") {
 					_splitre = compile_regex("\\|")?;
