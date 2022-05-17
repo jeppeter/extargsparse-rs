@@ -72,6 +72,7 @@ struct ParserTest2 {
 	verbose :i32,
 	port :i32,
 	dep :Depst,
+	args : Vec<String>,
 }
 
 #[test]
@@ -128,8 +129,11 @@ fn test_a002() {
 	let p :ParserTest2 = ParserTest2::new();
 	let pi :Arc<RefCell<ParserTest2>> = Arc::new(RefCell::new(p));
 	extargs_log_trace!(" ");
-	let _ns = parser.parse_commandline(Some(params.clone()),Some(pi.clone())).unwrap();
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
 	extargs_log_trace!("verbose [{}]",pi.borrow().verbose);
 	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().port == 5000);
+	assert!(_ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
 	return;
 }

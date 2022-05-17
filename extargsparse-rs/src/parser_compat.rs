@@ -511,5 +511,4 @@ impl ParserCompat {
 		}
 		return self.innerrc.borrow().get_help_info_ex(hs,innerpaths,mapv);
 	}
-
 }

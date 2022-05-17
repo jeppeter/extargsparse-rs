@@ -41,7 +41,7 @@ error_class!{ParserError}
 enum ExtArgsFunc {
 	LoadFunc(Rc<dyn Fn(String,ExtKeyParse,Vec<ParserCompat>) -> Result<(),Box<dyn Error>>>),
 	ActionFunc(Rc<dyn Fn(NameSpaceEx,i32,ExtKeyParse,Vec<String>) -> Result<i32,Box<dyn Error>>>),
-	LoadJsonFunc(Rc<dyn Fn(NameSpaceEx) -> Result<(),Box<dyn Error>>>),
+	LoadJsonFunc(Rc<dyn Fn(NameSpaceEx,Option<ParserState>) -> Result<(),Box<dyn Error>>>),
 	JsonFunc(Rc<dyn Fn(NameSpaceEx,ExtKeyParse,Value) -> Result<(),Box<dyn Error>>>),	
 }
 
@@ -102,7 +102,7 @@ impl InnerExtArgsParser {
 			extargs_log_trace!("call [{}]", KEYWORD_STRING) ;
 			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v)
-			} )))));
+		} )))));
 		let s1 = b.clone();
 		bmut.insert(format!("{}",KEYWORD_INT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_INT) ; 
 			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
@@ -198,19 +198,19 @@ impl InnerExtArgsParser {
 		let b = Arc::new(RefCell::new(self.clone()));
 		let s1 = b.clone();
 		extargs_log_trace!("setmapfuncs [{}]",SUB_COMMAND_JSON_SET);
-		self.setmapfuncs.borrow_mut().insert(SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_subcommand_json_set(n) })))));
+		self.setmapfuncs.borrow_mut().insert(SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_subcommand_json_set(n,s) })))));
 		let s1 = b.clone();
 		extargs_log_trace!("setmapfuncs [{}]",COMMAND_JSON_SET);
-		self.setmapfuncs.borrow_mut().insert(COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_command_json_set(n) })))));
+		self.setmapfuncs.borrow_mut().insert(COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_command_json_set(n,s) })))));
 		let s1 = b.clone();
 		extargs_log_trace!("setmapfuncs [{}]",ENVIRONMENT_SET);
-		self.setmapfuncs.borrow_mut().insert(ENVIRONMENT_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_environment_set(n) })))));
+		self.setmapfuncs.borrow_mut().insert(ENVIRONMENT_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_environment_set(n,s) })))));
 		let s1 = b.clone();
 		extargs_log_trace!("setmapfuncs [{}]",ENV_SUB_COMMAND_JSON_SET);
-		self.setmapfuncs.borrow_mut().insert(ENV_SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_env_subcommand_json_set(n) })))));
+		self.setmapfuncs.borrow_mut().insert(ENV_SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_env_subcommand_json_set(n,s) })))));
 		let s1 = b.clone();
 		extargs_log_trace!("setmapfuncs [{}]",ENV_COMMAND_JSON_SET);
-		self.setmapfuncs.borrow_mut().insert(ENV_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n| { s1.borrow().parse_env_command_json_set(n) })))));
+		self.setmapfuncs.borrow_mut().insert(ENV_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_env_command_json_set(n,s) })))));
 		return;
 	}
 
@@ -415,9 +415,9 @@ impl InnerExtArgsParser {
 		match keycls.value() {
 			Value::Bool(bv) => {
 				if bv {
-				   b = false;	
+					b = false;	
 				} else {
-				   b = true;
+					b = true;
 				}
 				
 			},
@@ -773,11 +773,11 @@ impl InnerExtArgsParser {
 		}
 	}
 
-	fn parse_subcommand_json_set(&self, ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
+	fn parse_subcommand_json_set(&self, ns :NameSpaceEx,pstate :Option<ParserState>) -> Result<(),Box<dyn Error>> {
 		let s = ns.get_string(KEYWORD_SUBNARGS);
 		if s.len() > 0 && !self.no_json_option {
-			if self.arg_state.is_some() {
-				let cmds = self.arg_state.as_ref().unwrap().get_cmd_paths();
+			if pstate.is_some() {
+				let cmds = pstate.as_ref().unwrap().get_cmd_paths();
 				let mut idx :usize = cmds.len();
 				while idx >= 2 {
 					let mut curcmds :Vec<ParserCompat> = Vec::new();
@@ -800,7 +800,7 @@ impl InnerExtArgsParser {
 		Ok(())
 	}
 
-	fn parse_command_json_set(&self, ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
+	fn parse_command_json_set(&self, ns :NameSpaceEx,_pstate :Option<ParserState>) -> Result<(),Box<dyn Error>> {
 		if !self.no_json_option && self.json_long.len() > 0 {
 			let jsonfile = ns.get_string(&(self.json_long));
 			extargs_log_trace!("jsonfile [{}]",jsonfile);
@@ -907,18 +907,18 @@ impl InnerExtArgsParser {
 		return self.set_environment_value_inner(ns.clone(),"".to_string(),self.maincmd.clone());
 	}
 
-	fn parse_environment_set(&self, ns :NameSpaceEx) ->  Result<(),Box<dyn Error>> {
+	fn parse_environment_set(&self, ns :NameSpaceEx,_pstate : Option<ParserState>) ->  Result<(),Box<dyn Error>> {
 		return self.set_environment_value(ns.clone());
 	}
 
-	fn parse_env_subcommand_json_set(&self,ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {
+	fn parse_env_subcommand_json_set(&self,ns :NameSpaceEx,pstate : Option<ParserState>) -> Result<(),Box<dyn Error>> {
 		let s :String;
 		s = ns.get_string(KEYWORD_SUBCOMMAND);
 		if s.len() > 0 && !self.no_json_option && self.json_long.len() > 0 {
-			if self.arg_state.is_none() {
+			if pstate.is_none() {
 				new_error!{ParserError,"not set arg_state yet"}
 			}
-			let cmds = self.arg_state.as_ref().unwrap().get_cmd_paths();
+			let cmds = pstate.as_ref().unwrap().get_cmd_paths();
 			let mut idx :usize = cmds.len();
 			while idx >= 2 {
 				let mut curcmds :Vec<ParserCompat> = Vec::new();
@@ -949,7 +949,7 @@ impl InnerExtArgsParser {
 		Ok(())
 	}
 
-	fn parse_env_command_json_set(&self, ns :NameSpaceEx)  -> Result<(),Box<dyn Error>> {
+	fn parse_env_command_json_set(&self, ns :NameSpaceEx,_pstate :Option<ParserState>)  -> Result<(),Box<dyn Error>> {
 		if !self.no_json_option && self.json_long.len() > 0 {
 			let mut jsonenv :String = format!("EXTARGSPARSE_{}",self.json_long);
 			jsonenv = jsonenv.replace("-","_");
@@ -1066,8 +1066,10 @@ impl InnerExtArgsParser {
 
 		if parserclone > 0 {
 			let uc = parsers.len() -1;
+			extargs_log_trace!("input [{}] keycls [{}]", parsers[uc].string(), keycls.string());
 			parsers[uc].push_cmdopts(keycls);
 		} else {
+			extargs_log_trace!("input [{}] keycls [{}]", self.maincmd.string(), keycls.string());
 			self.maincmd.push_cmdopts(keycls);
 		}
 
@@ -1343,7 +1345,7 @@ impl InnerExtArgsParser {
 			pstate.add_parse_args(step)?;
 		}
 
-
+		extargs_log_trace!("set arg_state");
 		self.arg_state = Some(pstate.clone());
 		Ok(ns)
 	}
@@ -1360,13 +1362,13 @@ impl InnerExtArgsParser {
 		retv
 	}
 
-	fn call_parse_setmap_func(&self,idx :i32,ns:NameSpaceEx) -> Result<(),Box<dyn Error>> {
+	fn call_parse_setmap_func(&self,idx :i32,ns:NameSpaceEx,pstate :Option<ParserState>) -> Result<(),Box<dyn Error>> {
 		let fnptr = self.get_setmap_func(idx);
 		if fnptr.is_some() {
 			let f2 = fnptr.unwrap();
 			match f2 {
 				ExtArgsFunc::LoadJsonFunc(f) => {
-					return f(ns);
+					return f(ns,pstate);
 				},
 				_ => {
 					new_error!{ParserError,"return [{}] not LoadJsonFunc", idx}
@@ -1450,23 +1452,34 @@ impl InnerExtArgsParser {
 	fn set_struct_part_for_single(&self,ns:NameSpaceEx, ostruct :Arc<RefCell<dyn ArgSetImpl>>,parser :ParserCompat,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let name :String;
 		name = self.format_cmd_from_cmd_array(parsers.clone());
+		extargs_log_trace!("name [{}]",name);
 		for opt in parser.get_cmdopts() {
-			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE {
+				let mut curname :String = "".to_string();
+			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
+			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
 				if name.len() > 0 {
-					let mut curname :String = format!("{}",name);
+					curname.push_str(&format!("{}",name));
 					curname.push_str(".");
-					if opt.type_name() != KEYWORD_ARGS {
-						curname.push_str(&opt.flag_name());
-					} else {
-						if parsers.len() > 1 {
-							curname.push_str(KEYWORD_SUBNARGS);
-						} else {
-							curname.push_str(KEYWORD_ARGS);
-						}
-					}
-					extargs_log_trace!("set [{}]", curname);
-					ostruct.borrow_mut().set_value(&curname,ns.clone())?;	
 				}
+				if opt.type_name() != KEYWORD_ARGS {
+					curname.push_str(&opt.flag_name());
+				} else {
+					if parsers.len() > 1 {
+						curname.push_str(KEYWORD_SUBNARGS);
+					} else {
+						curname.push_str(KEYWORD_ARGS);
+					}
+				}
+				extargs_log_trace!("set [{}]", curname);
+				ostruct.borrow_mut().set_value(&curname,ns.clone())?;	
+			} else if opt.is_flag() && opt.type_name() == KEYWORD_ARGS {
+				if name.len() > 0 {
+					curname.push_str(&(format!("{}.{}",name,KEYWORD_SUBNARGS)));
+				} else {
+					curname.push_str(&format!("{}",KEYWORD_ARGS));
+				}
+				extargs_log_trace!("set [{}]", curname);
+				ostruct.borrow_mut().set_value(&curname,ns.clone())?;
 			}
 		}
 		Ok(())
@@ -1499,8 +1512,10 @@ impl InnerExtArgsParser {
 		}
 
 		if ostruct1.is_none() {
+			extargs_log_trace!("is_none");
 			return Ok(());
 		}
+		extargs_log_trace!("not none");
 		let ostruct = ostruct1.unwrap();
 		let mut parsers :Vec<ParserCompat> = Vec::new();
 		self.set_struct_part_inner(ns.clone(),ostruct.clone(),parsers.clone())?;
@@ -1509,6 +1524,7 @@ impl InnerExtArgsParser {
 		let mut curparsers :Vec<ParserCompat> = Vec::new();
 		let mut idx :usize = 0;
 		while idx < parsers.len() {
+			extargs_log_trace!("[{}] parser [{}]",idx,parsers[idx].string());
 			curparsers.push(parsers[idx].clone());
 			self.set_struct_part_for_single(ns.clone(),ostruct.clone(),curparsers[idx].clone(),curparsers.clone())?;
 			idx += 1;
@@ -1573,7 +1589,18 @@ impl InnerExtArgsParser {
 
 		for idx in self.load_priority.clone() {
 			if idx != COMMAND_SET && idx != DEFAULT_SET {
-				let c = self.call_parse_setmap_func(idx,ns.clone());
+				let pstate :Option<ParserState>;
+				if self.arg_state.is_some() {
+					extargs_log_trace!("[{}]arg_state set",idx);
+				} else {
+					extargs_log_trace!("[{}]arg_state not set",idx);
+				}
+				if self.arg_state.is_some() {
+					pstate = Some(self.arg_state.as_ref().unwrap().clone());
+				} else {
+					pstate = None;
+				}
+				let c = self.call_parse_setmap_func(idx,ns.clone(),pstate);
 				if c.is_err() {
 					self.set_mode_resume(setmode);
 					return Err(c.err().unwrap());
@@ -1597,6 +1624,7 @@ impl InnerExtArgsParser {
 			ctx = Some(context.unwrap().clone());
 		}
 
+		extargs_log_trace!(" ");
 		let c = self.set_struct_part(ns.clone(),stx);
 		if c.is_err() {
 			self.set_mode_resume(setmode);
