@@ -73,7 +73,6 @@ struct ParserTest2 {
 	port :i32,
 	dep :Depst,
 	args : Vec<String>,
-	subnargs : Vec<String>,
 }
 
 #[test]
@@ -139,5 +138,52 @@ fn test_a002() {
 	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
 	assert!(pi.borrow().dep.string == "s_var");
 	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	return;
+}
+
+#[derive(ArgSet)]
+struct ParserTest3 {
+	verbose :i32,
+	port :i32,
+	dep :Depst,
+	rdep :Depst,
+	args : Vec<String>,
+}
+
+#[test]
+fn test_a003() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "rdep", "-L", "arg1", "--rdep-list", "arg2", "cc", "dd"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let p :ParserTest3 = ParserTest3::new();
+	let pi :Arc<RefCell<ParserTest3>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	extargs_log_trace!("verbose [{}]",pi.borrow().verbose);
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().port == 5000);
+	assert!(_ns.get_string("subcommand") == "rdep" );
+	extargs_log_trace!("list [{:?}]", pi.borrow().rdep.list);
+	assert!(check_array_equal(pi.borrow().rdep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(pi.borrow().dep.string == "s_rdep");
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(),format_string_array(vec![])));
 	return;
 }
