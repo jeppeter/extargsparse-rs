@@ -1454,12 +1454,11 @@ impl InnerExtArgsParser {
 		name = self.format_cmd_from_cmd_array(parsers.clone());
 		extargs_log_trace!("name [{}]",name);
 		for opt in parser.get_cmdopts() {
-				let mut curname :String = "".to_string();
+			let mut curname :String = "".to_string();
 			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
-			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
+			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE  {
 				if name.len() > 0 {
-					curname.push_str(&format!("{}",name));
-					curname.push_str(".");
+					curname.push_str(&format!("{}_",name));
 				}
 				if opt.type_name() != KEYWORD_ARGS {
 					curname.push_str(&opt.flag_name());
@@ -1470,17 +1469,9 @@ impl InnerExtArgsParser {
 						curname.push_str(KEYWORD_ARGS);
 					}
 				}
-				extargs_log_trace!("set [{}]", curname);
-				ostruct.borrow_mut().set_value(&curname,ns.clone())?;	
-			} else if opt.is_flag() && opt.type_name() == KEYWORD_ARGS {
-				if name.len() > 0 {
-					curname.push_str(&(format!("{}.{}",name,KEYWORD_SUBNARGS)));
-				} else {
-					curname.push_str(&format!("{}",KEYWORD_ARGS));
-				}
-				extargs_log_trace!("set [{}]", curname);
-				ostruct.borrow_mut().set_value(&curname,ns.clone())?;
-			}
+				extargs_log_trace!("set [{}][{}]",name, curname);
+				ostruct.borrow_mut().set_value("",&curname,ns.clone())?;	
+			} 
 		}
 		Ok(())
 	}

@@ -73,6 +73,7 @@ struct ParserTest2 {
 	port :i32,
 	dep :Depst,
 	args : Vec<String>,
+	subnargs : Vec<String>,
 }
 
 #[test]
@@ -134,6 +135,7 @@ fn test_a002() {
 	assert!(pi.borrow().verbose == 4);
 	assert!(pi.borrow().port == 5000);
 	assert!(_ns.get_string("subcommand") == "dep" );
+	extargs_log_trace!("list [{:?}]", pi.borrow().dep.list);
 	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
 	return;
 }

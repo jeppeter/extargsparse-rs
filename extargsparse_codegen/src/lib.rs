@@ -5,7 +5,7 @@ use syn;
 use std::sync::{Mutex,Arc};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-//use std::cmp::Ordering;
+use std::cmp::Ordering;
 
 use rand::Rng;
 use bytes::{BytesMut,BufMut};
@@ -381,7 +381,9 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 	rets.push_str(&format!("\n"));
 
 	rets.push_str(&format_tab_space(1));
-	rets.push_str(&format!("fn set_value(&mut self,k :&str, ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {{\n"));
+	rets.push_str(&format!("fn set_value(&mut self, prefix :&str,k :&str, ns :NameSpaceEx) -> Result<(),Box<dyn Error>> {{\n"));
+	rets.push_str(&format_tab_space(2));
+	rets.push_str(&format!("let mut extk :String = \"\".to_string();\n"));
 	let mut i :i32 = 0;
 	for (k,v) in names.clone().iter() {
 		if !check_in_array(ARGSET_KEYWORDS.clone(), v) {
@@ -396,25 +398,39 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 			rets.push_str(&format!("if "));
 		}
 		rets.push_str(&format!("k == \"{}\" {{\n", k));
-		rets.push_str(&format!("            "));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("extk = \"\".to_string();\n")));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("extk.push_str(prefix);\n")));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("if extk.len() > 0 {{\n")));
+		rets.push_str(&format_tab_space(4));
+		rets.push_str(&(format!("extk.push_str(\"_\");\n")));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("}}\n")));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("extk.push_str(\"{}\");\n",k)));
+		rets.push_str(&format_tab_space(3));
+		rets.push_str(&(format!("println!(\"will get [{{}}]\", extk);\n")));
+		rets.push_str(&format_tab_space(3));
 		if v == KEYWORD_TYPE_STRING {
-			rets.push_str(&format!("self.{} = ns.get_string(k);\n", k));
+			rets.push_str(&format!("self.{} = ns.get_string(&extk);\n", k));
 		} else if v == KEYWORD_I32 {
-			rets.push_str(&format!("self.{} = ns.get_int(k) as i32;\n",k));
+			rets.push_str(&format!("self.{} = ns.get_int(&extk) as i32;\n",k));
 		} else if v == KEYWORD_U32 {
-			rets.push_str(&format!("self.{} = ns.get_int(k) as u32;\n",k));
+			rets.push_str(&format!("self.{} = ns.get_int(&extk) as u32;\n",k));
 		} else if v == KEYWORD_F32 {
-			rets.push_str(&format!("self.{} = ns.get_float(k) as f32;\n",k));
+			rets.push_str(&format!("self.{} = ns.get_float(&extk) as f32;\n",k));
 		} else if v == KEYWORD_I64 {
-			rets.push_str(&format!("self.{} = ns.get_int(k);\n",k));
+			rets.push_str(&format!("self.{} = ns.get_int(&extk);\n",k));
 		} else if v == KEYWORD_U64 {
-			rets.push_str(&format!("self.{} = ns.get_int(k) as u64;\n",k));
+			rets.push_str(&format!("self.{} = ns.get_int(&extk) as u64;\n",k));
 		} else if v == KEYWORD_F64 {
-			rets.push_str(&format!("self.{} = ns.get_float(k);\n",k));
+			rets.push_str(&format!("self.{} = ns.get_float(&extk);\n",k));
 		} else if v == KEYWORD_TYPE_BOOL {
-			rets.push_str(&format!("self.{} = ns.get_bool(k);\n",k));
+			rets.push_str(&format!("self.{} = ns.get_bool(&extk);\n",k));
 		} else if v == KEYWORD_VEC_STRING {
-			rets.push_str(&format!("self.{} = ns.get_array(k);\n",k));
+			rets.push_str(&format!("self.{} = ns.get_array(&extk);\n",k));
 		} 
 		i += 1;
 	}
@@ -429,15 +445,27 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 					} else {
 						rets.push_str(&format!("if "));
 					}
-					rets.push_str(&format!("k.starts_with(&format!(\"{}.\")) {{\n",k));
+					rets.push_str(&format!("k.starts_with(&format!(\"{}_\")) {{\n",k));
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&format!("let nk = format!(\"{{}}\",k);\n"));
 					rets.push_str(&format_tab_space(3));
-					rets.push_str(&format!("let re = Regex::new(r\"^{}\\.\").unwrap();\n",k));
+					rets.push_str(&format!("let re = Regex::new(r\"^{}_\").unwrap();\n",k));
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&format!("let kn = re.replace_all(&nk,\"\").to_string();\n"));
 					rets.push_str(&format_tab_space(3));
-					rets.push_str(&format!("self.{}.set_value(&kn,ns.clone())?;\n",k));
+					rets.push_str(&(format!("extk = \"\".to_string();\n")));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&(format!("extk.push_str(prefix);\n")));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&(format!("if extk.len() > 0 {{\n")));
+					rets.push_str(&format_tab_space(4));
+					rets.push_str(&(format!("extk.push_str(\"_\");\n")));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&(format!("}}\n")));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&(format!("extk.push_str(\"{}\");\n",k)));
+					rets.push_str(&format_tab_space(3));
+					rets.push_str(&format!("self.{}.set_value(&extk,&kn,ns.clone())?;\n",k));
 					break;
 				}
 			}
@@ -452,7 +480,7 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 		rets.push_str(&format!("}} else {{\n"));
 		rets.push_str(&format_tab_space(3));
 
-		rets.push_str(&format!("new_error!{{ {},\"{{}} not valid\" , k}}\n", typeerrname));
+		rets.push_str(&format!("new_error!{{ {},\"[{{}}].{{}} not valid\" , prefix , k}}\n", typeerrname));
 		rets.push_str(&format_tab_space(2));
 
 		rets.push_str(&format!("}}\n"));
