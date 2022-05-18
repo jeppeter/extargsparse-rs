@@ -981,3 +981,33 @@ fn test_a017() {
 	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec![])));
 	return;
 }
+
+#[test]
+fn test_a018() {
+	let loads = r#"        {
+            "+dpkg" : {
+                "dpkg" : "dpkg"
+            },
+            "verbose|v" : "+",
+            "rollback|r": true,
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            }
+        }"#;
+	before_parser();
+	let params :Vec<String> = format_string_array(vec!["-vvrvv"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_bool("rollback") == false);
+	assert!(ns.get_int("port")== 3000);
+	assert!(ns.get_string("dpkg_dpkg") == "dpkg");
+	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec![])));
+	return;
+}
