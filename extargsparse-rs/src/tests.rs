@@ -188,3 +188,38 @@ fn test_a003() {
 	assert!(check_array_equal(pi.borrow().args.clone(),format_string_array(vec![])));
 	return;
 }
+
+
+#[test]
+fn test_a003_2() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "rdep", "-L", "arg1", "--rdep-list", "arg2", "cc", "dd"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("port") == 5000);
+	assert!(ns.get_string("subcommand") == "rdep" );
+	assert!(check_array_equal(ns.get_array("rdep_list"), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(ns.get_string("rdep_string") == "s_rdep");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["cc", "dd"])));
+	assert!(check_array_equal(ns.get_array("dep_list"),format_string_array(vec![])));
+	assert!(ns.get_string("dep_string")  == "s_var");
+	assert!(check_array_equal(ns.get_array("args"),format_string_array(vec![])));
+	return;
+}
