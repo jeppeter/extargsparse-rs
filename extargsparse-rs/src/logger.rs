@@ -93,7 +93,6 @@ lazy_static! {
 	};
 }
 
-
 pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
 	if *EXT_OPTIONS_LOG_LEVEL >= level {
 		if level <= 0 {

@@ -389,6 +389,7 @@ impl InnerExtArgsParser {
 		extargs_log_trace!("set [{}] [{}]",keycls.opt_dest(),params[validx as usize]);
 		let n = format!("{}",keycls.opt_dest());
 		let v = format!("{}",params[validx as usize]);
+		extargs_log_trace!("set [{}] = [{}]",n,v);
 		ns.set_string(&n,v)?;
 		Ok(1)
 	}
@@ -1439,8 +1440,40 @@ impl InnerExtArgsParser {
 		for opt in parser.get_cmdopts() {
 			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
 			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
-				extargs_log_trace!("set [{}]",opt.var_name());
-				ostruct.borrow_mut().set_value("",&opt.var_name(),ns.clone())?;	
+				let mut curname :String = "".to_string();
+				curname.push_str(&name);
+				if curname.len() > 0 {
+					curname.push_str(".");
+				}
+				curname.push_str(&opt.var_name());
+				extargs_log_trace!("set [{}]",curname);
+				let mut oe :Result<(),Box<dyn Error>>;
+				oe = ostruct.borrow_mut().set_value("",&curname,&opt.opt_dest(),ns.clone());	
+				if oe.is_err() {
+					curname = "".to_string();
+					if name.len() > 0 {
+						curname.push_str(&name);
+						curname.push_str(".");
+					}
+					curname.push_str(&opt.var_name());
+					curname = curname.replace(".","_");
+					oe = ostruct.borrow_mut().set_value("",&curname,&opt.opt_dest(),ns.clone());
+					if oe.is_err() {
+						curname = "".to_string();
+						curname.push_str(&opt.var_name());						
+						oe = ostruct.borrow_mut().set_value("",&curname,&opt.opt_dest(),ns.clone());
+						if oe.is_err() {							
+							curname = "".to_string();
+							curname.push_str(&opt.var_name());
+							curname = curname.replace(".","_");
+							oe = ostruct.borrow_mut().set_value("",&curname,&opt.opt_dest(),ns.clone());
+							if oe.is_err() {
+								extargs_log_warn!("can not set [{}][{}]  value [{:?}]",name, opt.string(),oe);
+								return oe;
+							}
+						}
+					}
+				}
 			}
 		}
 		Ok(())
@@ -1494,16 +1527,19 @@ impl InnerExtArgsParser {
 		/*now for the command line*/
 		let mut curname :String = "".to_string();
 		let name = self.format_cmd_from_cmd_array(parsers);
+		let nsname :String;
 		if name.len() > 0 {
 			curname.push_str(&format!("{}_subnargs",name.replace(".","_")));
+			nsname = format!("subnargs");
 		} else {
 			curname.push_str(&format!("args"));
+			nsname = format!("args");
 		}
 		//
-		let _  = ostruct.borrow_mut().set_value("",&curname,ns.clone());
+		let _  = ostruct.borrow_mut().set_value("",&curname,&nsname,ns.clone());
 		if name.len() > 0 {
 			curname = "subnargs".to_string();
-			let _  = ostruct.borrow_mut().set_value("",&curname,ns.clone());
+			let _  = ostruct.borrow_mut().set_value("",&curname,&nsname,ns.clone());
 		}
 		Ok(())
 	}

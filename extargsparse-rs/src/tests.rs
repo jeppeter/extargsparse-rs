@@ -476,3 +476,164 @@ fn test_a007_2() {
 	assert!(check_array_equal(pi.borrow().subnargs.clone(), format_string_array(vec!["ww"])));
 	return;
 }
+
+#[derive(ArgSet)]
+struct ParserTest8 {
+	verbose :i32,
+	http_port :i32,
+	http_visual_mode: bool,
+	dep_string : String,
+	dep_list : Vec<String>,
+	subnargs : Vec<String>,
+}
+
+#[test]
+fn test_a008() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "+http" : {
+                "port|p" : 3000,
+                "visual_mode|V" : false
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "--http-port", "9000", "--http-visual-mode", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let p :ParserTest8 = ParserTest8::new();
+	let pi :Arc<RefCell<ParserTest8>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().http_port == 9000);
+	assert!(pi.borrow().http_visual_mode == true);
+	assert!(_ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(pi.borrow().dep_list.clone(), format_string_array(vec!["cc"])) );
+	assert!(pi.borrow().dep_string == "ee");
+	assert!(check_array_equal(pi.borrow().subnargs.clone(), format_string_array(vec!["ww"])));
+	return;
+}
+
+
+#[test]
+fn test_a008_2() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "+http" : {
+                "port|p" : 3000,
+                "visual_mode|V" : false
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "--http-port", "9000", "--http-visual-mode", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("http_port") == 9000);
+	assert!(ns.get_bool("http_visual_mode") == true);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["cc"])) );
+	assert!(ns.get_string("dep_string")== "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
+
+#[derive(ArgSet)]
+struct Depvv {
+	list :Vec<String>,
+	strv :String,
+	subnargs :Vec<String>,
+}
+
+#[derive(ArgSet)]
+struct ParserTest9 {
+	verbose :i32,
+	port :i32,
+	dep :Depvv,
+	args : Vec<String>,
+}
+
+#[test]
+fn test_a009() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s<dep.strv>" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "9000", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let p :ParserTest9 = ParserTest9::new();
+	let pi :Arc<RefCell<ParserTest9>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().port == 9000);
+	assert!(_ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["cc"])) );
+	assert!(pi.borrow().dep.strv == "ee");
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["ww"])));
+	return;
+}
+
+
+#[test]
+fn test_a009_2() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "9000", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("port") == 9000);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["cc"])) );
+	assert!(ns.get_string("dep_string")== "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
