@@ -176,15 +176,15 @@ fn test_a003() {
 	let pi :Arc<RefCell<ParserTest3>> = Arc::new(RefCell::new(p));
 	extargs_log_trace!(" ");
 	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
-	extargs_log_trace!("verbose [{}]",pi.borrow().verbose);
 	assert!(pi.borrow().verbose == 4);
 	assert!(pi.borrow().port == 5000);
 	assert!(_ns.get_string("subcommand") == "rdep" );
-	extargs_log_trace!("list [{:?}]", pi.borrow().rdep.list);
 	assert!(check_array_equal(pi.borrow().rdep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
 	assert!(pi.borrow().rdep.string == "s_rdep");
 	assert!(check_array_equal(pi.borrow().rdep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
-	extargs_log_trace!("dep.subnargs [{:?}]", pi.borrow().dep.subnargs.clone());
 	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(),format_string_array(vec![])));
+	assert!(check_array_equal(pi.borrow().dep.list.clone(),format_string_array(vec![])));
+	assert!(pi.borrow().dep.string== "s_var");
+	assert!(check_array_equal(pi.borrow().args.clone(),format_string_array(vec![])));
 	return;
 }
