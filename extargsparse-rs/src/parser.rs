@@ -1437,15 +1437,10 @@ impl InnerExtArgsParser {
 		name = self.format_cmd_from_cmd_array(parsers.clone());
 		extargs_log_trace!("name [{}]",name);
 		for opt in parser.get_cmdopts() {
-			let mut curname :String = "".to_string();
 			extargs_log_trace!("[{}] opt [{}]",name,opt.string());
 			if opt.is_flag() && opt.type_name() != KEYWORD_HELP && opt.type_name() != KEYWORD_JSONFILE && opt.type_name() != KEYWORD_ARGS {
-				if name.len() > 0 {
-					curname.push_str(&format!("{}_",name.replace(".","_").replace("-","_")));
-				}
-				curname.push_str(&opt.flag_name());
-				extargs_log_trace!("set [{}][{}]",name, curname);
-				ostruct.borrow_mut().set_value("",&curname,ns.clone())?;	
+				extargs_log_trace!("set [{}]",opt.var_name());
+				ostruct.borrow_mut().set_value("",&opt.var_name(),ns.clone())?;	
 			}
 		}
 		Ok(())
@@ -1506,6 +1501,10 @@ impl InnerExtArgsParser {
 		}
 		//
 		let _  = ostruct.borrow_mut().set_value("",&curname,ns.clone());
+		if name.len() > 0 {
+			curname = "subnargs".to_string();
+			let _  = ostruct.borrow_mut().set_value("",&curname,ns.clone());
+		}
 		Ok(())
 	}
 

@@ -437,3 +437,42 @@ fn test_a007() {
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
 	return;
 }
+
+#[derive(ArgSet)]
+struct ParserTest7 {
+	verbose :i32,
+	http_port :i32,
+	dep_string : String,
+	dep_list : Vec<String>,
+	subnargs : Vec<String>,
+}
+
+#[test]
+fn test_a007_2() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p+http" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let p :ParserTest7 = ParserTest7::new();
+	let pi :Arc<RefCell<ParserTest7>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().http_port == 3000);
+	assert!(_ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(pi.borrow().dep_list.clone(), format_string_array(vec!["cc"])) );
+	assert!(pi.borrow().dep_string == "ee");
+	assert!(check_array_equal(pi.borrow().subnargs.clone(), format_string_array(vec!["ww"])));
+	return;
+}
