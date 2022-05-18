@@ -700,3 +700,47 @@ fn test_a010() {
 	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["ww"])));
 	return;
 }
+
+#[derive(ArgSet)]
+struct ParserTest11 {
+	verbose :i32,
+	port :i32,
+	dep :Depvv10,
+	args : Vec<String>,
+}
+
+#[test]
+fn test_a011() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    let ws = r#"{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"}"#;
+    let f = make_temp_file(ws);
+    let depjsonfile = format!("{}",f.path().display());
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "9000", "dep", "--dep-json", &depjsonfile, "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let p :ParserTest11 = ParserTest11::new();
+	let pi :Arc<RefCell<ParserTest11>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("port")== 9000);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])) );
+	assert!(ns.get_string("dep_string") == "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
