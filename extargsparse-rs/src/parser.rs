@@ -830,6 +830,7 @@ impl InnerExtArgsParser {
 
 			if opt.type_name() == KEYWORD_STRING || opt.type_name() == KEYWORD_JSONFILE {
 				valstr = format!("\"{}\"",valstr);
+				valstr = valstr.replace("\\","\\\\");
 				let ojson = serde_json::from_str(&valstr);
 				if ojson.is_err() {
 					new_error!{ParserError,"get [{}] value [{}] parse error {:?}", optdest,valstr,ojson}
@@ -898,12 +899,14 @@ impl InnerExtArgsParser {
 	fn parse_env_subcommand_json_set(&self,ns :NameSpaceEx,pstate : Option<ParserState>) -> Result<(),Box<dyn Error>> {
 		let s :String;
 		s = ns.get_string(KEYWORD_SUBCOMMAND);
+		extargs_log_trace!("[{}]=[{}]",KEYWORD_SUBCOMMAND,s);
 		if s.len() > 0 && !self.no_json_option && self.json_long.len() > 0 {
 			if pstate.is_none() {
 				new_error!{ParserError,"not set arg_state yet"}
 			}
 			let cmds = pstate.as_ref().unwrap().get_cmd_paths();
 			let mut idx :usize = cmds.len();
+			extargs_log_trace!("cmds [{}] ",idx);
 			while idx >= 2 {
 				let mut curcmds :Vec<ParserCompat> = Vec::new();
 				let mut i :usize = 0;
@@ -913,13 +916,15 @@ impl InnerExtArgsParser {
 				}
 				let subname = self.format_cmd_from_cmd_array(curcmds);
 				let mut prefix : String = subname.replace(".","_");
-				prefix = format!("{}_{}",self.json_long, prefix);
+				prefix = format!("{}_{}",prefix,self.json_long);
 				let jsondest = prefix.to_uppercase();
 				let mut jsonfile :String = "".to_string();
 
+				extargs_log_trace!("jsondest [{}]",jsondest);
 				match env::var(&jsondest) {
 					Ok(v) => {
 						jsonfile = v.to_string();
+						extargs_log_trace!("jsonfile [{}]",jsonfile);
 					},
 					Err(_e) => {}
 				}

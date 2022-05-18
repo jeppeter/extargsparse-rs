@@ -33,6 +33,7 @@ fn before_parser() {
 				sk.starts_with("SSL_") || 
 				sk.starts_with("EXTARGSPARSE_JSON") || 
 				sk.starts_with("EXTARGSPARSE_JSONFILE"){
+					extargs_log_trace!("remove_var [{}]",k);
 					std::env::remove_var(k);
 					cont = 1;
 					break;
@@ -43,6 +44,7 @@ fn before_parser() {
 }
 
 fn set_env_var(k :&str, v :&str) {
+	extargs_log_trace!("set_var [{}] = [{}]",k,v);
 	std::env::set_var(k,v);
 }
 
@@ -818,6 +820,48 @@ fn test_a013() {
 	assert!(ns.get_int("port")== 9000);
 	assert!(ns.get_string("subcommand") == "dep" );
 	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])) );
+	assert!(ns.get_string("dep_string") == "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
+
+#[test]
+fn test_a014() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	before_parser();
+    let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
+    let depws = r#"{"list":["depjson1","depjson2"]}"#;
+    let f = make_temp_file(ws);
+    let depf = make_temp_file(depws);
+    let jsonfile = format!("{}",f.path().display());
+    let depjsonfile = format!("{}",depf.path().display());
+	let params :Vec<String> = format_string_array(vec!["-p", "9000", "dep", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let p :ParserTest11 = ParserTest11::new();
+	let pi :Arc<RefCell<ParserTest11>> = Arc::new(RefCell::new(p));
+
+	extargs_log_trace!(" ");
+    set_env_var("EXTARGSPARSE_JSON",&jsonfile);
+    set_env_var("DEP_JSON",&depjsonfile);
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(ns.get_int("verbose") == 3);
+	assert!(ns.get_int("port")== 9000);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["depjson1", "depjson2"])) );
 	assert!(ns.get_string("dep_string") == "ee");
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
 	return;
