@@ -410,3 +410,30 @@ fn test_a006() {
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["zz","64"])));
 	return;
 }
+
+#[test]
+fn test_a007() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p+http" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "dep", "-l", "cc", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline(Some(params.clone()),None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("http_port") == 3000);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["cc"])) );
+	assert!(ns.get_string("dep_string") == "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
