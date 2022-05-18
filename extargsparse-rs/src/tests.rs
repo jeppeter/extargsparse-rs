@@ -641,6 +641,13 @@ fn test_a009_2() {
 	return;
 }
 
+fn make_temp_file(s :&str) -> NamedTempFile {
+	let mut retv = NamedTempFile::new().unwrap();
+	let mut f = retv.reopen().unwrap();
+	f.write_all(s.as_bytes()).unwrap();
+	f.sync_all().unwrap();
+	return retv;
+}
 
 #[derive(ArgSet)]
 struct Depvv10 {
@@ -673,11 +680,8 @@ fn test_a010() {
                 "$" : "+"
             }
         }"#;
-    let f :NamedTempFile  = NamedTempFile::new().unwrap();
     let ws = r#"{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"}"#;
-    let mut fh :File = f.reopen().unwrap();
-    fh.write_all(ws.as_bytes()).unwrap();
-    fh.sync_all().unwrap();
+    let f = make_temp_file(ws);
     let depjsonfile = format!("{}",f.path().display());
 	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "9000", "dep", "--dep-json", &depjsonfile, "--dep-string", "ee", "ww"]);
 	extargs_log_trace!("params {:?}", params);
