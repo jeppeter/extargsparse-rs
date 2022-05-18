@@ -273,7 +273,9 @@ impl NameSpaceEx {
 	}
 	
 	pub (crate) fn set_string(&self,k :&str, v :String) -> Result<(),Box<dyn Error>> {
-		let s :String = format!("\"{}\"", v);
+		let ns :String = format!("\"{}\"", v);
+		/*for parse will not make this ok*/
+		let s :String = ns.replace("\\","\\\\");
 		match serde_json::from_str(&s) {
 			Ok(v) => {
 				self.innerrc.borrow_mut().set_value(k,v);

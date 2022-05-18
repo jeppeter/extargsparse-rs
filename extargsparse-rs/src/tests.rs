@@ -13,6 +13,9 @@ use regex::Regex;
 use std::any::Any;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use tempfile::{NamedTempFile};
+use std::fs::File;
+use std::io::{Write};
 
 use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
 
@@ -635,5 +638,61 @@ fn test_a009_2() {
 	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["cc"])) );
 	assert!(ns.get_string("dep_string")== "ee");
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
+
+
+#[derive(ArgSet)]
+struct Depvv10 {
+	list :Vec<String>,
+	string :String,
+	subnargs :Vec<String>,
+}
+
+#[derive(ArgSet)]
+struct ParserTest10 {
+	verbose :i32,
+	port :i32,
+	dep :Depvv10,
+	args : Vec<String>,
+}
+
+#[test]
+fn test_a010() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    let f :NamedTempFile  = NamedTempFile::new().unwrap();
+    let ws = r#"{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"}"#;
+    let mut fh :File = f.reopen().unwrap();
+    fh.write_all(ws.as_bytes()).unwrap();
+    fh.sync_all().unwrap();
+    let depjsonfile = format!("{}",f.path().display());
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "9000", "dep", "--dep-json", &depjsonfile, "--dep-string", "ee", "ww"]);
+	extargs_log_trace!("params {:?}", params);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let p :ParserTest10 = ParserTest10::new();
+	let pi :Arc<RefCell<ParserTest10>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().port == 9000);
+	assert!(_ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(pi.borrow().dep.list.clone(), format_string_array(vec!["jsonval1", "jsonval2"])) );
+	assert!(pi.borrow().dep.string == "ee");
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(), format_string_array(vec!["ww"])));
 	return;
 }
