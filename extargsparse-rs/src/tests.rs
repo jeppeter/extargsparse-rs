@@ -42,6 +42,10 @@ fn before_parser() {
 	return;
 }
 
+fn set_env_var(k :&str, v :&str) {
+	std::env::set_var(k,v);
+}
+
 fn format_string_array(v :Vec<&str>) -> Vec<String> {
 	let mut retv :Vec<String> = Vec::new();
 	for i in v.iter() {
@@ -771,6 +775,44 @@ fn test_a012() {
 	let p :ParserTest11 = ParserTest11::new();
 	let pi :Arc<RefCell<ParserTest11>> = Arc::new(RefCell::new(p));
 	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(ns.get_int("verbose") == 3);
+	assert!(ns.get_int("port")== 9000);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])) );
+	assert!(ns.get_string("dep_string") == "ee");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
+
+#[test]
+fn test_a013() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+	let params :Vec<String> = format_string_array(vec!["-p", "9000", "dep", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let p :ParserTest11 = ParserTest11::new();
+	let pi :Arc<RefCell<ParserTest11>> = Arc::new(RefCell::new(p));
+
+	extargs_log_trace!(" ");
+	set_env_var("EXTARGSPARSE_JSON",&jsonfile);
 	let ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
 	assert!(ns.get_int("verbose") == 3);
 	assert!(ns.get_int("port")== 9000);
