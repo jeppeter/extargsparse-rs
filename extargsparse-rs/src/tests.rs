@@ -1,6 +1,7 @@
 use super::parser::{ExtArgsParser};
 use super::logger::{extargs_debug_out};
 use super::argset::{ArgSetImpl};
+use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
@@ -9,8 +10,11 @@ use std::sync::Arc;
 use std::error::Error;
 use std::boxed::Box;
 use regex::Regex;
+use std::any::Any;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
 
-use extargsparse_codegen::{extargs_load_commandline,ArgSet};
+use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
 
 
 fn before_parser() {
@@ -145,8 +149,12 @@ fn test_a002() {
 struct ParserTest3 {
 	verbose :i32,
 	port :i32,
-	dep :Depst,
-	rdep :Depst,
+	dep_list :Vec<String>,
+	dep_string :String,
+	dep_subnargs : Vec<String>,
+	rdep_list :Vec<String>,
+	rdep_string : String,
+	rdep_subnargs : Vec<String>,
 	args : Vec<String>,
 }
 
@@ -179,12 +187,12 @@ fn test_a003() {
 	assert!(pi.borrow().verbose == 4);
 	assert!(pi.borrow().port == 5000);
 	assert!(_ns.get_string("subcommand") == "rdep" );
-	assert!(check_array_equal(pi.borrow().rdep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
-	assert!(pi.borrow().rdep.string == "s_rdep");
-	assert!(check_array_equal(pi.borrow().rdep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
-	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(),format_string_array(vec![])));
-	assert!(check_array_equal(pi.borrow().dep.list.clone(),format_string_array(vec![])));
-	assert!(pi.borrow().dep.string== "s_var");
+	assert!(check_array_equal(pi.borrow().rdep_list.clone(), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(pi.borrow().rdep_string == "s_rdep");
+	assert!(check_array_equal(pi.borrow().rdep_subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	assert!(check_array_equal(pi.borrow().dep_subnargs.clone(),format_string_array(vec![])));
+	assert!(check_array_equal(pi.borrow().dep_list.clone(),format_string_array(vec![])));
+	assert!(pi.borrow().dep_string== "s_var");
 	assert!(check_array_equal(pi.borrow().args.clone(),format_string_array(vec![])));
 	return;
 }
@@ -221,5 +229,149 @@ fn test_a003_2() {
 	assert!(check_array_equal(ns.get_array("dep_list"),format_string_array(vec![])));
 	assert!(ns.get_string("dep_string")  == "s_var");
 	assert!(check_array_equal(ns.get_array("args"),format_string_array(vec![])));
+	return;
+}
+
+
+#[derive(ArgSet)]
+struct ParserTest4 {
+	verbose :i32,
+	port :i32,
+	dep :Depst,
+	rdep :Depst,
+	args : Vec<String>,
+}
+
+#[test]
+fn test_a004() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "rdep", "-L", "arg1", "--rdep-list", "arg2", "cc", "dd"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let p :ParserTest4 = ParserTest4::new();
+	let pi :Arc<RefCell<ParserTest4>> = Arc::new(RefCell::new(p));
+	extargs_log_trace!(" ");
+	let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+	assert!(pi.borrow().verbose == 4);
+	assert!(pi.borrow().port == 5000);
+	assert!(_ns.get_string("subcommand") == "rdep" );
+	assert!(check_array_equal(pi.borrow().rdep.list.clone(), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(pi.borrow().rdep.string == "s_rdep");
+	assert!(check_array_equal(pi.borrow().rdep.subnargs.clone(), format_string_array(vec!["cc", "dd"])));
+	assert!(check_array_equal(pi.borrow().dep.subnargs.clone(),format_string_array(vec![])));
+	assert!(check_array_equal(pi.borrow().dep.list.clone(),format_string_array(vec![])));
+	assert!(pi.borrow().dep.string== "s_var");
+	assert!(check_array_equal(pi.borrow().args.clone(),format_string_array(vec![])));
+	return;
+}
+
+
+#[test]
+fn test_a004_2() {
+	let loads = r#"{
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-vvvv", "-p", "5000", "rdep", "-L", "arg1", "--rdep-list", "arg2", "cc", "dd"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("port") == 5000);
+	assert!(ns.get_string("subcommand") == "rdep" );
+	assert!(check_array_equal(ns.get_array("rdep_list"), format_string_array(vec!["arg1", "arg2"])) );
+	assert!(ns.get_string("rdep_string") == "s_rdep");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["cc", "dd"])));
+	assert!(check_array_equal(ns.get_array("dep_list"),format_string_array(vec![])));
+	assert!(ns.get_string("dep_string")== "s_var");
+	assert!(check_array_equal(ns.get_array("args"),format_string_array(vec![])));
+	return;
+}
+
+struct ParserTest5Ctx {
+	has_called_args : String,
+}
+
+fn debug_args_function(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _parser :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	if _parser.is_some() {
+		let ctx = _parser.as_ref().unwrap().clone();
+		let mut bctx = ctx.borrow_mut();
+		match bctx.downcast_mut::<ParserTest5Ctx>() {
+			Some(_v) => {
+				extargs_log_trace!("call ParserTest5Ctx downcast_mut");
+				_v.has_called_args = _ns.get_string("subcommand");
+			},
+			_ => {
+
+			}
+		}
+	}
+	Ok(())
+}
+
+#[extargs_map_function(debug_args_function)]
+#[test]
+fn test_a005() {
+	let loads = r#"
+	        {
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep<debug_args_function>" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-p", "7003", "-vvvvv", "dep", "-l", "foo1", "-s", "new_var", "zz"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ctx :ParserTest5Ctx = ParserTest5Ctx{ has_called_args : "".to_string(),};
+	let ctxpi : Arc<RefCell<ParserTest5Ctx>> = Arc::new(RefCell::new(ctx));
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline(Some(params.clone()),Some(ctxpi.clone())).unwrap();
+	assert!(ns.get_int("port") == 7003);
+	assert!(ns.get_int("verbose") == 5);
+	assert!(ns.get_string("subcommand") == "dep" );
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["foo1"])) );
+	assert!(ns.get_string("dep_string") == "new_var");
+	assert!(ctxpi.borrow().has_called_args == "dep");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["zz"])));
 	return;
 }

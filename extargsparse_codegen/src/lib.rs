@@ -5,6 +5,7 @@ use syn;
 use std::sync::{Mutex,Arc};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use regex::Regex;
 //use std::cmp::Ordering;
 
 use rand::Rng;
@@ -430,11 +431,27 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 		} else if v == KEYWORD_TYPE_BOOL {
 			rets.push_str(&format!("self.{} = ns.get_bool(&extk);\n",k));
 		} else if v == KEYWORD_VEC_STRING {
-			if k == KEYWORD_SUBNARGS || k == KEYWORD_ARGS {
+			let mut bsubnargs : bool= false;
+			let resubnargs;
+			match Regex::new(".*_subnargs$") {
+				Ok(v) => {
+					resubnargs = v;
+					bsubnargs = resubnargs.is_match(k);
+					em_log_trace!("match [{}] [{:?}]",k,bsubnargs);
+				},
+				_ => {}
+			}
+			em_log_trace!("match [{}] [{:?}]",k,bsubnargs);
+
+			if k == KEYWORD_SUBNARGS || k == KEYWORD_ARGS  {
 				rets.push_str(&(format!("println!(\"will get args[{}]\");\n",k)));
 				rets.push_str(&format_tab_space(3));				
 				rets.push_str(&format!("self.{} = ns.get_array(\"{}\");\n",k,k));
-			} else {				
+			} else if  bsubnargs {
+				rets.push_str(&(format!("println!(\"will get args[{}]\");\n",k)));
+				rets.push_str(&format_tab_space(3));
+				rets.push_str(&format!("self.{} = ns.get_array(\"subnargs\");\n",k));
+			} else {
 				rets.push_str(&format!("self.{} = ns.get_array(&extk);\n",k));
 			}
 		} 
