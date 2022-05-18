@@ -375,3 +375,38 @@ fn test_a005() {
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["zz"])));
 	return;
 }
+
+#[test]
+fn test_a006() {
+	let loads1 = r#"{
+            "verbose|v" : "+",
+            "port|p" : 3000,
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    let loads2 = r#"{
+            "rdep" : {
+                "list|L" : [],
+                "string|S" : "s_rdep",
+                "$" : 2
+            }
+        }"#;
+	let params :Vec<String> = format_string_array(vec!["-p", "7003", "-vvvvv", "rdep", "-L", "foo1", "-S", "new_var", "zz", "64"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	before_parser();
+	extargs_log_trace!(" ");
+	extargs_load_commandline!(parser,loads1).unwrap();
+	extargs_load_commandline!(parser,loads2).unwrap();
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline(Some(params.clone()),None).unwrap();
+	assert!(ns.get_int("port") == 7003);
+	assert!(ns.get_int("verbose") == 5);
+	assert!(ns.get_string("subcommand") == "rdep" );
+	assert!(check_array_equal(ns.get_array("rdep_list"), format_string_array(vec!["foo1"])) );
+	assert!(ns.get_string("rdep_string") == "new_var");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["zz","64"])));
+	return;
+}

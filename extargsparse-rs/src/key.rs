@@ -1127,7 +1127,7 @@ impl InnerExtKeyParse {
 
 			match self.keydata.get_nargs(KEYWORD_NARGS) {
 				Some(v) => {
-					retstr.push_str(&(format!("{}", v.string())[..]));
+					retstr.push_str(&(format!("<{}:{}>",KEYWORD_NARGS, v.string())[..]));
 				},
 				_ => {
 
@@ -1141,7 +1141,15 @@ impl InnerExtKeyParse {
 
 			match self.keydata.get_jsonval(KEYWORD_VALUE) {
 				Some(v) => {
-					retstr.push_str(&(format!("<{}:{:?}>", KEYWORD_VALUE,v)[..]));
+					match v {
+						Value::Null => {
+
+						},
+						_ => {
+							retstr.push_str(&(format!("<{}:{:?}>", KEYWORD_VALUE,v)[..]));		
+						}
+					}
+					
 				},
 				_ => {
 
@@ -1159,7 +1167,7 @@ impl InnerExtKeyParse {
 				retstr.push_str(&(format!("<{}:{}>",KEYWORD_ATTR,v.string())[..]));
 			},
 			_ => {
-
+				retstr.push_str(&(format!("<{}:>",KEYWORD_ATTR)));
 			},
 		}
 
@@ -1307,7 +1315,6 @@ impl InnerExtKeyParse {
 				self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
 			}
 			
-			extargs_log_trace!("set [{}]=[{}]",KEYWORD_TYPE,KEYWORD_COMMAND);
 			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COMMAND);
 		}
 
@@ -1697,7 +1704,6 @@ impl InnerExtKeyParse {
 		}
 
 		self.keydata.set_jsonval(KEYWORD_VALUE,value);
-		extargs_log_trace!("value [{:?}]",value);
 
 		if !ishelp && !isjsonfile {
 			self.keydata.set_type(KEYWORD_TYPE,TypeClass::new(value).get_type().as_str());

@@ -98,51 +98,39 @@ impl InnerExtArgsParser {
 		let b = Arc::new(UnsafeCell::new(self.clone()));
 		let mut bmut =  self.loadfuncs.borrow_mut();
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_STRING),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {  
-			extargs_log_trace!("call [{}]", KEYWORD_STRING) ;
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_STRING),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v)
 		} )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_INT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_INT) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_INT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_FLOAT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_FLOAT) ;  
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_FLOAT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_LIST),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_LIST) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_LIST),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_BOOL),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_BOOL) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_BOOL),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_ARGS),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_ARGS) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_ARGS),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_args(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_COMMAND),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_COMMAND) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_COMMAND),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {	let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_command_subparser(n,k,v) 
 		} )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_PREFIX),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_PREFIX) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_PREFIX),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_command_prefix(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_COUNT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_COUNT) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_COUNT),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_HELP),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_HELP) ; 
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_HELP),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		let s1 = b.clone();
-		bmut.insert(format!("{}",KEYWORD_JSONFILE),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| { extargs_log_trace!("call [{}]", KEYWORD_JSONFILE) ;  
-			let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
+		bmut.insert(format!("{}",KEYWORD_JSONFILE),Rc::new(RefCell::new(ExtArgsFunc::LoadFunc(Rc::new(move |n,k,v| {let  c :&mut InnerExtArgsParser = unsafe {&mut *s1.get()};
 			c.load_commandline_base(n,k,v) } )))));
 		return;
 	}	
@@ -197,19 +185,14 @@ impl InnerExtArgsParser {
 	fn insert_setmap_funcs(&mut self) {
 		let b = Arc::new(RefCell::new(self.clone()));
 		let s1 = b.clone();
-		extargs_log_trace!("setmapfuncs [{}]",SUB_COMMAND_JSON_SET);
 		self.setmapfuncs.borrow_mut().insert(SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_subcommand_json_set(n,s) })))));
 		let s1 = b.clone();
-		extargs_log_trace!("setmapfuncs [{}]",COMMAND_JSON_SET);
 		self.setmapfuncs.borrow_mut().insert(COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_command_json_set(n,s) })))));
 		let s1 = b.clone();
-		extargs_log_trace!("setmapfuncs [{}]",ENVIRONMENT_SET);
 		self.setmapfuncs.borrow_mut().insert(ENVIRONMENT_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_environment_set(n,s) })))));
 		let s1 = b.clone();
-		extargs_log_trace!("setmapfuncs [{}]",ENV_SUB_COMMAND_JSON_SET);
 		self.setmapfuncs.borrow_mut().insert(ENV_SUB_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_env_subcommand_json_set(n,s) })))));
 		let s1 = b.clone();
-		extargs_log_trace!("setmapfuncs [{}]",ENV_COMMAND_JSON_SET);
 		self.setmapfuncs.borrow_mut().insert(ENV_COMMAND_JSON_SET,Rc::new(RefCell::new(ExtArgsFunc::LoadJsonFunc(Rc::new(move |n,s| { s1.borrow().parse_env_command_json_set(n,s) })))));
 		return;
 	}
@@ -1049,8 +1032,9 @@ impl InnerExtArgsParser {
 		} else {
 			lastparser = self.maincmd.clone();
 		}
-
+		extargs_log_trace!("lastparser [{}] cmpkeycls [{}]", lastparser.string(),keycls.string());
 		for opt in lastparser.get_cmdopts().iter() {
+			extargs_log_trace!("k [{}]", opt.string());
 			if opt.flag_name() != KEYWORD_DOLLAR_SIGN && keycls.flag_name() != KEYWORD_DOLLAR_SIGN {
 				if opt.type_name() != KEYWORD_HELP && keycls.type_name() != KEYWORD_HELP {
 					if opt.opt_dest().eq(&keycls.opt_dest()) {
@@ -1066,10 +1050,8 @@ impl InnerExtArgsParser {
 
 		if parserclone > 0 {
 			let uc = parsers.len() -1;
-			extargs_log_trace!("input [{}] keycls [{}]", parsers[uc].string(), keycls.string());
 			parsers[uc].push_cmdopts(keycls);
 		} else {
-			extargs_log_trace!("input [{}] keycls [{}]", self.maincmd.string(), keycls.string());
 			self.maincmd.push_cmdopts(keycls);
 		}
 
@@ -1096,16 +1078,17 @@ impl InnerExtArgsParser {
 		let key1 :String;
 		let v :Value;
 		let keycls :ExtKeyParse;
-		extargs_log_trace!("json_long [{}]",self.json_long);
 		key1 = format!("{}##json input file to get the value set##",self.json_long);
 		prefix = self.format_cmd_from_cmd_array(parsers.clone());
 		prefix = prefix.replace(".","_");
 		v = Value::Null;
-		extargs_log_trace!("prefix [{}]",prefix);
 		let res = ExtKeyParse::new(&prefix,&key1,&v,true,false,true,&self.long_prefix,&self.short_prefix,false);
 		extargs_assert!(res.is_ok(), "create json keycls error [{:?}]", res.err().unwrap());
 		keycls = res.unwrap();
-		return self.load_commandline_json_file(keycls,parsers);
+		/*nothing to added*/
+		extargs_log_trace!("added [{}]", keycls.string());
+		_ = self.load_commandline_json_file(keycls,parsers);
+		return Ok(());
 	}
 
 	fn load_commandline_help(&mut self, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
@@ -1124,12 +1107,12 @@ impl InnerExtArgsParser {
 		let res = ExtKeyParse::new("",&key1,&v,true,true,false,&self.long_prefix,&self.short_prefix,false);
 		extargs_assert!(res.is_ok(),"create help keycls error [{:?}]", res.err().unwrap());
 		let keycls = res.unwrap();
-		return self.load_commandline_help(keycls,parsers);
+		let _ = self.load_commandline_help(keycls,parsers);
+		return Ok(());
 	}
 
 	fn call_load_command_map_func(&mut self,prefix :String,keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let fnptr :Option<ExtArgsFunc>;
-		extargs_log_trace!("typename [{}]",keycls.type_name());
 		fnptr = self.get_load_func(&(keycls.type_name()));
 		if fnptr.is_some() {
 			let f2 = fnptr.unwrap();

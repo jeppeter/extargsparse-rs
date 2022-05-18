@@ -128,7 +128,7 @@ impl InnerExtArgsOptions {
 		};
 
 		for (k,v) in OPT_DEFAULT_VALUE.clone() {
-			extargs_log_trace!("[{}]=[{:?}]", k,v);
+			//extargs_log_trace!("[{}]=[{:?}]", k,v);
 			retv.values.insert(k,v);
 		}
 		let err = serde_json::from_str(s);
