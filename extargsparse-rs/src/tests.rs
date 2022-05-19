@@ -1242,3 +1242,72 @@ fn test_a024() {
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec![])));
 	return;
 }
+
+#[test]
+fn test_a025() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "+http" : {
+                "url|u" : "http://www.google.com",
+                "visual_mode|V": false
+            },
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+",
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            },
+            "rdep" : {
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            }
+        }"#;
+	before_parser();
+
+	let ws = r#"{ "http" : { "url" : "http://www.github.com"} ,"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
+	let depws = r#"{"list":["depjson1","depjson2"]}"#;
+	let rdepws = r#"{"ip": {"list":["rdepjson1","rdepjson3"],"verbose": 5}}"#;
+	let f = make_temp_file(ws);
+	let depf = make_temp_file(depws);
+	let rdepf = make_temp_file(rdepws);
+	let depjsonfile = format!("{}",depf.path().display());
+	let jsonfile = format!("{}",f.path().display());
+	let rdepjsonfile = format!("{}",rdepf.path().display());
+
+	set_env_var("EXTARGSPARSE_JSON",&jsonfile);
+	set_env_var("DEP_JSON",&depjsonfile);
+	set_env_var("RDEP_JSON", &rdepjsonfile);
+
+	let prioropt = Some(vec![ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET]);
+
+	let params :Vec<String> = format_string_array(vec!["-p", "9000", "rdep", "ip", "--rdep-ip-verbose", "--rdep-ip-cc", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,prioropt).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	extargs_log_trace!(" ");
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 3);
+	assert!(ns.get_int("port") == 9000);
+	assert!(ns.get_string("dep_string")== "jsonstring");
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])));
+	assert!(ns.get_bool("http_visual_mode") == false);
+	assert!(ns.get_string("http_url")== "http://www.github.com");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	assert!(ns.get_string("subcommand") == "rdep.ip");
+	assert!(ns.get_int("rdep_ip_verbose") == 1);
+	assert!(check_array_equal(ns.get_array("rdep_ip_cc"), format_string_array(vec!["ee"])));
+	assert!(check_array_equal(ns.get_array("rdep_ip_list"), format_string_array(vec!["rdepjson1", "rdepjson3"])));
+	return;
+}
