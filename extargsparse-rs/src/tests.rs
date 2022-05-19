@@ -1091,3 +1091,18 @@ fn test_a020() {
 	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec![])));
 	return;
 }
+
+#[test]
+fn test_a021() {
+	let loads = r#"        {
+            "maxval|m" : 392244922
+        }"#;
+	before_parser();
+
+	let params :Vec<String> = format_string_array(vec!["-m", "0xffcc"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("maxval") == 0xffcc);
+	return;
+}
