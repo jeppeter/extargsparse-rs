@@ -6,6 +6,7 @@ use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL};
+use super::options::{ExtArgsOptions,OPT_PROG};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -17,8 +18,9 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use tempfile::{NamedTempFile};
 //use std::fs::File;
-use std::io::{Write};
 use serde_json::Value;
+use std::io::{Write,BufWriter};
+
 
 use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
 
@@ -1309,5 +1311,123 @@ fn test_a025() {
 	assert!(ns.get_int("rdep_ip_verbose") == 1);
 	assert!(check_array_equal(ns.get_array("rdep_ip_cc"), format_string_array(vec!["ee"])));
 	assert!(check_array_equal(ns.get_array("rdep_ip_list"), format_string_array(vec!["rdepjson1", "rdepjson3"])));
+	return;
+}
+
+fn get_cmd_help(parser :ExtArgsParser, cmdname :&str) -> Vec<String> {
+	let mut buf = vec![];
+	{
+		let mut wstr = BufWriter::new(&mut buf);
+		let _ = parser.print_help_ex(&mut wstr , cmdname).unwrap();
+
+
+	}
+	let s = std::str::from_utf8(&buf).unwrap();
+	extargs_log_trace!("cmd[{}]help\n{}",cmdname,s);
+	let sp :Vec<&str> = s.split("\n").collect();
+	let mut retv :Vec<String> = Vec::new();
+	for c in sp.iter() {
+		retv.push(format!("{}",c));
+	}
+	return retv;
+}
+
+fn get_opt_ok(sarr :Vec<String>, opt :ExtKeyParse) -> bool {
+	if opt.flag_name() == KEYWORD_DOLLAR_SIGN {
+		return true;
+	}
+	let mut exprstr :String = "".to_string();
+	let mut morethanone :i32 = 0;
+	exprstr.push_str(&format!("^\\s+{}",opt.long_opt()));
+	if opt.short_opt().len() > 0 {
+		exprstr.push_str(&format!("\\|{}",opt.short_opt()));
+	}
+
+	match opt.get_nargs_v() {
+		Nargs::Argnum(n) => {
+			if n > 0 {
+				morethanone = 1;
+			}
+		},
+		_ => {}
+	}
+
+	if morethanone > 0 {
+		exprstr.push_str(&format!("\\s+{}\\s+.*$",opt.opt_dest()));
+	} else {
+		exprstr.push_str(&format!("\\s+.*$"));
+	}
+
+	extargs_log_trace!("exprstr {}",exprstr);
+	let ex = Regex::new(&exprstr).unwrap();
+	for l in sarr.iter() {
+		if ex.is_match(l) {
+			return true;
+		}
+	}
+	return false;
+}
+
+fn check_all_opts_help(sarr : Vec<String>, opts :Vec<ExtKeyParse>) -> bool {
+	for opt in opts.iter() {
+		let b = get_opt_ok(sarr.clone(),opt.clone());
+		if !b {
+			return false;
+		}
+	}
+	return true;
+}
+
+#[test]
+fn test_a026() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "+http" : {
+                "url|u" : "http://www.google.com",
+                "visual_mode|V": false
+            },
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+",
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            },
+            "rdep" : {
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            }
+        }"#;
+	before_parser();
+	let s :String = format!("{{ \"{}\" : \"cmd1\" }}", OPT_PROG);
+	let opt = ExtArgsOptions::new(&s).unwrap();
+
+
+	let parser :ExtArgsParser = ExtArgsParser::new(Some(opt.clone()),None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let sarr = get_cmd_help(parser.clone(),"");
+	let opts = parser.get_cmd_opts_ex("").unwrap();
+	assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+
+	let sarr = get_cmd_help(parser.clone(),"rdep");
+	let opts = parser.get_cmd_opts_ex("rdep").unwrap();
+	assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+
+	let sarr = get_cmd_help(parser.clone(),"rdep.ip");
+	let opts = parser.get_cmd_opts_ex("rdep.ip").unwrap();
+	assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+
 	return;
 }

@@ -627,7 +627,7 @@ impl InnerExtArgsParser {
 		return commands;
 	}
 
-	pub (crate) fn print_help_ex<T : std::io::Write>(&mut self, iowriter :&mut T,cmdname :String) -> Result<usize,Box<dyn Error>> {
+	pub (crate) fn print_help_ex<T : std::io::Write>(&mut self, iowriter :&mut T,cmdname :&str) -> Result<usize,Box<dyn Error>> {
 		let mut parsers :Vec<ParserCompat>;
 		self.set_commandline_self_args()?;
 		parsers = Vec::new();
@@ -656,7 +656,7 @@ impl InnerExtArgsParser {
 			new_error!{ParserError,"no params in help action"}
 		}
 		let mut of = std::io::stdout();
-		_ = self.print_help_ex(&mut of,format!("{}",params[0]))?;
+		_ = self.print_help_ex(&mut of,&format!("{}",params[0]))?;
 		std::process::exit(0);
 	}
 
@@ -1818,5 +1818,9 @@ impl  ExtArgsParser {
 
 	pub fn get_cmd_opts_ex(&self, name :&str) -> Result<Vec<ExtKeyParse>, Box<dyn Error>> {
 		return self.innerrc.borrow_mut().get_cmd_opts_ex(name);
+	}
+
+	pub fn print_help_ex<T : std::io::Write>(&self, iowriter :&mut T,cmdname :&str) -> Result<usize,Box<dyn Error>> {
+		return self.innerrc.borrow_mut().print_help_ex(iowriter,cmdname);
 	}
 }
