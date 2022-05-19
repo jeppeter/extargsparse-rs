@@ -5,7 +5,7 @@ use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -1158,5 +1158,47 @@ fn test_a022() {
 	assert!(curopt.long_opt() == "--help");
 	assert!(curopt.short_opt() == "-h");
 
+	return;
+}
+
+#[test]
+fn test_a023() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "dep" : {
+                "new|n" : false,
+                "$<NARGS>" : "+"
+            },
+            "rdep" : {
+                "new|n" : true,
+                "$<NARGS>" : "?"
+            }
+        }"#;
+	before_parser();
+
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let cmds :Vec<String> = parser.get_sub_commands_ex("").unwrap();
+	assert!(check_array_equal(cmds.clone(),format_string_array(vec!["dep", "rdep"])));
+	let opts :Vec<ExtKeyParse> = parser.get_cmd_opts_ex("").unwrap();
+	assert!(opts.len() == 4);
+	let curopt = get_assert_opt(opts.clone(),"$").unwrap();
+	assert!(curopt.get_nargs_v() == Nargs::Argtype("*".to_string()));
+	let curopt = get_assert_opt(opts.clone(),"verbose").unwrap();
+	assert!(curopt.type_name() == KEYWORD_COUNT);
+	let curopt = get_assert_opt(opts.clone(),"json").unwrap();
+	assert!(curopt.type_name() == KEYWORD_JSONFILE);
+	let curopt = get_assert_opt(opts.clone(),"help").unwrap();
+	assert!(curopt.type_name() == KEYWORD_HELP);
+	let opts = parser.get_cmd_opts_ex("dep").unwrap();
+	assert!(opts.len() == 4);
+	let curopt = get_assert_opt(opts.clone(),"$").unwrap();
+	assert!(curopt.var_name() == "NARGS");
+	let curopt = get_assert_opt(opts.clone(),"help").unwrap();
+	assert!(curopt.type_name() == KEYWORD_HELP);
+	let curopt = get_assert_opt(opts.clone(),"dep_json").unwrap();
+	assert!(curopt.type_name() == KEYWORD_JSONFILE);
+	let curopt = get_assert_opt(opts.clone(),"dep_new").unwrap();
+	assert!(curopt.type_name() == KEYWORD_BOOL);
 	return;
 }
