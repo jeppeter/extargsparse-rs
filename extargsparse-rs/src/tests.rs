@@ -1202,3 +1202,43 @@ fn test_a023() {
 	assert!(curopt.type_name() == KEYWORD_BOOL);
 	return;
 }
+
+#[test]
+fn test_a024() {
+	let loads = r#"        {
+            "rdep" : {
+                "ip" : {
+                    "modules" : [],
+                    "called" : true,
+                    "setname" : null,
+                    "$" : 2
+                }
+            },
+            "dep" : {
+                "port" : 5000,
+                "cc|C" : true
+            },
+            "verbose|v" : "+"
+        }"#;
+	before_parser();
+
+	let params :Vec<String> = format_string_array(vec!["rdep", "ip", "--verbose", "--rdep-ip-modules", "cc", "--rdep-ip-setname", "bb", "xx", "bb"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_string("subcommand") == "rdep.ip");
+	assert!(ns.get_int("verbose") == 1);
+	assert!(ns.get_array("rdep_ip_modules") == format_string_array(vec!["cc"]));
+	assert!(ns.get_string("rdep_ip_setname") == "bb");
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["xx", "bb"])));
+	let params :Vec<String> = format_string_array(vec!["dep", "--verbose", "--verbose", "-vvC"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_string("subcommand") == "dep");
+	assert!(ns.get_int("verbose") == 4);
+	assert!(ns.get_int("dep_port") == 5000);
+	assert!(ns.get_bool("dep_cc") == false);
+	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec![])));
+	return;
+}
