@@ -15,7 +15,7 @@ use std::any::Any;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use tempfile::{NamedTempFile};
-use std::fs::File;
+//use std::fs::File;
 use std::io::{Write};
 
 use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
@@ -649,7 +649,7 @@ fn test_a009_2() {
 }
 
 fn make_temp_file(s :&str) -> NamedTempFile {
-	let mut retv = NamedTempFile::new().unwrap();
+	let retv = NamedTempFile::new().unwrap();
 	let mut f = retv.reopen().unwrap();
 	f.write_all(s.as_bytes()).unwrap();
 	f.sync_all().unwrap();
@@ -1056,5 +1056,38 @@ fn test_a019() {
 	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])));
 	assert!(ns.get_string("dep_string")== "ee");
 	assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+	return;
+}
+
+#[test]
+fn test_a020() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "rollback|R" : true,
+            "$port|P" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+	before_parser();
+
+	let params :Vec<String> = format_string_array(vec!["-P", "9000", "--no-rollback", "dep", "--dep-string", "ee", "ww"]);
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_int("verbose") == 0);
+	assert!(ns.get_int("port") == 9000);
+	assert!(ns.get_bool("rollback") == false);
+	assert!(ns.get_string("subcommand")== "dep");
+	assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec![])));
+	assert!(ns.get_string("dep_string")== "ee");
+	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec![])));
 	return;
 }
