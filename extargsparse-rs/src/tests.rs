@@ -5,6 +5,7 @@ use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -17,6 +18,7 @@ use std::collections::HashMap;
 use tempfile::{NamedTempFile};
 //use std::fs::File;
 use std::io::{Write};
+use serde_json::Value;
 
 use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
 
@@ -1104,5 +1106,57 @@ fn test_a021() {
 	extargs_load_commandline!(parser,loads).unwrap();
 	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
 	assert!(ns.get_int("maxval") == 0xffcc);
+	return;
+}
+
+fn get_assert_opt(opts :Vec<ExtKeyParse>, kname :&str) -> Option<ExtKeyParse> {
+	let mut retv :Option<ExtKeyParse> = None;
+	for o in opts.iter() {
+		if ! o.is_flag() {
+			continue;
+		}
+		if o.flag_name() == KEYWORD_DOLLAR_SIGN && kname == KEYWORD_DOLLAR_SIGN {
+			retv = Some(o.clone());
+			break;
+		}
+
+		if o.flag_name() == KEYWORD_DOLLAR_SIGN {
+			continue;
+		}
+
+		if o.opt_dest() == kname {
+			retv = Some(o.clone());
+			break;
+		}
+	}
+
+	return retv;
+}
+
+#[test]
+fn test_a022() {
+	let loads = r#"        {
+            "verbose|v" : "+"
+        }"#;
+	before_parser();
+
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let cmds :Vec<String> = parser.get_sub_commands_ex("").unwrap();
+	assert!(check_array_equal(cmds.clone(),format_string_array(vec![])));
+	let opts :Vec<ExtKeyParse> = parser.get_cmd_opts_ex("").unwrap();
+	assert!(opts.len() == 4);
+	let curopt = get_assert_opt(opts.clone(),"verbose").unwrap();
+	assert!(curopt.opt_dest() == "verbose");
+	assert!(curopt.long_opt() == "--verbose");
+	assert!(curopt.short_opt() == "-v");
+	assert!(get_assert_opt(opts.clone(),"noflag") == None);
+	let curopt = get_assert_opt(opts.clone(),"json").unwrap();
+	assert!(curopt.value() == Value::Null);
+	let curopt = get_assert_opt(opts.clone(),"help").unwrap();
+	assert!(curopt.type_name() == "help");
+	assert!(curopt.long_opt() == "--help");
+	assert!(curopt.short_opt() == "-h");
+
 	return;
 }
