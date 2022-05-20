@@ -1644,3 +1644,26 @@ fn test_a030() {
 	assert!(oerr == None);
 	return;
 }
+
+#[test]
+fn test_a031() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "catch|C## to not catch the exception ##" : true,
+            "input|i## to specify input default(stdin)##" : null,
+            "$caption## set caption ##" : "runcommand",
+            "test|t##to test mode##" : false,
+            "release|R##to release test mode##" : false,
+            "$" : "*"
+        }"#;
+	before_parser();
+
+
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	let params :Vec<String> = format_string_array(vec!["--test"]);
+	extargs_load_commandline!(parser,loads).unwrap();
+	let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+	assert!(ns.get_bool("test") == true);
+	assert!(check_array_equal(ns.get_array("args"), format_string_array(vec![])));
+	return;
+}
