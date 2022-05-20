@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
-use super::options::{ExtArgsOptions,OPT_PROG};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -1499,5 +1499,50 @@ fn test_a027() {
 	let attr = attro.unwrap().clone();
 	assert!(attr.get_attr("attr") == "cc");
 	assert!(attr.get_attr("optfunc") == "list_opt_func");
+	return;
+}
+
+#[test]
+fn test_a028() {
+	let loads = r#"        {
+            "verbose<VAR1>|v" : "+",
+            "+http" : {
+                "url|u<VAR1>" : "http://www.google.com",
+                "visual_mode|V": false
+            },
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l!attr=cc;optfunc=list_opt_func!" : [],
+                "string|s" : "s_var",
+                "$" : "+",
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            },
+            "rdep" : {
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            }
+        }"#;
+	before_parser();
+	let s :String = format!("{{ \"{}\" : \"raise\" }}", OPT_ERROR_HANDLER);
+	let opt = ExtArgsOptions::new(&s).unwrap();
+
+
+	let parser :ExtArgsParser = ExtArgsParser::new(Some(opt.clone()),None).unwrap();
+	let params :Vec<String> = format_string_array(vec!["dep", "cc"]);
+	extargs_load_commandline!(parser,loads).unwrap();
+	let oerr = parser.parse_commandline_ex(Some(params.clone()),None,None,None);
+	assert!(oerr.is_err() == true);
 	return;
 }
