@@ -5,7 +5,7 @@ use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
 use super::{error_class};
 use super::namespace::{NameSpaceEx};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
 use super::options::{ExtArgsOptions,OPT_PROG};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
@@ -1429,5 +1429,75 @@ fn test_a026() {
 	let opts = parser.get_cmd_opts_ex("rdep.ip").unwrap();
 	assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
 
+	return;
+}
+
+#[test]
+fn test_a027() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "+http" : {
+                "url|u" : "http://www.google.com",
+                "visual_mode|V": false
+            },
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l!attr=cc;optfunc=list_opt_func!" : [],
+                "string|s" : "s_var",
+                "$" : "+",
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            },
+            "rdep" : {
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            }
+        }"#;
+	before_parser();
+	let s :String = format!("{{ \"{}\" : \"cmd1\" }}", OPT_PROG);
+	let opt = ExtArgsOptions::new(&s).unwrap();
+
+
+	let parser :ExtArgsParser = ExtArgsParser::new(Some(opt.clone()),None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let opts = parser.get_cmd_opts_ex("dep").unwrap();
+	let mut val :i32 = 0;
+	let mut flago :Option<ExtKeyParse> = None;
+	for f in opts.iter() {
+		if f.type_name() == KEYWORD_ARGS {
+			continue;
+		}
+
+		if f.flag_name() == "list" {
+			val = 1;
+			flago = Some(f.clone());
+			break;
+		}
+	}
+	assert!(val == 1);
+	let flag = flago.unwrap().clone();
+	let mut attro :Option<KeyAttr> = None;
+
+	match flag.get_keyattr(KEYWORD_ATTR) {
+		Some(v) => {
+			attro = Some(v.clone());
+		},
+		None => {			
+		}
+	}
+	let attr = attro.unwrap().clone();
+	assert!(attr.get_attr("attr") == "cc");
+	assert!(attr.get_attr("optfunc") == "list_opt_func");
 	return;
 }
