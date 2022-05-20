@@ -22,7 +22,7 @@ use serde_json::Value;
 use std::io::{Write,BufWriter};
 
 
-use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
+use codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
 
 
 fn before_parser() {
