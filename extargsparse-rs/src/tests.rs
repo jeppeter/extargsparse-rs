@@ -1590,3 +1590,57 @@ fn test_a029() {
 	assert!(check_array_equal(sarr.clone(),format_string_array(vec!["no help information"])));
 	return;
 }
+
+#[test]
+fn test_a030() {
+	let loads = r#"        {
+            "verbose|v" : "+",
+            "+http" : {
+                "url|u" : "http://www.google.com",
+                "visual_mode|V": false
+            },
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep<dep_handler>!opt=cc!" : {
+                "list|l!attr=cc;optfunc=list_opt_func!" : [],
+                "string|s" : "s_var",
+                "$" : "+",
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            },
+            "rdep<rdep_handler>" : {
+                "ip" : {
+                    "verbose" : "+",
+                    "list" : [],
+                    "cc" : []
+                }
+            }
+        }"#;
+	before_parser();
+	let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+	extargs_load_commandline!(parser,loads).unwrap();
+	let flag = parser.get_cmd_key_ex("").unwrap().unwrap();
+	assert!(flag.cmd_name() == "main");
+	assert!(flag.is_cmd() == true);
+	assert!(flag.func_name() == "");
+	let flag = parser.get_cmd_key_ex("dep").unwrap().unwrap();
+	assert!(flag.cmd_name() == "dep");
+	assert!(flag.func_name() == "dep_handler");
+	let attr = flag.get_keyattr(KEYWORD_ATTR).unwrap();
+	assert!(attr.get_attr("opt")== "cc");
+	let flag = parser.get_cmd_key_ex("rdep").unwrap().unwrap();
+	assert!(flag.cmd_name() == "rdep");
+	assert!(flag.func_name() == "rdep_handler");
+	let attro = flag.get_keyattr(KEYWORD_ATTR);
+	assert!(attro == None);
+	let oerr = parser.get_cmd_key_ex("nosuch").unwrap();
+	assert!(oerr == None);
+	return;
+}
