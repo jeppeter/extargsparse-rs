@@ -1,5 +1,5 @@
 [package]
-name = "worker"
+name = "extargsparse_worker"
 version = "0.1.0"
 authors = ["bt"]
 edition = "2018"
@@ -12,7 +12,7 @@ regex = "1"
 log4rs = "^0.8.3"
 log = "^0.4.8"
 lazy_static = "^1.4.0"
-codegen = { path = "../codegen"}
+extargsparse_codegen = { path = "../extargsparse_codegen"}
 
 [dev-dependencies]
 tempfile = "^3.3.0"
