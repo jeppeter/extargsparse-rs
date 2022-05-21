@@ -32,10 +32,10 @@ use super::helpsize::{HelpSize};
 use super::optchk::{OptChk};
 
 
-use super::{error_class,new_error};
+use super::{extargs_error_class,extargs_new_error};
 
 
-error_class!{ParserError}
+extargs_error_class!{ParserError}
 
 #[derive(Clone)]
 enum ExtArgsFunc {
@@ -210,7 +210,7 @@ impl InnerExtArgsParser {
 		}
 		for v in setpriority.iter() {
 			if !is_valid_priority(*v) {
-				new_error!{ParserError,"unknown type [{}]",  *v}
+				extargs_new_error!{ParserError,"unknown type [{}]",  *v}
 			}
 		}
 		let mut retv :InnerExtArgsParser = InnerExtArgsParser {
@@ -247,7 +247,7 @@ impl InnerExtArgsParser {
 
 	fn load_commandline_base(&mut self, _prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		if keycls.is_flag() && keycls.flag_name() != KEYWORD_DOLLAR_SIGN && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.flag_name())) {
-			new_error!{ParserError,"{} in the {}", keycls.flag_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+			extargs_new_error!{ParserError,"{} in the {}", keycls.flag_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
 		}
 		return self.check_flag_insert(keycls,parsers);
 	}
@@ -318,16 +318,16 @@ impl InnerExtArgsParser {
 	fn load_command_subparser(&mut self,prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		let mut newprefix :String;
 		if keycls.type_name() != KEYWORD_COMMAND {
-			new_error!{ParserError,"{} not valid command", keycls.string()}
+			extargs_new_error!{ParserError,"{} not valid command", keycls.string()}
 		}
 		if keycls.cmd_name().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.cmd_name())) {
-			new_error!{ParserError,"{} in reserved {}", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+			extargs_new_error!{ParserError,"{} in reserved {}", keycls.cmd_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
 		}
 		extargs_log_info!("load [{}]",keycls.string());
 
 		let oparser = self.get_subparser_inner(keycls.clone(),parsers.clone());
 		if oparser.is_none() {
-			new_error!{ParserError,"can not find [{}] ", keycls.string()}
+			extargs_new_error!{ParserError,"can not find [{}] ", keycls.string()}
 		}
 
 		let mut nextparsers :Vec<ParserCompat>;
@@ -352,7 +352,7 @@ impl InnerExtArgsParser {
 
 	fn load_command_prefix(&mut self,_prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
 		if keycls.prefix().len() > 0 && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.prefix())) {
-			new_error!{ParserError,"prefix [{}] in [{}]", keycls.prefix(), format_array_string(PARSER_RESERVE_ARGS.clone())}
+			extargs_new_error!{ParserError,"prefix [{}] in [{}]", keycls.prefix(), format_array_string(PARSER_RESERVE_ARGS.clone())}
 		}
 		return self.load_commandline_inner(keycls.prefix(),keycls.value().clone(),parsers.clone());
 	}
@@ -384,7 +384,7 @@ impl InnerExtArgsParser {
 
 	fn string_action(&mut self,ns :NameSpaceEx,validx :i32,keycls :ExtKeyParse,params :Vec<String>) -> Result<i32,Box<dyn Error>> {
 		if validx >= params.len() as i32 {
-			new_error!{ParserError,"need args [{}] [{}] [{:?}]", validx, keycls.string(), params}
+			extargs_new_error!{ParserError,"need args [{}] [{}] [{:?}]", validx, keycls.string(), params}
 		}
 		extargs_log_trace!("set [{}] [{}]",keycls.opt_dest(),params[validx as usize]);
 		let n = format!("{}",keycls.opt_dest());
@@ -418,7 +418,7 @@ impl InnerExtArgsParser {
 		let mut cparse :String;
 		extargs_log_trace!("validx [{}]", validx);
 		if validx >= params.len() as i32 {
-			new_error!{ParserError, "[{}] >= [{}]", validx, params.len()}
+			extargs_new_error!{ParserError, "[{}] >= [{}]", validx, params.len()}
 		}
 		cparse = format!("{}",params[validx as usize]);
 		if cparse.starts_with("0x") || cparse.starts_with("0X") {
@@ -434,7 +434,7 @@ impl InnerExtArgsParser {
 				ns.set_int(&(keycls.opt_dest()),v)?;
 			},
 			Err(e) => {
-				new_error!{ParserError, "parse [{}] error [{:?}]", params[ validx as usize], e}
+				extargs_new_error!{ParserError, "parse [{}] error [{:?}]", params[ validx as usize], e}
 			}
 		}
 		Ok(1)
@@ -443,7 +443,7 @@ impl InnerExtArgsParser {
 	fn append_action(&mut self,ns :NameSpaceEx, validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
 		let mut carr :Vec<String>;
 		if validx >= params.len() as i32 {
-			new_error!{ParserError,"[{}] >= [{}]", validx,params.len()}
+			extargs_new_error!{ParserError,"[{}] >= [{}]", validx,params.len()}
 		}
 		carr = ns.get_array(&(keycls.opt_dest()));
 		carr.push(format!("{}",params[validx as usize]));
@@ -524,18 +524,18 @@ impl InnerExtArgsParser {
 				}
 				retb = optchk.add_and_check(format!("{}",KEYWORD_VARNAME),&(opt.var_name()));
 				if !retb {
-					new_error!{ParserError,"opt varname[{}] is already", opt.var_name()}
+					extargs_new_error!{ParserError,"opt varname[{}] is already", opt.var_name()}
 				}
 
 				retb = optchk.add_and_check(format!("{}",KEYWORD_LONGOPT),&(opt.long_opt()));
 				if !retb {
-					new_error!{ParserError,"opt longopt[{}] is already", opt.long_opt()}
+					extargs_new_error!{ParserError,"opt longopt[{}] is already", opt.long_opt()}
 				}
 
 				if opt.short_opt().len() > 0 {
 					retb = optchk.add_and_check(format!("{}",KEYWORD_SHORTOPT),&(opt.short_opt()));
 					if !retb {
-						new_error!{ParserError,"opt shortopt[{}] is already",opt.short_opt()}
+						extargs_new_error!{ParserError,"opt shortopt[{}] is already",opt.short_opt()}
 					}
 				}
 			}
@@ -633,7 +633,7 @@ impl InnerExtArgsParser {
 		parsers = Vec::new();
 		parsers = self.find_command_in_path(format!("{}",cmdname),parsers.clone());
 		if parsers.len() == 0 {
-			new_error!{ParserError,"can not find [{}] for help", cmdname}
+			extargs_new_error!{ParserError,"can not find [{}] for help", cmdname}
 		}
 
 		let s = self.print_help(parsers.clone());
@@ -653,7 +653,7 @@ impl InnerExtArgsParser {
 
 	fn help_action(&mut self,_ns :NameSpaceEx,_valid :i32, _keycls :ExtKeyParse, params :Vec<String>) -> Result<i32, Box<dyn Error>> {
 		if params.len() == 0 {
-			new_error!{ParserError,"no params in help action"}
+			extargs_new_error!{ParserError,"no params in help action"}
 		}
 		let mut of = std::io::stdout();
 		_ = self.print_help_ex(&mut of,&format!("{}",params[0]))?;
@@ -674,14 +674,14 @@ impl InnerExtArgsParser {
 
 	fn float_action(&mut self, _ns :NameSpaceEx, _validx :i32, _keycls :ExtKeyParse, _params :Vec<String>) -> Result<i32,Box<dyn Error>> {
 		if _validx >= _params.len() as i32  {
-			new_error!{ParserError,"need args [{}] [{}] [{:?}]",_validx, _keycls.string(),_params}
+			extargs_new_error!{ParserError,"need args [{}] [{}] [{:?}]",_validx, _keycls.string(),_params}
 		}
 		match _params[_validx as usize].parse::<f64>() {
 			Ok(fv) => {
 				_ns.set_float(&(_keycls.opt_dest()),fv)?;
 			},
 			Err(e) => {
-				new_error!{ParserError,"parse [{}] not float [{:?}]", _params[_validx as usize], e}
+				extargs_new_error!{ParserError,"parse [{}] not float [{:?}]", _params[_validx as usize], e}
 			}
 		}
 		Ok(1)
@@ -724,12 +724,12 @@ impl InnerExtArgsParser {
 						return Ok(content);
 					},
 					Err(e) => {
-						new_error!{ParserError,"read [{}] error[{:?}]", fname,e}
+						extargs_new_error!{ParserError,"read [{}] error[{:?}]", fname,e}
 					}
 				}
 			},
 			Err(e) => {
-				new_error!{ParserError,"open [{}] error[{:?}]", fname,e}
+				extargs_new_error!{ParserError,"open [{}] error[{:?}]", fname,e}
 			}
 		}
 	}
@@ -744,7 +744,7 @@ impl InnerExtArgsParser {
 		let jsoncontent = self.read_file(&jsonfile)?;
 		let jres = serde_json::from_str(&jsoncontent);
 		if jres.is_err() {
-			new_error!{ParserError,"parse jsonfile [{}] erorr[{:?}]\n{}", jsonfile,jres,jsoncontent}
+			extargs_new_error!{ParserError,"parse jsonfile [{}] erorr[{:?}]\n{}", jsonfile,jres,jsoncontent}
 		}
 		let vobj :Value = jres.unwrap();
 		match vobj {
@@ -752,7 +752,7 @@ impl InnerExtArgsParser {
 				return self.load_json_value(ns,prefix,_obj.clone());
 			}
 			_ => {
-				new_error!{ParserError,"[{}] not object\n{}",jsonfile,jsoncontent}
+				extargs_new_error!{ParserError,"[{}] not object\n{}",jsonfile,jsoncontent}
 			}
 		}
 	}
@@ -833,7 +833,7 @@ impl InnerExtArgsParser {
 				valstr = valstr.replace("\\","\\\\");
 				let ojson = serde_json::from_str(&valstr);
 				if ojson.is_err() {
-					new_error!{ParserError,"get [{}] value [{}] parse error {:?}", optdest,valstr,ojson}
+					extargs_new_error!{ParserError,"get [{}] value [{}] parse error {:?}", optdest,valstr,ojson}
 				}
 				jsonval = ojson.unwrap();
 				self.call_json_value(ns.clone(),opt.clone(),jsonval.clone())?;
@@ -861,7 +861,7 @@ impl InnerExtArgsParser {
 						self.call_json_value(ns.clone(),opt.clone(),jsonval.clone())?;
 					},
 					Err(e) => {
-						new_error!{ParserError, "parse [{}] error [{:?}]", valstr, e}
+						extargs_new_error!{ParserError, "parse [{}] error [{:?}]", valstr, e}
 					}
 				}
 			} else if opt.type_name() == KEYWORD_FLOAT {
@@ -871,18 +871,18 @@ impl InnerExtArgsParser {
 						self.call_json_value(ns.clone(),opt.clone(),jsonval.clone())?;
 					},
 					Err(e) => {
-						new_error!{ParserError,"parse [{}] for float error [{:?}]", valstr, e}
+						extargs_new_error!{ParserError,"parse [{}] for float error [{:?}]", valstr, e}
 					}
 				}
 			} else if opt.type_name() == KEYWORD_LIST {
 				let ojson = serde_json::from_str(&valstr);
 				if ojson.is_err() {
-					new_error!{ParserError,"can not parse [{}] [{:?}]", valstr, ojson}
+					extargs_new_error!{ParserError,"can not parse [{}] [{:?}]", valstr, ojson}
 				}
 				jsonval = ojson.unwrap();
 				self.call_json_value(ns.clone(),opt.clone(), jsonval.clone())?;
 			} else {
-				new_error!{ParserError,"unknown opt [{}]", opt.string()}
+				extargs_new_error!{ParserError,"unknown opt [{}]", opt.string()}
 			}
 		}
 		Ok(())
@@ -902,7 +902,7 @@ impl InnerExtArgsParser {
 		extargs_log_trace!("[{}]=[{}]",KEYWORD_SUBCOMMAND,s);
 		if s.len() > 0 && !self.no_json_option && self.json_long.len() > 0 {
 			if pstate.is_none() {
-				new_error!{ParserError,"not set arg_state yet"}
+				extargs_new_error!{ParserError,"not set arg_state yet"}
 			}
 			let cmds = pstate.as_ref().unwrap().get_cmd_paths();
 			let mut idx :usize = cmds.len();
@@ -963,18 +963,18 @@ impl InnerExtArgsParser {
 		match val {
 			Value::String(ref _s) => {
 				if opt.type_name() != KEYWORD_STRING && opt.type_name() != KEYWORD_JSONFILE {
-					new_error!{ParserError, "[{}] [{}] not for [{:?}] set", opt.type_name(), opt.opt_dest(), val.clone()}
+					extargs_new_error!{ParserError, "[{}] [{}] not for [{:?}] set", opt.type_name(), opt.opt_dest(), val.clone()}
 				}
 				extargs_log_trace!("set [{}] [{:?}]", opt.opt_dest(), val);
 				ns.set_value(&(opt.opt_dest()),val.clone());
 			},
 			Value::Object(ref _o) => {
-				new_error!{ParserError,"could not set [{}] for object [{:?}]", opt.opt_dest(),val}
+				extargs_new_error!{ParserError,"could not set [{}] for object [{:?}]", opt.opt_dest(),val}
 			},
 			Value::Array(ref a) => {
 				let mut narr :Vec<String> = Vec::new();
 				if opt.type_name() != KEYWORD_LIST {
-					new_error!{ParserError,"[{}] not for list [{:?}]", opt.opt_dest(),val}
+					extargs_new_error!{ParserError,"[{}] not for list [{:?}]", opt.opt_dest(),val}
 				}
 
 				idx = 0;
@@ -984,7 +984,7 @@ impl InnerExtArgsParser {
 							narr.push(format!("{}",s));
 						},
 						_ => {
-							new_error!{ParserError,"at [{}] not string  [{:?}]", idx, s}
+							extargs_new_error!{ParserError,"at [{}] not string  [{:?}]", idx, s}
 						}
 					}
 					idx += 1;
@@ -993,7 +993,7 @@ impl InnerExtArgsParser {
 			},
 			Value::Bool(_b) => {
 				if opt.type_name() != KEYWORD_BOOL {
-					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+					extargs_new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
 				}
 				ns.set_value(&(opt.opt_dest()),val.clone());
 			},
@@ -1002,23 +1002,23 @@ impl InnerExtArgsParser {
 					if n.is_i64() || n.is_u64() {
 						ns.set_value(&(opt.opt_dest()),val.clone());
 					} else {
-						new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+						extargs_new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
 					}
 				} else if opt.type_name() == KEYWORD_FLOAT {
 					if n.is_f64() {
 						ns.set_value(&(opt.opt_dest()), val.clone());
 					} else {
-						new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+						extargs_new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
 					}
 				} else {
-					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
+					extargs_new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}
 				}
 			},
 			Value::Null => {
 				if opt.type_name() == KEYWORD_JSONFILE || opt.type_name() == KEYWORD_STRING {
 					ns.set_string(&(opt.opt_dest()), "".to_string())?;
 				} else {
-					new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}	
+					extargs_new_error!{ParserError,"[{}] not for [{:?}] set", opt.opt_dest(),val}	
 				}
 			}
 		}
@@ -1026,7 +1026,7 @@ impl InnerExtArgsParser {
 	}
 
 	fn json_value_error(&self,_ns :NameSpaceEx,opt :ExtKeyParse, _val :Value) -> Result<(),Box<dyn Error>> {
-		new_error!{ParserError,"set [{}]", opt.opt_dest()}
+		extargs_new_error!{ParserError,"set [{}]", opt.opt_dest()}
 	}
 
 	fn check_flag_insert(&mut self,keycls :ExtKeyParse,parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
@@ -1044,13 +1044,13 @@ impl InnerExtArgsParser {
 			if opt.flag_name() != KEYWORD_DOLLAR_SIGN && keycls.flag_name() != KEYWORD_DOLLAR_SIGN {
 				if opt.type_name() != KEYWORD_HELP && keycls.type_name() != KEYWORD_HELP {
 					if opt.opt_dest().eq(&keycls.opt_dest()) {
-						new_error!{ParserError,"[{}] already inserted", keycls.opt_dest()}
+						extargs_new_error!{ParserError,"[{}] already inserted", keycls.opt_dest()}
 					}
 				} else if opt.type_name() == KEYWORD_HELP && keycls.type_name() == KEYWORD_HELP {
-					new_error!{ParserError,"help [{}] had already inserted", keycls.string()}
+					extargs_new_error!{ParserError,"help [{}] had already inserted", keycls.string()}
 				}
 			} else if opt.flag_name() == KEYWORD_DOLLAR_SIGN && keycls.flag_name() == KEYWORD_DOLLAR_SIGN {
-				new_error!{ParserError,"args [{}] already inserted", keycls.string()}
+				extargs_new_error!{ParserError,"args [{}] already inserted", keycls.string()}
 			}
 		}
 
@@ -1127,11 +1127,11 @@ impl InnerExtArgsParser {
 					return f(prefix,keycls.clone(),parsers.clone());
 				},
 				_ => {
-					new_error!{ParserError,"return [{}] not load function", prefix}
+					extargs_new_error!{ParserError,"return [{}] not load function", prefix}
 				}
 			}
 		} else {
-			new_error!{ParserError,"can not found [{}] load command map function", prefix}
+			extargs_new_error!{ParserError,"can not found [{}] load command map function", prefix}
 		}
 	}
 
@@ -1145,7 +1145,7 @@ impl InnerExtArgsParser {
 		}
 
 		if !vmap.is_object() {
-			new_error!{ParserError,"{:?} not object", vmap}
+			extargs_new_error!{ParserError,"{:?} not object", vmap}
 		}
 		for (k, v) in vmap.as_object().unwrap() {
 			extargs_log_info!("{} , {} , {:?} , False",prefix,k,v);
@@ -1158,7 +1158,7 @@ impl InnerExtArgsParser {
 
 	fn load_commandline(&mut self,vmap :Value) -> Result<(),Box<dyn Error>> {
 		if self.ended != 0 {
-			new_error!{ParserError,"you have call parse_command_line before call load_commandline"}
+			extargs_new_error!{ParserError,"you have call parse_command_line before call load_commandline"}
 		}
 		let parsers :Vec<ParserCompat> = Vec::new();
 		return self.load_commandline_inner("".to_string(),vmap.clone(),parsers);
@@ -1168,7 +1168,7 @@ impl InnerExtArgsParser {
 		let val :Value;
 		let ov = serde_json::from_str(s);
 		if ov.is_err() {
-			new_error!{ParserError,"parse [{}] error[{:?}]", s,ov}
+			extargs_new_error!{ParserError,"parse [{}] error[{:?}]", s,ov}
 		}
 		val = ov.unwrap();
 		if fnptrs1.is_some() {
@@ -1196,7 +1196,7 @@ impl InnerExtArgsParser {
 		}
 
 		if argskeycls.is_none() {
-			new_error!{ParserError, "can not find [{}]", cmdname}
+			extargs_new_error!{ParserError, "can not find [{}]", cmdname}
 		}
 		let argskey = argskeycls.unwrap();
 
@@ -1207,12 +1207,12 @@ impl InnerExtArgsParser {
 						params = _lv.clone();
 					},
 					_ => {
-						new_error!{ParserError,"StateOptVal {:?}",v.clone()}
+						extargs_new_error!{ParserError,"StateOptVal {:?}",v.clone()}
 					}
 				}
 			},
 			None => {
-				new_error!{ParserError,"optval is none"}
+				extargs_new_error!{ParserError,"optval is none"}
 			}
 		}
 
@@ -1221,19 +1221,19 @@ impl InnerExtArgsParser {
 				let s  = format!("{}",_s);
 				if s == "+" {
 					if params.len() == 0 {
-						new_error!{ParserError,"[{}] args [{}] < 1", cmdname, params.len()}
+						extargs_new_error!{ParserError,"[{}] args [{}] < 1", cmdname, params.len()}
 					}
 				} else if s == "?" {
 					if params.len() > 1 {
-						new_error!{ParserError,"[{}] args [{}] [{}] > 1", cmdname, params[0],params.len()}
+						extargs_new_error!{ParserError,"[{}] args [{}] [{}] > 1", cmdname, params[0],params.len()}
 					}
 				} else if s != "*" {
-					new_error!{ParserError, "[{}] args [{}] not valid",cmdname,s}
+					extargs_new_error!{ParserError, "[{}] args [{}] not valid",cmdname,s}
 				}
 			},
 			Nargs::Argnum(n) => {
 				if params.len() as i32 != n {
-					new_error!{ParserError,"[{}] args [{}] != [{}]", cmdname,params.len(), n}
+					extargs_new_error!{ParserError,"[{}] args [{}] != [{}]", cmdname,params.len(), n}
 				}
 			}
 		}
@@ -1270,11 +1270,11 @@ impl InnerExtArgsParser {
 					return f(ns,validx,keycls.clone(),params);
 				},
 				_ => {
-					new_error!{ParserError,"return [{}] not action function", keycls.type_name()}
+					extargs_new_error!{ParserError,"return [{}] not action function", keycls.type_name()}
 				}
 			}
 		} else {
-			new_error!{ParserError,"can not found [{}] load command map function", keycls.string()}
+			extargs_new_error!{ParserError,"can not found [{}] load command map function", keycls.string()}
 		}
 	}
 
@@ -1292,7 +1292,7 @@ impl InnerExtArgsParser {
 				}
 			}
 		}
-		new_error!{ParserError,"internal error on [{}]", keycls.string()}
+		extargs_new_error!{ParserError,"internal error on [{}]", keycls.string()}
 	}
 
 	fn call_opt_method(&self, ns :NameSpaceEx,validx :i32 , keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
@@ -1360,11 +1360,11 @@ impl InnerExtArgsParser {
 					return f(ns,pstate);
 				},
 				_ => {
-					new_error!{ParserError,"return [{}] not LoadJsonFunc", idx}
+					extargs_new_error!{ParserError,"return [{}] not LoadJsonFunc", idx}
 				}
 			}
 		} else {
-			new_error!{ParserError,"can not found [{}] load json  function", idx}
+			extargs_new_error!{ParserError,"can not found [{}] load json  function", idx}
 		}
 	}
 
@@ -1380,11 +1380,11 @@ impl InnerExtArgsParser {
 					return f(ns.clone(),keycls.clone(),val.clone());
 				},
 				_ => {
-					new_error!{ParserError,"return [{}] not load function", typename}
+					extargs_new_error!{ParserError,"return [{}] not load function", typename}
 				}
 			}
 		} else {
-			new_error!{ParserError,"can not found [{}] load command map function", typename}
+			extargs_new_error!{ParserError,"can not found [{}] load command map function", typename}
 		}		
 	}
 
@@ -1507,7 +1507,7 @@ impl InnerExtArgsParser {
 
 	fn set_struct_part(&self,ns :NameSpaceEx,ostruct1 :Option<Arc<RefCell<dyn ArgSetImpl>>>) -> Result<(),Box<dyn Error>> {
 		if self.arg_state.is_none() {
-			new_error!{ParserError,"not parse args yet"}
+			extargs_new_error!{ParserError,"not parse args yet"}
 		}
 
 		if ostruct1.is_none() {
@@ -1555,7 +1555,7 @@ impl InnerExtArgsParser {
 			let callbackfunc = fo.unwrap();
 			return callbackfunc(ns.clone(),ostruct,context);
 		}
-		new_error!{ParserError,"can not get callback [{}]",funcname}
+		extargs_new_error!{ParserError,"can not get callback [{}]",funcname}
 	}
 
 	fn set_mode_resume(&mut self, setmode :i32) {

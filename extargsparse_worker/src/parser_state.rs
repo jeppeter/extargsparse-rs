@@ -3,7 +3,7 @@
 use super::parser_compat::{ParserCompat};
 use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN};
-use super::{error_class,new_error,extargs_assert,extargs_log_info,extargs_log_trace};
+use super::{extargs_error_class,extargs_new_error,extargs_assert,extargs_log_info,extargs_log_trace};
 use super::logger::{extargs_debug_out};
 
 use std::error::Error;
@@ -11,7 +11,7 @@ use std::boxed::Box;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-error_class!{ParseStateError}
+extargs_error_class!{ParseStateError}
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -112,7 +112,7 @@ impl InnerParserState {
 	pub (crate) fn add_parse_args(&mut self, nargs :i32) -> Result<(),Box<dyn Error>> {
 		if self.curcharidx >= 0 {
 			if nargs > 0 && self.shortcharargs > 0 {
-				new_error!{ParseStateError,"[{}] already set args",self.args[self.curidx as usize]}
+				extargs_new_error!{ParseStateError,"[{}] already set args",self.args[self.curidx as usize]}
 			}
 
 			if self.shortcharargs < 0 {
@@ -121,7 +121,7 @@ impl InnerParserState {
 			self.shortcharargs += nargs;
 		} else {
 			if self.longargs > 0 {
-				new_error!{ParseStateError,"[{}] not handled", self.args[self.curidx as usize]}
+				extargs_new_error!{ParseStateError,"[{}] not handled", self.args[self.curidx as usize]}
 			}
 			if self.longargs < 0 {
 				self.longargs = 0;
@@ -210,7 +210,7 @@ impl InnerParserState {
 				}
 				idx -= 1;
 			}
-			new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+			extargs_new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
 		} else {
 			if !self.bundlemode {
 				let curarg = format!("{}",self.args[oldidx as usize]);
@@ -258,7 +258,7 @@ impl InnerParserState {
 						}
 						idx -= 1;
 					}
-					new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
+					extargs_new_error!{ParseStateError,"can not parse ({})", self.args[oldidx as usize]}
 				} else if self.shortprefix.len() > 0 && curarg.starts_with(&self.shortprefix) {
 					if curarg.eq(&self.shortprefix) {
 						if self.parseall {

@@ -254,7 +254,7 @@ pub fn extargs_map_function(_args :TokenStream , input :TokenStream) -> TokenStr
 }
 
 
-error_class!{TypeError}
+extargs_error_class!{TypeError}
 
 fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	let name :String ;
@@ -264,7 +264,7 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 			name = format!("{}",_i);
 		},
 		None => {
-			new_error!{TypeError,"can not get"}
+			extargs_new_error!{TypeError,"can not get"}
 		}
 	}
 
@@ -302,11 +302,11 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 												jdx += 1;
 											}
 										},
-										_ => { new_error!{TypeError, "not "}}
+										_ => { extargs_new_error!{TypeError, "not "}}
 									}
 								},
 								_ => {
-									new_error!{TypeError,"no args type"}
+									extargs_new_error!{TypeError,"no args type"}
 								}
 							}
 							idx += 1;
@@ -314,14 +314,14 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 						typename.push_str(">");
 					},
 					syn::PathArguments::Parenthesized(ref _pn) => {
-						new_error!{TypeError,"Parenthesized"}
+						extargs_new_error!{TypeError,"Parenthesized"}
 					}
 				}
 				pidx += 1;
 			}
 		},
 		_ => {
-			new_error!{TypeError,"ty not support for"}
+			extargs_new_error!{TypeError,"ty not support for"}
 		}
 	}
 	em_log_trace!("name [{}] typename [{}]",name,typename);
@@ -348,7 +348,7 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 
 
 
-	rets.push_str(&format!("error_class!{{{}}}\n",typeerrname));
+	rets.push_str(&format!("extargs_error_class!{{{}}}\n",typeerrname));
 
 	rets.push_str(&format!("impl ArgSetImpl for {} {{\n",ident));
 	rets.push_str(&(format_tab_space(1)));
@@ -505,7 +505,7 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 		rets.push_str(&format!("}} else {{\n"));
 		rets.push_str(&format_tab_space(3));
 
-		rets.push_str(&format!("new_error!{{ {},\"[{{}}].{{}} not valid\" , prefix , k}}\n", typeerrname));
+		rets.push_str(&format!("extargs_new_error!{{ {},\"[{{}}].{{}} not valid\" , prefix , k}}\n", typeerrname));
 		rets.push_str(&format_tab_space(2));
 
 		rets.push_str(&format!("}}\n"));

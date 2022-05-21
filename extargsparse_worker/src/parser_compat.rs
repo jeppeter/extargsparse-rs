@@ -1,5 +1,5 @@
 
-use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_JSONFILE,Nargs};
+use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_JSONFILE,KEYWORD_COUNT,Nargs};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_warn,extargs_log_trace};
@@ -200,8 +200,9 @@ impl InnerParserCompat {
                     rets.push_str(&(format!("{} set default {}",keycls.opt_dest(),c)));  
                 } else if keycls.type_name() == KEYWORD_JSONFILE {
                     rets.push_str(&(format!("{} set default null",keycls.opt_dest())));  
-                }
-                
+                } else if keycls.type_name() == KEYWORD_COUNT {
+                    rets.push_str(&format!("count set default 0"));
+                }                
             } else {
                 rets.push_str(&(format!("{} command exec", keycls.cmd_name())));
             }

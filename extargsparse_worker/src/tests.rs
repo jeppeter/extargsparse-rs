@@ -3,7 +3,7 @@ use super::logger::{extargs_debug_out};
 use super::argset::{ArgSetImpl};
 use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
-use super::{error_class};
+use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
 use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER};

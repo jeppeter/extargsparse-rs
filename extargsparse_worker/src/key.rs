@@ -11,15 +11,15 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 
-use super::{error_class,new_error};
+use super::{extargs_error_class,extargs_new_error};
 //use super::logger::{extargs_debug_out};
 //use super::{extargs_log_trace};
 
 
 
 
-error_class!{KeyAttrError}
-error_class!{KeyError}
+extargs_error_class!{KeyAttrError}
+extargs_error_class!{KeyError}
 
 pub enum Nargs {	
 	Argtype(String),
@@ -111,13 +111,13 @@ impl KeyAttr {
 							kattr.__obj.insert(format!("{}",k), format!("{}",sv));
 						},
 						_ => {
-							new_error!{KeyError,"[{}] not string type", v}
+							extargs_new_error!{KeyError,"[{}] not string type", v}
 						}
 					}
 				}
 			},
 			_ => {
-				new_error!(KeyError,"{:?} not valid object", val)
+				extargs_new_error!(KeyError,"{:?} not valid object", val)
 			},
 		}
 	
@@ -146,7 +146,7 @@ impl KeyAttr {
 				} else if c == '+' {
 					kattr.__splitchar = '+';
 				} else {
-					new_error!{KeyAttrError,"not support char [{}]", c}
+					extargs_new_error!{KeyAttrError,"not support char [{}]", c}
 				}
 			}
 			let mut i :usize;
@@ -774,7 +774,7 @@ struct InnerExtKeyParse {
 fn compile_regex(expr :&str) -> Result<Regex,Box<dyn Error>> {
 	match Regex::new(expr) {
 		Err(e) => {
-			new_error!(KeyError,"compile [{}] error[{:?}]",expr,e)
+			extargs_new_error!(KeyError,"compile [{}] error[{:?}]",expr,e)
 		},
 		Ok(v) => {
 			Ok(v)
@@ -870,7 +870,7 @@ impl InnerExtKeyParse {
 			if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
 			    self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_ARGS	{
-			    new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
+			    extargs_new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
 			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_BOOL {
@@ -901,7 +901,7 @@ impl InnerExtKeyParse {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
 			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
+			    extargs_new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
 				retval = format!("{}{}",self.keydata.get_string_value(KEYWORD_SHORTPREFIX),
@@ -911,7 +911,7 @@ impl InnerExtKeyParse {
 			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
 			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
 			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
+			    extargs_new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 			}
 			if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
 				retval.push_str(&(format!("{}_",self.keydata.get_string_value(KEYWORD_PREFIX))[..]));
@@ -1183,7 +1183,7 @@ impl InnerExtKeyParse {
 			assert!(!self.keydata.get_bool_value(KEYWORD_ISCMD));
 			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
 			if s.len() > 0 {
-				new_error!{KeyError,"({}) can not accept function", origkey}
+				extargs_new_error!{KeyError,"({}) can not accept function", origkey}
 			}
 
 			bnone = false;
@@ -1196,46 +1196,46 @@ impl InnerExtKeyParse {
 			}
 
 			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && !bnone {
-				new_error!{KeyError,"({}) flag can not accept dict",origkey}
+				extargs_new_error!{KeyError,"({}) flag can not accept dict",origkey}
 			}
 
 			s = self.keydata.get_type(KEYWORD_TYPE);
 			if !self.__compare_value_type(&(s[..])) && s != KEYWORD_COUNT && s != KEYWORD_HELP && 
 				s != KEYWORD_JSONFILE {
-				new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
+				extargs_new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
 			}
 			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
 			if s.len() == 0 {
 				s = self.keydata.get_string_value(KEYWORD_PREFIX);
 				if s.len() == 0{
-					new_error!{KeyError,"({}) should at least for prefix", origkey}
+					extargs_new_error!{KeyError,"({}) should at least for prefix", origkey}
 				}
 				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_PREFIX);
 				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
 					Value::Object(_v) => {},
 					_ => {
-						new_error!{KeyError,"({}) should used dict to make prefix",origkey}
+						extargs_new_error!{KeyError,"({}) should used dict to make prefix",origkey}
 					},
 				}
 				s = self.keydata.get_string_value(KEYWORD_HELPINFO);
 				if s.len() > 0 {
-					new_error!{KeyError,"({}) should not have help info",origkey}
+					extargs_new_error!{KeyError,"({}) should not have help info",origkey}
 				}
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
-					new_error!{KeyError,"({}) should not set shortflag",origkey}
+					extargs_new_error!{KeyError,"({}) should not set shortflag",origkey}
 				}
 			} else if s == KEYWORD_DOLLAR_SIGN {
 				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_ARGS);
 				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 				if s.len() > 0 {
-					new_error!{KeyError,"({}) can not set shortflag for args",origkey}
+					extargs_new_error!{KeyError,"({}) can not set shortflag for args",origkey}
 				}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 			if s.len() > 1 {
-				new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
+				extargs_new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
 			}
 
 			s = self.keydata.get_type(KEYWORD_TYPE);
@@ -1243,7 +1243,7 @@ impl InnerExtKeyParse {
 				match self.keydata.get_nargs(KEYWORD_NARGS) {
 					Some(Nargs::Argnum(iv)) => {
 						if iv != 0 {
-							new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
+							extargs_new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
 						}
 					},
 					_ => {},
@@ -1253,7 +1253,7 @@ impl InnerExtKeyParse {
 				match self.keydata.get_nargs(KEYWORD_NARGS) {
 					Some(Nargs::Argnum(iv)) => {
 						if iv != 0 {
-							new_error!{KeyError,"help type ({}) can not accept not 0 nargs",origkey}
+							extargs_new_error!{KeyError,"help type ({}) can not accept not 0 nargs",origkey}
 						}
 					},
 					_ => {},
@@ -1264,7 +1264,7 @@ impl InnerExtKeyParse {
 					match self.keydata.get_nargs(KEYWORD_NARGS) {
 						Some(Nargs::Argnum(iv)) => {
 							if iv != 1 {
-								new_error!{KeyError,"({})only $ can accept nargs option [{}]",origkey,iv}
+								extargs_new_error!{KeyError,"({})only $ can accept nargs option [{}]",origkey,iv}
 							}
 						},
 						_ => {},
@@ -1284,24 +1284,24 @@ impl InnerExtKeyParse {
 		} else {
 			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
 			if s.len() == 0 {
-				new_error!{KeyError,"({}) not set cmdname",origkey}
+				extargs_new_error!{KeyError,"({}) not set cmdname",origkey}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
 			if s.len() > 0 {
-				new_error!{KeyError,"({}) has shortflag ({})",origkey,s}
+				extargs_new_error!{KeyError,"({}) has shortflag ({})",origkey,s}
 			}
 
 			match self.keydata.get_nargs(KEYWORD_NARGS) {
 				None => {},
 				Some(e) => {
-					new_error!{KeyError,"({}) has nargs ({})",origkey,e.string()}
+					extargs_new_error!{KeyError,"({}) has nargs ({})",origkey,e.string()}
 				},
 			}
 
 			s = self.keydata.get_type(KEYWORD_TYPE);
 			if s != KEYWORD_DICT {
-				new_error!{KeyError,"({}) command must be dict",origkey}
+				extargs_new_error!{KeyError,"({}) command must be dict",origkey}
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_PREFIX);
@@ -1387,26 +1387,26 @@ impl InnerExtKeyParse {
 							match v {
 								Value::String(vs) => {
 									if vs != KEYWORD_PLUS_SIGN && vs != KEYWORD_STAR_SIGN && vs != KEYWORD_QUESTION_SIGN {
-										new_error!{KeyError,"{} not in +?*",vs}
+										extargs_new_error!{KeyError,"{} not in +?*",vs}
 									}
 									va = Nargs::Argtype(vs.to_string());
 								},
 								Value::Number(vi) => {
 									if !vi.is_u64() {
-										new_error!{KeyError,"{:?} not valid u64",v}
+										extargs_new_error!{KeyError,"{:?} not valid u64",v}
 									}
 									match vi.as_u64() {
 										Some(v3) => {
 											va = Nargs::Argnum(v3 as i32);		
 										},
 										None => {
-											new_error!{KeyError,"{:?} not valid u64",v}
+											extargs_new_error!{KeyError,"{:?} not valid u64",v}
 										}
 									}
 									
 								},
 								_ => {
-									new_error!{KeyError,"{:?} not for int or string", v}
+									extargs_new_error!{KeyError,"{:?} not for int or string", v}
 								}
 							}
 							self.keydata.set_nargs(KEYWORD_NARGS,&va);
@@ -1415,12 +1415,12 @@ impl InnerExtKeyParse {
 								Value::String(vs) => {
 									s = self.keydata.get_string_value(k);
 									if s != &(vs[..]) && s.len() > 0 {
-										new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
+										extargs_new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
 									}
 									self.keydata.set_string(k,&(vs[..]));
 								},
 								_ => {
-									new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
+									extargs_new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
 								},
 							}
 						}
@@ -1434,14 +1434,14 @@ impl InnerExtKeyParse {
 									self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
 								},
 								_ => {
-									new_error!{KeyError,"({}) prefix not string or none", k}
+									extargs_new_error!{KeyError,"({}) prefix not string or none", k}
 								}
 							}
 						} else if k == KEYWORD_VALUE {
 							let vtype :TypeClass;
 							match v {
 								Value::Object(_v3) => {
-									new_error!{KeyError,"{:?} object values",v}
+									extargs_new_error!{KeyError,"{:?} object values",v}
 								},
 								_ => {
 
@@ -1451,7 +1451,7 @@ impl InnerExtKeyParse {
 							vtype = TypeClass::new(v);
 							self.keydata.set_type(KEYWORD_TYPE,&(vtype.get_type()[..]));
 						} else {
-							new_error!{KeyError,"{} not valid key", k}
+							extargs_new_error!{KeyError,"{} not valid key", k}
 						}
 					} else if k == KEYWORD_ATTR {
 						match v {
@@ -1505,11 +1505,11 @@ impl InnerExtKeyParse {
 		if s.contains("$") {
 			match sv.nth(0) {
 				None => {
-					new_error!{KeyError,"{} not get $",origkey}
+					extargs_new_error!{KeyError,"{} not get $",origkey}
 				},
 				Some(v) => {
 					if v != ('$' as u8) {
-						new_error!(KeyError,"({}) not right format for ($)",origkey)		
+						extargs_new_error!(KeyError,"({}) not right format for ($)",origkey)		
 					}
 				},
 			}
@@ -1517,11 +1517,11 @@ impl InnerExtKeyParse {
 			while idx < sv.len() {
 				match sv.nth(idx) {
 					None => {
-						new_error!{KeyError,"{} can not get [{}]", origkey,idx}
+						extargs_new_error!{KeyError,"{} can not get [{}]", origkey,idx}
 					},
 					Some(v) => {
 						if v == ('$' as u8) {
-							new_error!{KeyError,"({}) has ($) more than one",origkey}
+							extargs_new_error!{KeyError,"({}) has ($) more than one",origkey}
 						}
 					}
 				}
@@ -1579,7 +1579,7 @@ impl InnerExtKeyParse {
 					_splitre = compile_regex("\\|")?;
 					_sarr = _splitre.split(flags.as_str()).collect();
 					if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
-						new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+						extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
 					}
 					self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 					self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
@@ -1598,13 +1598,13 @@ impl InnerExtKeyParse {
 							_splitre = compile_regex("\\|")?;
 							_sarr = _splitre.split(flags.as_str()).collect();
 							if _sarr.len() > 2 || _sarr[1].len() != 1 || _sarr[0].len() <= 1 {
-								new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+								extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
 							}
 							self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 							self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
 						} else {
 							if flags.len() <= 1 {
-								new_error!{KeyError,"({}) flag must have long opt",origkey}
+								extargs_new_error!{KeyError,"({}) flag must have long opt",origkey}
 							}
 							self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
 						}
@@ -1637,7 +1637,7 @@ impl InnerExtKeyParse {
 						_splitre = compile_regex("\\|")?;
 						_sarr = _splitre.split(cmds.as_str()).collect();
 						if _sarr.len() > 2 || _sarr[1].len() != 1 || _sarr[0].len() <= 1 {
-							new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+							extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
 						}
 						self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 						self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
@@ -1717,7 +1717,7 @@ impl InnerExtKeyParse {
 
 		s = self.keydata.get_type(KEYWORD_TYPE);
 		if s == KEYWORD_HELP && !value.is_null() {
-			new_error!{KeyError,"help type must be value None"}
+			extargs_new_error!{KeyError,"help type must be value None"}
 		}
 
 		if cmdmode && s != KEYWORD_DICT {
@@ -1779,7 +1779,7 @@ impl InnerExtKeyParse {
 				}
 
 				if !((s == KEYWORD_STRING && bmatch )|| s == KEYWORD_INT) {
-					new_error!{KeyError,"({})({})({:?}) for $ should option dict set opt or +?* specialcase or type int",prefix,origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE)}
+					extargs_new_error!{KeyError,"({})({})({:?}) for $ should option dict set opt or +?* specialcase or type int",prefix,origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE)}
 				} else {
 					self.keydata.set_nargs(KEYWORD_NARGS,&nval);
 					self.keydata.set_jsonval(KEYWORD_VALUE,&jval);

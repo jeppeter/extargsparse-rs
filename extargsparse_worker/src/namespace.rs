@@ -9,9 +9,9 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::boxed::Box;
 
-use super::{error_class,new_error};
+use super::{extargs_error_class,extargs_new_error};
 
-error_class!{NameSpaceError}
+extargs_error_class!{NameSpaceError}
 
 #[derive(Clone)]
 struct InnerNameSpaceEx {
@@ -281,7 +281,7 @@ impl NameSpaceEx {
 				self.innerrc.borrow_mut().set_value(k,v);
 			},
 			Err(e) => {
-				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
+				extargs_new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
 			}
 		}
 		Ok(())
@@ -305,7 +305,7 @@ impl NameSpaceEx {
 				self.innerrc.borrow_mut().set_value(k,iv);
 			},
 			Err(e) => {
-				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]",s,e}
+				extargs_new_error!{NameSpaceError,"can not parse [{}] error[{:?}]",s,e}
 			}
 		}
 		Ok(())
@@ -327,7 +327,7 @@ impl NameSpaceEx {
 				self.innerrc.borrow_mut().set_value(k,v);
 			},
 			Err(e) => {
-				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
+				extargs_new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s,e}
 			}
 		}
 		Ok(())
@@ -340,7 +340,7 @@ impl NameSpaceEx {
 				self.innerrc.borrow_mut().set_value(k,v);
 			},
 			Err(e) => {
-				new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s, e}
+				extargs_new_error!{NameSpaceError,"can not parse [{}] error[{:?}]", s, e}
 			}
 		}
 		Ok(())

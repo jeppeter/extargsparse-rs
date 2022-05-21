@@ -13,7 +13,7 @@ fn _get_environ_var(envname :&str) -> String {
 }
 
 
-macro_rules! error_class {
+macro_rules! extargs_error_class {
 	($type:ident) => {
 	#[derive(Debug,Clone)]
 	struct $type {
@@ -36,7 +36,7 @@ macro_rules! error_class {
 	};
 }
 
-macro_rules! new_error {
+macro_rules! extargs_new_error {
 	($type:ty,$($a:expr),*) => {
 		{
 		let mut c :String= format!("[{}:{}][{}]",file!(),line!(),stringify!($type));

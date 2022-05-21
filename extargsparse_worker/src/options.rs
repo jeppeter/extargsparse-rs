@@ -14,9 +14,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 
-use super::{error_class,new_error};
+use super::{extargs_error_class,extargs_new_error};
 
-error_class!{ExtArgsOptionParseError}
+extargs_error_class!{ExtArgsOptionParseError}
 
 
 
@@ -134,12 +134,12 @@ impl InnerExtArgsOptions {
 		}
 		let err = serde_json::from_str(s);
 		if err.is_err() {
-			new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", err, s}
+			extargs_new_error!{ExtArgsOptionParseError,"parse error[{:?}]\n{}", err, s}
 		}
 
 		let f :Value = err.unwrap();
 		if !f.is_object() {
-			new_error!{ExtArgsOptionParseError,"{} not object", s}
+			extargs_new_error!{ExtArgsOptionParseError,"{} not object", s}
 		}
 		for (k,v) in f.as_object().unwrap() {
 			retv.values.insert(k.to_string(),v.clone());
