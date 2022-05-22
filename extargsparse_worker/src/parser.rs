@@ -5,6 +5,7 @@ use std::io::Write;
 use std::fs::File;
 use std::io::prelude::*;
 use std::env;
+use std::borrow::Cow;
 
 
 use serde_json::Value;
@@ -15,7 +16,7 @@ use std::collections::HashMap;
 use std::any::Any;
 
 
-use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE};
+use super::options::{ExtArgsOptions,OPT_HELP_HANDLER,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_JSON_LONG,OPT_CMD_PREFIX_ADDED, OPT_FLAG_NO_CHANGE,OPT_PROG};
 use super::parser_compat::{ParserCompat};
 use super::parser_state::{ParserState,StateOptVal};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_BOOL,KEYWORD_COUNT,KEYWORD_ARGS,KEYWORD_COMMAND,KEYWORD_PREFIX ,KEYWORD_VARNAME,KEYWORD_LONGOPT, KEYWORD_SHORTOPT,KEYWORD_ATTR,KEYWORD_SUBCOMMAND,KEYWORD_NARGS,KEYWORD_SUBNARGS,Nargs};
@@ -92,6 +93,21 @@ fn is_valid_priority (k :i32) -> bool {
 	}
 	return false;
 }
+
+fn basename<'a>(path: &'a str) -> Cow<'a, str> {
+	let splc :char;
+	if env::consts::OS == "windows" {
+		splc = '\\';
+	} else {
+		splc = '/';
+	}
+	let mut pieces = path.rsplitn(2, |c| c == splc);
+	match pieces.next() {
+		Some(p) => p.into(),
+		None => path.into(),
+	}
+}
+
 
 impl InnerExtArgsParser {
 	fn insert_load_command_funcs(&mut self)  {
@@ -198,12 +214,14 @@ impl InnerExtArgsParser {
 	}
 
 
+
 	pub fn new(opt :Option<ExtArgsOptions>,priority :Option<Vec<i32>>) -> Result<InnerExtArgsParser,Box<dyn Error>> {
 		let mut setopt = ExtArgsOptions::new("{}")?.clone();
 		let mut setpriority = PARSER_PRIORITY_ARGS.clone();
 		if opt.is_some() {
 			setopt = opt.as_ref().unwrap().clone();
 		}
+
 
 		if priority.is_some() {
 			setpriority = priority.as_ref().unwrap().clone();
@@ -213,6 +231,17 @@ impl InnerExtArgsParser {
 				extargs_new_error!{ParserError,"unknown type [{}]",  *v}
 			}
 		}
+
+		if setopt.get_string(OPT_PROG).len() == 0 {
+			let mut c :String = "".to_string();
+			let cargs :Vec<String>= env::args().collect();
+			for a in cargs.iter() {
+				c = format!("{}",basename(&format!("{}",a)));
+				break;
+			}
+			setopt.set_string(OPT_PROG,&c)?;
+		}
+
 		let mut retv :InnerExtArgsParser = InnerExtArgsParser {
 			options : setopt.clone(),
 			maincmd : ParserCompat::new(None,Some(setopt.clone())),
@@ -1574,7 +1603,7 @@ impl InnerExtArgsParser {
 	pub (crate) fn parse_commandline_ex(&mut self,args :Option<Vec<String>>,context :Option<Arc<RefCell<dyn Any>>>, ostruct : Option<Arc<RefCell<dyn ArgSetImpl>>>,mode :Option<String>) -> Result<NameSpaceEx,Box<dyn Error>> {
 		let ns :NameSpaceEx;
 		let mut setmode :i32 = 0;
-		let realargs :Vec<String>;
+		let mut realargs :Vec<String> ;
 		let mut ctx :Option<Arc<RefCell<dyn Any>>> = None;
 		let mut stx :Option<Arc<RefCell<dyn ArgSetImpl>>> = None;
 		let mut stx1 :Option<Arc<RefCell<dyn ArgSetImpl>>> = None;
@@ -1592,7 +1621,15 @@ impl InnerExtArgsParser {
 		}
 
 		if args.is_none() {
-			realargs = env::args().collect();
+			let mut ridx : i32 = 0;
+			let cargs :Vec<String> = env::args().collect();
+			realargs = Vec::new();
+			for a in cargs.iter() {
+				if ridx > 0 {
+					realargs.push(format!("{}",a));
+				}
+				ridx += 1;
+			}
 		} else {
 			realargs = args.unwrap();
 		}

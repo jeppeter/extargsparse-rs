@@ -411,8 +411,8 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 		rets.push_str(&(format!("}}\n")));
 		rets.push_str(&format_tab_space(3));
 		rets.push_str(&(format!("extk.push_str(\"{}\");\n",k)));
-		rets.push_str(&format_tab_space(3));
-		rets.push_str(&(format!("println!(\"will get [{{}}]\", nsname);\n")));
+		//rets.push_str(&format_tab_space(3));
+		//rets.push_str(&(format!("println!(\"will get [{{}}]\", nsname);\n")));
 		rets.push_str(&format_tab_space(3));
 		if v == KEYWORD_TYPE_STRING {
 			rets.push_str(&format!("self.{} = ns.get_string(nsname);\n", k));
@@ -444,12 +444,12 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 			em_log_trace!("match [{}] [{:?}]",k,bsubnargs);
 
 			if k == KEYWORD_SUBNARGS || k == KEYWORD_ARGS  {
-				rets.push_str(&(format!("println!(\"will get args[{}]\");\n",k)));
-				rets.push_str(&format_tab_space(3));				
+				//rets.push_str(&(format!("println!(\"will get args[{}]\");\n",k)));
+				//rets.push_str(&format_tab_space(3));				
 				rets.push_str(&format!("self.{} = ns.get_array(nsname);\n",k));
 			} else if  bsubnargs {
-				rets.push_str(&(format!("println!(\"will get args[{}] [{{}}]\",nsname);\n",k)));
-				rets.push_str(&format_tab_space(3));
+				//rets.push_str(&(format!("println!(\"will get args[{}] [{{}}]\",nsname);\n",k)));
+				//rets.push_str(&format_tab_space(3));
 				rets.push_str(&format!("self.{} = ns.get_array(nsname);\n",k));
 			} else {
 				rets.push_str(&format!("self.{} = ns.get_array(nsname);\n",k));
@@ -488,8 +488,8 @@ fn format_code(ident :&str,names :HashMap<String,String>, structnames :Vec<Strin
 					rets.push_str(&format_tab_space(3));
 					rets.push_str(&(format!("extk.push_str(\"{}\");\n",k)));
 					rets.push_str(&format_tab_space(3));
-					rets.push_str(&(format!("println!(\"will down [{{}}]{{}}\",extk,kn);\n")));
-					rets.push_str(&format_tab_space(3));
+					//rets.push_str(&(format!("println!(\"will down [{{}}]{{}}\",extk,kn);\n")));
+					//rets.push_str(&format_tab_space(3));
 					rets.push_str(&format!("self.{}.set_value(&extk,&kn,nsname,ns.clone())?;\n",k));
 					/*no break just for next search*/
 				}

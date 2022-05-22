@@ -318,7 +318,7 @@ impl NameSpaceEx {
 			if idx > 0 {
 				s.push_str(",");
 			}
-			s.push_str(&(format!("\"{}\"",c)));
+			s.push_str(&(format!("\"{}\"",c.replace("\\","\\\\"))));
 			idx += 1;
 		}
 		s.push_str("]");

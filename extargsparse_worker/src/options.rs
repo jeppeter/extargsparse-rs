@@ -148,6 +148,13 @@ impl InnerExtArgsOptions {
 
 		Ok(retv)
 	}
+
+
+	pub (crate) fn set_value( & mut self,k :&str, v :Value) {
+		self.values.insert(k.to_string(),v);
+	}
+
+
 	pub (crate) fn string(&self) -> String {
 		let mut rets :String;
 		let mut idx :i32 = 0;
@@ -287,6 +294,22 @@ impl ExtArgsOptions {
 			innerrc : Rc::new(RefCell::new(k)),
 		})
 	}
+
+	pub (crate) fn set_string(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		let ns :String = format!("\"{}\"", v);
+		/*for parse will not make this ok*/
+		let s :String = ns.replace("\\","\\\\");
+		match serde_json::from_str(&s) {
+			Ok(v) => {
+				self.innerrc.borrow_mut().set_value(k,v);
+			},
+			Err(e) => {
+				extargs_new_error!{ExtArgsOptionParseError,"can not parse [{}] error[{:?}]", s,e}
+			}
+		}
+		Ok(())		
+	}
+
 	pub fn get_value(&self, k :&str) -> Option<Value> {
 		return self.innerrc.borrow().get_value(k);
 	}
