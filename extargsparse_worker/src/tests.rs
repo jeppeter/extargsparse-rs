@@ -1329,22 +1329,24 @@ fn test_a025() {
     return;
 }
 
-fn get_cmd_help(parser :ExtArgsParser, cmdname :&str) -> Vec<String> {
-    let mut buf = vec![];
-    {
-        let mut wstr = BufWriter::new(&mut buf);
-        let _ = parser.print_help_ex(&mut wstr , cmdname).unwrap();
-
-
-    }
-    let s = std::str::from_utf8(&buf).unwrap();
-    extargs_log_trace!("cmd[{}]help\n{}",cmdname,s);
+fn split_string_array(s :&str) -> Vec<String> {
     let sp :Vec<&str> = s.split("\n").collect();
     let mut retv :Vec<String> = Vec::new();
     for c in sp.iter() {
         retv.push(format!("{}",c));
     }
-    return retv;
+    retv
+}
+
+fn get_cmd_help(parser :ExtArgsParser, cmdname :&str) -> Vec<String> {
+    let mut buf = vec![];
+    {
+        let mut wstr = BufWriter::new(&mut buf);
+        let _ = parser.print_help_ex(&mut wstr , cmdname).unwrap();
+    }
+    let s = std::str::from_utf8(&buf).unwrap();
+    extargs_log_trace!("cmd[{}]help\n{}",cmdname,s);
+    return split_string_array(&s);
 }
 
 fn get_opt_ok(sarr :Vec<String>, opt :ExtKeyParse) -> bool {
@@ -1743,5 +1745,19 @@ fn test_a032() {
     let delvars :Vec<String> = Vec::new();
     compiler.write_rust_code("{}",loads,addmode.clone(),fcomposer.clone(),None,false,"ns","pp").unwrap();
     let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["-h"])).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let opts = parser.get_cmd_opts_ex("").unwrap();
+    let sarr = split_string_array(&s);
+    assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+    let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["dep","-h"])).unwrap();
+    let opts = parser.get_cmd_opts_ex("dep").unwrap();
+    let sarr = split_string_array(&s);
+    assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+
+    let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["rdep","-h"])).unwrap();
+    let opts = parser.get_cmd_opts_ex("rdep").unwrap();
+    let sarr = split_string_array(&s);
+    assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
     return;
 }

@@ -465,7 +465,7 @@ impl ExtArgsDir {
             rets.push_str(&format!("    let {} = Arc::new(RefCell::new(MainDataStruct::new()));\n",piname));            
             rets.push_str(&format!("    let {} = parser.parse_commandline_ex(None,None,Some({}.clone()),None)?;\n",nsname,piname));
         } else {
-            rets.push_str(&format!("    let {} = parser.parse_commandline_ex(None,None,None,None)?\n",nsname));
+            rets.push_str(&format!("    let {} = parser.parse_commandline_ex(None,None,None,None)?;\n",nsname));
         }
 
         if printout {
