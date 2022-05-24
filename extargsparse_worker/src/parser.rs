@@ -81,7 +81,7 @@ lazy_static ! {
 	};
 
 	static ref PARSER_RESERVE_ARGS :Vec<String> = {
-		vec![String::from(KEYWORD_SUBCOMMAND),String::from(KEYWORD_SUBNARGS),String::from(KEYWORD_NARGS)]
+		vec![String::from(KEYWORD_SUBCOMMAND),String::from(KEYWORD_SUBNARGS),String::from(KEYWORD_NARGS),String::from("extargs"),String::from(KEYWORD_ARGS)]
 	};
 }
 
@@ -275,6 +275,7 @@ impl InnerExtArgsParser {
 	}
 
 	fn load_commandline_base(&mut self, _prefix :String, keycls :ExtKeyParse, parsers :Vec<ParserCompat>) -> Result<(),Box<dyn Error>> {
+		extargs_log_trace!("flag_name [{}]",keycls.flag_name());
 		if keycls.is_flag() && keycls.flag_name() != KEYWORD_DOLLAR_SIGN && check_in_array(PARSER_RESERVE_ARGS.clone(),&(keycls.flag_name())) {
 			extargs_new_error!{ParserError,"{} in the {}", keycls.flag_name(), format_array_string(PARSER_RESERVE_ARGS.clone())}
 		}

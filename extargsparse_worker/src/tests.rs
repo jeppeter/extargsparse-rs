@@ -1761,3 +1761,48 @@ fn test_a032() {
     assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
     return;
 }
+
+
+fn format_cmd1(k :&str) -> String {
+    let mut rets :String = "".to_string();
+    rets.push_str("{ \"");
+    rets.push_str(k);
+    rets.push_str("\" : true }");
+    rets
+}
+
+fn format_cmd2(k :&str) -> String {
+    let mut rets :String = "".to_string();
+    rets.push_str("{ \"+");
+    rets.push_str(k);
+    rets.push_str("\" : { \"reserve\" : true } }");
+    rets
+}
+
+fn format_cmd3(k :&str) -> String {
+    let mut rets :String = "".to_string();
+    rets.push_str("{ \"");
+    rets.push_str(k);
+    rets.push_str("\" : { \"function\" : 30 } }");
+    rets
+}
+
+#[test]
+fn test_a033() {
+    let reserve_args = vec!["subcommand", "subnargs", "nargs", "extargs", "args"];
+    for c in reserve_args.clone().iter() {
+        let cmdline = format_cmd1(c);
+        let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+        let berr = extargs_load_commandline!(parser,&cmdline);
+        assert!(berr.is_err() == true);
+        let cmdline = format_cmd2(c);
+        let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+        let berr = extargs_load_commandline!(parser,&cmdline);
+        assert!(berr.is_err() == true);
+        let cmdline = format_cmd3(c);
+        let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+        let berr = extargs_load_commandline!(parser,&cmdline);
+        assert!(berr.is_err() == true);
+    }
+    return;
+}
