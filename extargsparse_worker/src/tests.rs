@@ -2009,7 +2009,6 @@ struct ParserTest40 {
     tce_chroot       :String,
     tce_chown        :String,
     tce_mkdir        :String,
-    //tce_chmod        :String,
     tce_rollback     :bool,
     tce_cp           :String,
     tce_jsonfile     :String,
@@ -2023,7 +2022,7 @@ struct ParserTest40 {
 
 #[test]
 fn test_a040() {
-    let loads = r#"        {
+   let loads = r#"        {
             "+tce": {
                 "mirror": "http://repo.tinycorelinux.net",
                 "root": "/",
@@ -2063,5 +2062,53 @@ fn test_a040() {
     assert!(pi.borrow().tce_listsfile == "");
     assert!(pi.borrow().tce_maxtries == 5);
     assert!(pi.borrow().tce_timeout == 10);
+    return;
+}
+
+#[test]
+fn test_a041() {
+    let rootd = get_root_cargo_path();
+    let mut fdir :String =format!("{}{}extargsparse_worker{}certs",rootd,*PATH_SPLIT_CHAR,*PATH_SPLIT_CHAR);
+    if *PATH_SPLIT_CHAR == '\\' {
+        fdir = fdir.replace("\\","\\\\");
+    }
+    let loads = format!(r#"        {{            "countryname|N" : "CN",
+            "statename|S" : "ZJ",
+            "localityname" : "HZ",
+            "organizationname|O" : ["BT"],
+            "organizationunitname" : "BT R&D",
+            "commonname|C" : "bingte.com",
+            "+ssl" : {{
+                "chain" : true,
+                "dir" : "{}",
+                "bits" : 4096,
+                "md" : "sha256",
+                "utf8" : true,
+                "name" : "ipxe",
+                "days" : 3650,
+                "crl-days": 365,
+                "emailaddress" : "bt@bingte.com",
+                "aia_url" : "http://bingte.com/sec/aia",
+                "crl_url" : "http://bingte.com/sec/crl",
+                "ocsp_url" : "http://bingte.com/sec/ocsp",
+                "dns_url" : ["bingte.com"],
+                "excluded_ip" : ["0.0.0.0/0.0.0.0","0:0:0:0:0:0:0:0/0:0:0:0:0:0:0:0"],
+                "password|P" : null,
+                "copy_extensions" : "none",
+                "subca" : false,
+                "comment": ""
+            }}
+        }}"#,fdir);
+    before_parser();
+
+    let ws = r#"{"emailaddress" : "unit@bingte.com","organizationname" : "BT RD","ssl" :{ "dir" : "./certs/bingte","name" : "bingte","subca" : true,"copy_extensions" : "copy","days" : 375,"crl_days" : 30,"bits" : 4096}}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    let params :Vec<String> = format_string_array(vec!["--json", &jsonfile]);
+    extargs_load_commandline!(parser,&loads).unwrap();
+    let berr = parser.parse_commandline_ex(Some(params.clone()),None,None,None);
+    assert!(berr.is_err() == true);
     return;
 }
