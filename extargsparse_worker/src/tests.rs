@@ -1744,18 +1744,19 @@ fn test_a032() {
     let setvars :HashMap<String,String> = HashMap::new();
     let delvars :Vec<String> = Vec::new();
     compiler.write_rust_code("{}",loads,addmode.clone(),fcomposer.clone(),None,false,"ns","pp").unwrap();
-    let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["-h"])).unwrap();
+    compiler.compile_command().unwrap();
+    let s = compiler.run_command(setvars.clone(),delvars.clone(),format_string_array(vec!["-h"])).unwrap();
     let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
     extargs_load_commandline!(parser,loads).unwrap();
     let opts = parser.get_cmd_opts_ex("").unwrap();
     let sarr = split_string_array(&s);
     assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
-    let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["dep","-h"])).unwrap();
+    let s = compiler.run_command(setvars.clone(),delvars.clone(),format_string_array(vec!["dep","-h"])).unwrap();
     let opts = parser.get_cmd_opts_ex("dep").unwrap();
     let sarr = split_string_array(&s);
     assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
 
-    let s = compiler.compile_and_run(setvars.clone(),delvars.clone(),format_string_array(vec!["rdep","-h"])).unwrap();
+    let s = compiler.run_command(setvars.clone(),delvars.clone(),format_string_array(vec!["rdep","-h"])).unwrap();
     let opts = parser.get_cmd_opts_ex("rdep").unwrap();
     let sarr = split_string_array(&s);
     assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
