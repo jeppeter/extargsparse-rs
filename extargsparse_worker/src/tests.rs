@@ -1945,3 +1945,49 @@ fn test_a037() {
     assert!(opts[4].type_name() == KEYWORD_HELP);
     return;
 }
+
+#[test]
+fn test_a038() {
+    let loads = r#"        {
+            "verbose|v" : "+",
+            "kernel|K" : "/boot/",
+            "initrd|I" : "/boot/",
+            "encryptfile|e" : null,
+            "encryptkey|E" : null,
+            "setupsectsoffset" : 0x1f1,
+            "ipxe<ipxe_handler>" : {
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    let berr = extargs_load_commandline!(parser,loads);
+    assert!(berr.is_err() == true);
+    return;
+}
+
+#[test]
+fn test_a039() {
+    let loads = r#"        {
+            "verbose|v" : "+",
+            "kernel|K" : "/boot/",
+            "initrd|I" : "/boot/",
+            "encryptfile|e" : null,
+            "encryptkey|E" : null,
+            "setupsectsoffset" : 451
+        }"#;
+    before_parser();
+    set_env_var("EXTARGS_VERBOSE", "4");
+    set_env_var("EXTARGS_SETUPSECTSOFFSET", "0x612");
+
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    let params :Vec<String> = format_string_array(vec![]);
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_int("verbose") == 4);
+    assert!(ns.get_int("setupsectsoffset") == 0x612);
+    return;
+}
