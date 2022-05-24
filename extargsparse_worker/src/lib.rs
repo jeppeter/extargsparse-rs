@@ -14,5 +14,9 @@ pub (crate) mod optchk;
 pub mod argset;
 pub mod parser;
 
+
+#[cfg(test)]
+mod util_test;
+
 #[cfg(test)]
 mod tests;
