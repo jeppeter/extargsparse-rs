@@ -1991,3 +1991,77 @@ fn test_a039() {
     assert!(ns.get_int("setupsectsoffset") == 0x612);
     return;
 }
+
+#[derive(ArgSet)]
+struct ParserTest40 {
+    tce_mirror       :String,
+    tce_root         :String,
+    tce_tceversion   :String,
+    tce_wget         :String,
+    tce_cat          :String,
+    tce_rm           :String,
+    tce_sudoprefix   :String,
+    tce_optional_dir :String,
+    tce_trymode      :bool,
+    tce_platform     :String,
+    tce_mount        :String,
+    tce_umount       :String,
+    tce_chroot       :String,
+    tce_chown        :String,
+    tce_mkdir        :String,
+    //tce_chmod        :String,
+    tce_rollback     :bool,
+    tce_cp           :String,
+    tce_jsonfile     :String,
+    tce_perspace     :i64,
+    tce_depmapfile   :String,
+    tce_timeout      :i64,
+    tce_listsfile    :String,
+    tce_maxtries     :i64,
+    args             :Vec<String>,
+}
+
+#[test]
+fn test_a040() {
+    let loads = r#"        {
+            "+tce": {
+                "mirror": "http://repo.tinycorelinux.net",
+                "root": "/",
+                "tceversion": "7.x",
+                "wget": "wget",
+                "cat": "cat",
+                "rm": "rm",
+                "sudoprefix": "sudo",
+                "optional_dir": "/cde",
+                "trymode": false,
+                "platform": "x86_64",
+                "mount": "mount",
+                "umount": "umount",
+                "chroot": "chroot",
+                "chown": "chown",
+                "chmod": "chmod",
+                "mkdir": "mkdir",
+                "rollback": true,
+                "cp": "cp",
+                "jsonfile": null,
+                "perspace": 3,
+                "depmapfile": null,
+                "timeout": 10,
+                "listsfile": null,
+                "maxtries": 5
+            }
+        }"#;
+    before_parser();
+    let params :Vec<String> = format_string_array(vec!["--tce-root", "/home/"]);
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let p :ParserTest40 = ParserTest40::new();
+    let pi :Arc<RefCell<ParserTest40>> = Arc::new(RefCell::new(p));
+    let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+    assert!(pi.borrow().tce_mirror == "http://repo.tinycorelinux.net");
+    assert!(pi.borrow().tce_root == "/home/");
+    assert!(pi.borrow().tce_listsfile == "");
+    assert!(pi.borrow().tce_maxtries == 5);
+    assert!(pi.borrow().tce_timeout == 10);
+    return;
+}

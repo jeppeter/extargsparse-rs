@@ -1503,8 +1503,7 @@ impl InnerExtArgsParser {
 							curname = curname.replace(".","_");
 							oe = ostruct.borrow_mut().set_value("",&curname,&opt.opt_dest(),ns.clone());
 							if oe.is_err() {
-								extargs_log_warn!("can not set [{}][{}]  value [{:?}]",name, opt.string(),oe);
-								return oe;
+								extargs_log_warn!("could not set [{}] error[{:?}] ",curname, oe.err().unwrap());
 							}
 						}
 					}
