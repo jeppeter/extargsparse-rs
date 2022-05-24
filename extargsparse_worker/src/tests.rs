@@ -1829,5 +1829,66 @@ fn test_a034() {
     assert!(ns.get_string("subcommand") == "dep");
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec![])));
     return;
+}
 
+#[test]
+fn test_a035() {
+    let loads = r#"        {
+            "float1|f" : 3.633 ,
+            "float2" : 6422.22,
+            "float3" : 44463.23,
+            "verbose|v" : "+",
+            "dep" : {
+                "float3" : 3332.233
+            },
+            "rdep" : {
+                "ip" : {
+                    "float4" : 3377.33,
+                    "float6" : 33.22,
+                    "float7" : 0.333
+                }
+            }
+
+        }"#;
+    before_parser();
+
+    let depws = r#"{"float3":33.221}"#;
+    let depf = make_temp_file(depws);
+    let depjson = format!("{}",depf.path().display());
+
+    let rdepws = r#"{"ip" : { "float4" : 40.3}}"#;
+    let rdepf = make_temp_file(rdepws);
+    let rdepjson = format!("{}",rdepf.path().display());
+
+    let ws = r#"{"verbose": 30,"float3": 77.1}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+
+
+    let rdepipws = r#"{"float7" : 11.22,"float4" : 779.2}"#;
+    let rdepipf = make_temp_file(rdepipws);
+    let rdepipjson = format!("{}",rdepipf.path().display());
+
+    set_env_var("EXTARGSPARSE_JSON",&jsonfile);
+    set_env_var("DEP_JSON",&depjson);
+    set_env_var("RDEP_JSON",&rdepjson);
+    set_env_var("DEP_FLOAT3","33.52");
+    set_env_var("RDEP_IP_FLOAT7", "99.3");
+
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    let params :Vec<String> = format_string_array(vec!["-vvfvv", "33.21", "rdep", "ip", "--json", &jsonfile, "--rdep-ip-json", &rdepipjson]);
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec![])));
+    assert!(ns.get_string("subcommand") == "rdep.ip");
+    assert!(ns.get_int("verbose") == 4);
+    assert!(ns.get_float("float1") == 33.21);
+    assert!(ns.get_float("dep_float3") == 33.52);
+    assert!(ns.get_float("float2") == 6422.22);
+    assert!(ns.get_float("float3") == 77.1);
+    assert!(ns.get_float("rdep_ip_float4") == 779.2);
+    assert!(ns.get_float("rdep_ip_float6") == 33.22);
+    assert!(ns.get_float("rdep_ip_float7") == 11.22);
+    return;
 }
