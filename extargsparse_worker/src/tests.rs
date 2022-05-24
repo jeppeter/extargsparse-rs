@@ -1892,3 +1892,56 @@ fn test_a035() {
     assert!(ns.get_float("rdep_ip_float7") == 11.22);
     return;
 }
+
+#[test]
+fn test_a037() {
+    let loads = r#"        {
+            "jsoninput|j##input json default stdin##" : null,
+            "input|i##input file to get default nothing - for stdin##" : null,
+            "output|o##output c file##" : null,
+            "verbose|v##verbose mode default(0)##" : "+",
+            "cmdpattern|c" : "%EXTARGS_CMDSTRUCT%",
+            "optpattern|O" : "%EXTARGS_STRUCT%",
+            "structname|s" : "args_options_t",
+            "funcname|F" : "debug_extargs_output",
+            "releasename|R" : "release_extargs_output",
+            "funcpattern" : "%EXTARGS_DEBUGFUNC%",
+            "prefix|p" : "",
+            "test" : {
+                "$" : 0
+            },
+            "optstruct" : {
+                "$" : 0
+            },
+            "cmdstruct" : {
+                "$" : 0
+            },
+            "debugfunc" : {
+                "$" : 0
+            },
+            "all" : {
+                "$" : 0
+            }
+        }"#;
+    before_parser();
+
+
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let subcmds = parser.get_sub_commands_ex("").unwrap();
+    assert!(subcmds.len() == 5);
+    assert!(subcmds[0] == "all");
+    assert!(subcmds[1] == "cmdstruct");
+    assert!(subcmds[2] == "debugfunc");
+    assert!(subcmds[3] == "optstruct");
+    assert!(subcmds[4] == "test");
+    let opts = parser.get_cmd_opts_ex("").unwrap();
+    assert!(opts.len() == 14);
+    assert!(opts[0].flag_name() == "$");
+    assert!(opts[1].long_opt() == "--cmdpattern");
+    assert!(opts[2].opt_dest() == "funcname");
+    assert!(opts[3].var_name() == "funcpattern");
+    assert!(opts[4].type_name() == KEYWORD_HELP);
+    return;
+}
