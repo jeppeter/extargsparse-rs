@@ -1806,3 +1806,28 @@ fn test_a033() {
     }
     return;
 }
+
+#[test]
+fn test_a034() {
+    let loads = r#"        {
+            "dep" : {
+                "string|S" : "stringval"
+            }
+        }"#;
+    before_parser();
+
+    let depws = r#"{"dep_string":null}"#;
+    let depf = make_temp_file(depws);
+    let depjson = format!("{}",depf.path().display());
+
+
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    let params :Vec<String> = format_string_array(vec!["--json", &depjson, "dep"]);
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_string("dep_string") == "");
+    assert!(ns.get_string("subcommand") == "dep");
+    assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec![])));
+    return;
+
+}
