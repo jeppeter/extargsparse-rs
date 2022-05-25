@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
-use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -2131,6 +2131,31 @@ fn test_a042() {
     before_parser();
     let params :Vec<String> = format_string_array(vec!["-vvvK", "kernel", "--initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
     let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_string("subcommand") == "ipxe");
+    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
+    return;
+}
+
+#[test]
+fn test_a043() {
+   let loads = r#"        {
+            "verbose|v" : "+",
+            "kernel|K" : "/boot/",
+            "initrd|I" : "/boot/",
+            "encryptfile|e" : null,
+            "encryptkey|E" : null,
+            "setupsectsoffset" : 663,
+            "ipxe" : {
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{"{}": true,"{}" : "-", "{}" : "-"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let params :Vec<String> = format_string_array(vec!["-K", "kernel", "-initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
     extargs_load_commandline!(parser,loads).unwrap();
     let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
     assert!(ns.get_string("subcommand") == "ipxe");
