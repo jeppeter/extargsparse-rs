@@ -28,6 +28,7 @@ use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function}
 
 use super::util_test::{ExtArgsDir,FuncComposer};
 
+extargs_error_class!{TestCaseError}
 
 lazy_static!{
     static ref PATH_SPLIT_CHAR :char = {
@@ -2186,4 +2187,17 @@ fn test_a044() {
     assert!(ns.get_string("subcommand") == "ipxe");
     assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
     return;
+}
+
+fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+    let mut sarr :Vec<String>;
+    if (validx + 2) > params.len() as i32 {
+        extargs_new_error!{TestCaseError,"[{}+2] > len({}) {:?}",validx,params.len(),params}
+    }
+
+    sarr = ns.get_array(&keycls.opt_dest());
+    sarr.push(format!("{}",params[validx as usize].to_uppercase()));
+    sarr.push(format!("{}",params[(validx + 1) as usize].to_uppercase()));
+    ns.set_array(&keycls.opt_dest(),sarr)?;
+    return Ok(2);
 }

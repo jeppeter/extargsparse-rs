@@ -272,7 +272,7 @@ impl NameSpaceEx {
 		return self.innerrc.borrow().string();
 	}
 	
-	pub (crate) fn set_string(&self,k :&str, v :String) -> Result<(),Box<dyn Error>> {
+	pub fn set_string(&self,k :&str, v :String) -> Result<(),Box<dyn Error>> {
 		let ns :String = format!("\"{}\"", v);
 		/*for parse will not make this ok*/
 		let s :String = ns.replace("\\","\\\\");
@@ -287,7 +287,7 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_bool(&self,k :String, b :bool) -> Result<(),Box<dyn Error>> {
+	pub fn set_bool(&self,k :String, b :bool) -> Result<(),Box<dyn Error>> {
 		let setv :Value;
 		if b {
 			setv = serde_json::from_str("true").unwrap();
@@ -298,7 +298,7 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_int(&self,k :&str, v :i64) -> Result<(),Box<dyn Error>> {
+	pub fn set_int(&self,k :&str, v :i64) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("{}", v);
 		match serde_json::from_str(&s) {
 			Ok(iv) => {
@@ -311,7 +311,7 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_array(&self, k :&str, narr :Vec<String>) -> Result<(),Box<dyn Error>> {
+	pub fn set_array(&self, k :&str, narr :Vec<String>) -> Result<(),Box<dyn Error>> {
 		let mut s :String = "[".to_string();
 		let mut idx :i32 = 0;
 		for c in narr {
@@ -333,7 +333,7 @@ impl NameSpaceEx {
 		Ok(())
 	}
 
-	pub (crate) fn set_float(&self, k :&str, fv :f64) -> Result<(),Box<dyn Error>> {
+	pub fn set_float(&self, k :&str, fv :f64) -> Result<(),Box<dyn Error>> {
 		let s :String = format!("{}",fv);
 		match serde_json::from_str(&s) {
 			Ok(v) => {
@@ -350,7 +350,7 @@ impl NameSpaceEx {
 		return self.innerrc.borrow().is_accessed(k);
 	}
 
-	pub (crate) fn set_value(&self,k :&str,v :Value)  {
+	pub fn set_value(&self,k :&str,v :Value)  {
 		return self.innerrc.borrow_mut().set_value(k,v);
 	}
 }
