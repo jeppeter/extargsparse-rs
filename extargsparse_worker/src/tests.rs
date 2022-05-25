@@ -2113,3 +2113,27 @@ fn test_a041() {
     assert!(berr.is_err() == true);
     return;
 }
+
+
+#[test]
+fn test_a042() {
+   let loads = r#"        {
+            "verbose|v" : "+",
+            "kernel|K" : "/boot/",
+            "initrd|I" : "/boot/",
+            "encryptfile|e" : null,
+            "encryptkey|E" : null,
+            "setupsectsoffset" : 663,
+            "ipxe" : {
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let params :Vec<String> = format_string_array(vec!["-vvvK", "kernel", "--initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_string("subcommand") == "ipxe");
+    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
+    return;
+}
