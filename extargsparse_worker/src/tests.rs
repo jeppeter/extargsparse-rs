@@ -2191,13 +2191,44 @@ fn test_a044() {
 
 fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
     let mut sarr :Vec<String>;
+    extargs_log_trace!("validx [{}]",validx);
     if (validx + 2) > params.len() as i32 {
         extargs_new_error!{TestCaseError,"[{}+2] > len({}) {:?}",validx,params.len(),params}
     }
 
     sarr = ns.get_array(&keycls.opt_dest());
-    sarr.push(format!("{}",params[validx as usize].to_uppercase()));
-    sarr.push(format!("{}",params[(validx + 1) as usize].to_uppercase()));
+    sarr.push(format!("{}",params[validx as usize]));
+    sarr.push(format!("{}",params[(validx + 1) as usize]));
+    extargs_log_trace!("set [{}] value {:?}", keycls.opt_dest(),sarr);
     ns.set_array(&keycls.opt_dest(),sarr)?;
     return Ok(2);
+}
+
+
+#[test]
+#[extargs_map_function(actfunc=debug_set_2_args)]
+fn test_a045() {
+   let loads = r#"        {
+            "verbose|v" : "+",
+            "kernel|K" : "/boot/",
+            "initrd|I" : "/boot/",
+            "pair|P!optparse=debug_set_2_args!" : [],
+            "encryptfile|e" : null,
+            "encryptkey|E" : null,
+            "setupsectsoffset" : 663,
+            "ipxe" : {
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let params :Vec<String> = format_string_array(vec!["+K", "kernel", "++pair", "initrd", "cc", "dd", "+E", "encryptkey", "+e", "encryptfile", "ipxe"]);
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_string("subcommand") == "ipxe");
+    assert!(check_array_equal(ns.get_array("pair"),format_string_array(vec!["initrd", "cc"])));
+    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["dd"])));
+    return;
 }
