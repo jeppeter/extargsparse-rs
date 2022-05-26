@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
-use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -1741,10 +1741,11 @@ fn test_a032() {
     let workdir = get_worker_path();
     let gendir = get_codegen_path();
     let mut compiler :ExtArgsDir = ExtArgsDir::new("callextargs",&workdir,&gendir);
-    let addmode :Vec<String> = Vec::new();
+    let importlibs :HashMap<String,String> = HashMap::new();
     let setvars :HashMap<String,String> = HashMap::new();
     let delvars :Vec<String> = Vec::new();
-    compiler.write_rust_code("{}",loads,addmode.clone(),fcomposer.clone(),None,false,"ns","pp").unwrap();
+
+    compiler.write_rust_code("{}",loads,importlibs.clone(),fcomposer.clone(),None,false,"ns","pp").unwrap();
     compiler.compile_command().unwrap();
     let s = compiler.run_command(setvars.clone(),delvars.clone(),format_string_array(vec!["-h"])).unwrap();
     let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
@@ -2024,7 +2025,7 @@ struct ParserTest40 {
 
 #[test]
 fn test_a040() {
-   let loads = r#"        {
+ let loads = r#"        {
     "+tce": {
         "mirror": "http://repo.tinycorelinux.net",
         "root": "/",
@@ -2118,7 +2119,7 @@ fn test_a041() {
 
 #[test]
 fn test_a042() {
-   let loads = r#"        {
+ let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2141,7 +2142,7 @@ return;
 
 #[test]
 fn test_a043() {
-   let loads = r#"        {
+ let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2166,7 +2167,7 @@ return;
 
 #[test]
 fn test_a044() {
-   let loads = r#"        {
+ let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2234,35 +2235,67 @@ fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
 #[test]
 #[extargs_map_function(actfunc=debug_set_2_args)]
 fn test_a045() {
-   let loads = r#"        {
-        "verbose|v" : "+",
-        "kernel|K" : "/boot/",
-        "initrd|I" : "/boot/",
-        "pair|P!optparse=debug_set_2_args!" : [],
-        "encryptfile|e" : null,
-        "encryptkey|E" : null,
-        "setupsectsoffset" : 663,
-        "ipxe" : {
-            "$" : "+"
-        }
-    }"#;
-    before_parser();
-    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
-    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
-    let params :Vec<String> = format_string_array(vec!["+K", "kernel", "++pair", "initrd", "cc", "dd", "+E", "encryptkey", "+e", "encryptfile", "ipxe"]);
-    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
-    assert!(ns.get_string("subcommand") == "ipxe");
-    assert!(check_array_equal(ns.get_array("pair"),format_string_array(vec!["initrd", "cc"])));
-    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["dd"])));
-    return;
+ let loads = r#"        {
+    "verbose|v" : "+",
+    "kernel|K" : "/boot/",
+    "initrd|I" : "/boot/",
+    "pair|P!optparse=debug_set_2_args!" : [],
+    "encryptfile|e" : null,
+    "encryptkey|E" : null,
+    "setupsectsoffset" : 663,
+    "ipxe" : {
+        "$" : "+"
+    }
+}"#;
+before_parser();
+let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+let params :Vec<String> = format_string_array(vec!["+K", "kernel", "++pair", "initrd", "cc", "dd", "+E", "encryptkey", "+e", "encryptfile", "ipxe"]);
+let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+assert!(ns.get_string("subcommand") == "ipxe");
+assert!(check_array_equal(ns.get_array("pair"),format_string_array(vec!["initrd", "cc"])));
+assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["dd"])));
+return;
 }
 
 #[test]
 #[extargs_map_function(actfunc=debug_set_2_args,opthelp=debug_opthelp_set)]
 fn test_a046() {
-   let loads = r#"        {
+ let loads = r#"        {
+    "verbose|v" : "+",
+    "kernel|K" : "/boot/",
+    "initrd|I" : "/boot/",
+    "pair|P!optparse=debug_set_2_args;opthelp=debug_opthelp_set!" : [],
+    "encryptfile|e" : null,
+    "encryptkey|E" : null,
+    "setupsectsoffset" : 663,
+    "ipxe" : {
+        "$" : "+"
+    }
+}"#;
+before_parser();
+let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let sarr = get_cmd_help(parser.clone(),"");
+let expr = Regex::new(r#".*opthelp function set \[pair\].*"#).unwrap();
+let mut bmatch :bool =false;
+for l in sarr.iter() {
+    if expr.is_match(l) {
+        bmatch = true;
+        break;
+    }
+}
+assert!(bmatch == true);
+return;
+}
+
+#[test]
+fn test_a047() {
+    let loads = r#"        {
         "verbose|v" : "+",
         "kernel|K" : "/boot/",
         "initrd|I" : "/boot/",
@@ -2275,11 +2308,79 @@ fn test_a046() {
         }
     }"#;
     before_parser();
-    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
-    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
-    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let sarr = get_cmd_help(parser.clone(),"");
+    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+", "{}" : "?", "{}" : "usage" ,"{}" : "jsonfile"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG);
+    let codstr =r#"
+use serde_json::Value;
+use extargsparse_worker::key::ExtKeyParse;
+
+extargs_error_class!{TestCaseError}
+
+    macro_rules! extargs_log_trace {
+        ($($arg:tt)+) => {
+            let mut _c :String= format!("[{}:{}] ",file!(),line!());
+            _c.push_str(&(format!($($arg)+)[..]));
+            println!("{}",_c);
+        }
+    }
+
+    fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
+        let mut sarr :Vec<String>;
+        extargs_log_trace!("validx [{}]",validx);
+        if (validx + 2) > params.len() as i32 {
+            extargs_new_error!{TestCaseError,"[{}+2] > len({}) {:?}",validx,params.len(),params}
+        }
+
+        sarr = ns.get_array(&keycls.opt_dest());
+        sarr.push(format!("{}",params[validx as usize]));
+        sarr.push(format!("{}",params[(validx + 1) as usize]));
+        extargs_log_trace!("set [{}] value {:?}", keycls.opt_dest(),sarr);
+        ns.set_array(&keycls.opt_dest(),sarr)?;
+        return Ok(2);
+    }
+
+    fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
+        let mut cs :String = "".to_string();
+        let mut idx :i32 = 0;
+        match keycls.value() {
+            Value::Array(_a) => {
+                cs.push_str("[");
+                for curv in _a {
+                    match curv {
+                        Value::String(v) => {
+                            if idx > 0 {
+                                cs.push_str(",");
+                            }
+                            cs.push_str(&(v.to_string()));
+                            idx += 1;
+                        },
+                        _ => {}
+                    }
+                }
+                cs.push_str("]");
+            },
+            _ => {}
+        }
+        return format!("opthelp function set [{}] default value ({})", keycls.opt_dest(), cs);
+    }
+
+    "#;
+    let mapstr = r#"actfunc=debug_set_2_args,opthelp=debug_opthelp_set"#;
+    let mut fcomposer : FuncComposer = FuncComposer::new();
+    fcomposer.add_code(codstr);
+    fcomposer.add_inner(mapstr);
+
+    let workdir = get_worker_path();
+    let gendir = get_codegen_path();
+    let mut compiler :ExtArgsDir = ExtArgsDir::new("callextargs",&workdir,&gendir);
+    let mut importlibs :HashMap<String,String> = HashMap::new();
+    let setvars :HashMap<String,String> = HashMap::new();
+    let delvars :Vec<String> = Vec::new();
+
+    importlibs.insert(format!("serde_json"),format!("^1.0.42"));
+    compiler.write_rust_code(&optstr,loads,importlibs.clone(),fcomposer.clone(),None,false,"args","ppc").unwrap();
+    compiler.compile_command().unwrap();
+    let s = compiler.run_command(setvars.clone(),delvars.clone(),format_string_array(vec!["++usage"])).unwrap();
+    let sarr = split_string_array(&s);
     let expr = Regex::new(r#".*opthelp function set \[pair\].*"#).unwrap();
     let mut bmatch :bool =false;
     for l in sarr.iter() {

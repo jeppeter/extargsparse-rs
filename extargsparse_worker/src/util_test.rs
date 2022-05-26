@@ -357,7 +357,7 @@ impl ExtArgsDir {
 		rets
 	}
 
-	fn format_cargo_toml(&self) -> String {
+	fn format_cargo_toml(&self,importlibs :HashMap<String,String>) -> String {
 		let mut rets :String = "".to_string();
 		rets.push_str("[package]\n");
 		rets.push_str(&format!("name = \"{}\"\n",self.exename));
@@ -369,15 +369,20 @@ impl ExtArgsDir {
 		rets.push_str(&format!("extargsparse_worker = {{ path = \"{}\" }}\n", self.workdir.replace("\\","\\\\")));
 		rets.push_str("regex = \"1\"\n");
 		rets.push_str("lazy_static = \"^1.4.0\"\n");
+		for (k,v) in importlibs.iter() {
+			rets.push_str(&format!("{} = \"{}\"\n",k,v));
+		}
 		rets.push_str("\n");
 
 		rets
 	}
 
-	fn write_cargo_toml(&self) -> Result<(),Box<dyn Error>> {
+	fn write_cargo_toml(&self,importlibs :HashMap<String,String>) -> Result<(),Box<dyn Error>> {
 		let cargopath = self.tdir.path().join("Cargo.toml").display().to_string();
 		let mut fp: fs::File = fs::File::create(&cargopath).unwrap();
-		fp.write_all(self.format_cargo_toml().as_bytes())?;
+		let s = self.format_cargo_toml(importlibs.clone());
+		extargs_log_trace!("write [{}]\n{}",cargopath,s);
+		fp.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
@@ -483,12 +488,13 @@ impl ExtArgsDir {
 		let maindirpath = self.tdir.path().join("src").display().to_string();
 		fs::create_dir_all(&maindirpath)?;
 		let mut fp: fs::File = fs::File::create(&mainrspath).unwrap();
+		extargs_log_trace!("write [{}]\n{}", maindirpath,mainrs);
 		fp.write_all(mainrs.as_bytes())?;
 		Ok(())
 	}
 
-	pub fn write_rust_code(&mut self,optstr :&str,cmdstr :&str, _addmode :Vec<String>,fcomposer :FuncComposer, priority :Option<Vec<i32>>,printout :bool, nsname :&str, piname :&str) -> Result<(),Box<dyn Error>> {
-		self.write_cargo_toml()?;
+	pub fn write_rust_code(&mut self,optstr :&str,cmdstr :&str, importlibs :HashMap<String,String>,fcomposer :FuncComposer, priority :Option<Vec<i32>>,printout :bool, nsname :&str, piname :&str) -> Result<(),Box<dyn Error>> {
+		self.write_cargo_toml(importlibs.clone())?;
 		/*to get write main file*/
 		let mut rets :String = "".to_string();
 		rets.push_str(&(self.format_imports()));
@@ -641,6 +647,4 @@ impl ExtArgsDir {
 
 		Ok(rets)
 	}
-
-
 }
