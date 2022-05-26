@@ -1812,10 +1812,10 @@ fn test_a033() {
 #[test]
 fn test_a034() {
     let loads = r#"        {
-            "dep" : {
-                "string|S" : "stringval"
-            }
-        }"#;
+        "dep" : {
+            "string|S" : "stringval"
+        }
+    }"#;
     before_parser();
 
     let depws = r#"{"dep_string":null}"#;
@@ -1836,22 +1836,22 @@ fn test_a034() {
 #[test]
 fn test_a035() {
     let loads = r#"        {
-            "float1|f" : 3.633 ,
-            "float2" : 6422.22,
-            "float3" : 44463.23,
-            "verbose|v" : "+",
-            "dep" : {
-                "float3" : 3332.233
-            },
-            "rdep" : {
-                "ip" : {
-                    "float4" : 3377.33,
-                    "float6" : 33.22,
-                    "float7" : 0.333
-                }
+        "float1|f" : 3.633 ,
+        "float2" : 6422.22,
+        "float3" : 44463.23,
+        "verbose|v" : "+",
+        "dep" : {
+            "float3" : 3332.233
+        },
+        "rdep" : {
+            "ip" : {
+                "float4" : 3377.33,
+                "float6" : 33.22,
+                "float7" : 0.333
             }
+        }
 
-        }"#;
+    }"#;
     before_parser();
 
     let depws = r#"{"float3":33.221}"#;
@@ -1898,33 +1898,33 @@ fn test_a035() {
 #[test]
 fn test_a037() {
     let loads = r#"        {
-            "jsoninput|j##input json default stdin##" : null,
-            "input|i##input file to get default nothing - for stdin##" : null,
-            "output|o##output c file##" : null,
-            "verbose|v##verbose mode default(0)##" : "+",
-            "cmdpattern|c" : "%EXTARGS_CMDSTRUCT%",
-            "optpattern|O" : "%EXTARGS_STRUCT%",
-            "structname|s" : "args_options_t",
-            "funcname|F" : "debug_extargs_output",
-            "releasename|R" : "release_extargs_output",
-            "funcpattern" : "%EXTARGS_DEBUGFUNC%",
-            "prefix|p" : "",
-            "test" : {
-                "$" : 0
-            },
-            "optstruct" : {
-                "$" : 0
-            },
-            "cmdstruct" : {
-                "$" : 0
-            },
-            "debugfunc" : {
-                "$" : 0
-            },
-            "all" : {
-                "$" : 0
-            }
-        }"#;
+        "jsoninput|j##input json default stdin##" : null,
+        "input|i##input file to get default nothing - for stdin##" : null,
+        "output|o##output c file##" : null,
+        "verbose|v##verbose mode default(0)##" : "+",
+        "cmdpattern|c" : "%EXTARGS_CMDSTRUCT%",
+        "optpattern|O" : "%EXTARGS_STRUCT%",
+        "structname|s" : "args_options_t",
+        "funcname|F" : "debug_extargs_output",
+        "releasename|R" : "release_extargs_output",
+        "funcpattern" : "%EXTARGS_DEBUGFUNC%",
+        "prefix|p" : "",
+        "test" : {
+            "$" : 0
+        },
+        "optstruct" : {
+            "$" : 0
+        },
+        "cmdstruct" : {
+            "$" : 0
+        },
+        "debugfunc" : {
+            "$" : 0
+        },
+        "all" : {
+            "$" : 0
+        }
+    }"#;
     before_parser();
 
 
@@ -1951,16 +1951,16 @@ fn test_a037() {
 #[test]
 fn test_a038() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 0x1f1,
-            "ipxe<ipxe_handler>" : {
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "kernel|K" : "/boot/",
+        "initrd|I" : "/boot/",
+        "encryptfile|e" : null,
+        "encryptkey|E" : null,
+        "setupsectsoffset" : 0x1f1,
+        "ipxe<ipxe_handler>" : {
+            "$" : "+"
+        }
+    }"#;
     before_parser();
 
 
@@ -1973,13 +1973,13 @@ fn test_a038() {
 #[test]
 fn test_a039() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 451
-        }"#;
+        "verbose|v" : "+",
+        "kernel|K" : "/boot/",
+        "initrd|I" : "/boot/",
+        "encryptfile|e" : null,
+        "encryptkey|E" : null,
+        "setupsectsoffset" : 451
+    }"#;
     before_parser();
     set_env_var("EXTARGS_VERBOSE", "4");
     set_env_var("EXTARGS_SETUPSECTSOFFSET", "0x612");
@@ -2025,46 +2025,46 @@ struct ParserTest40 {
 #[test]
 fn test_a040() {
    let loads = r#"        {
-            "+tce": {
-                "mirror": "http://repo.tinycorelinux.net",
-                "root": "/",
-                "tceversion": "7.x",
-                "wget": "wget",
-                "cat": "cat",
-                "rm": "rm",
-                "sudoprefix": "sudo",
-                "optional_dir": "/cde",
-                "trymode": false,
-                "platform": "x86_64",
-                "mount": "mount",
-                "umount": "umount",
-                "chroot": "chroot",
-                "chown": "chown",
-                "chmod": "chmod",
-                "mkdir": "mkdir",
-                "rollback": true,
-                "cp": "cp",
-                "jsonfile": null,
-                "perspace": 3,
-                "depmapfile": null,
-                "timeout": 10,
-                "listsfile": null,
-                "maxtries": 5
-            }
-        }"#;
-    before_parser();
-    let params :Vec<String> = format_string_array(vec!["--tce-root", "/home/"]);
-    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let p :ParserTest40 = ParserTest40::new();
-    let pi :Arc<RefCell<ParserTest40>> = Arc::new(RefCell::new(p));
-    let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
-    assert!(pi.borrow().tce_mirror == "http://repo.tinycorelinux.net");
-    assert!(pi.borrow().tce_root == "/home/");
-    assert!(pi.borrow().tce_listsfile == "");
-    assert!(pi.borrow().tce_maxtries == 5);
-    assert!(pi.borrow().tce_timeout == 10);
-    return;
+    "+tce": {
+        "mirror": "http://repo.tinycorelinux.net",
+        "root": "/",
+        "tceversion": "7.x",
+        "wget": "wget",
+        "cat": "cat",
+        "rm": "rm",
+        "sudoprefix": "sudo",
+        "optional_dir": "/cde",
+        "trymode": false,
+        "platform": "x86_64",
+        "mount": "mount",
+        "umount": "umount",
+        "chroot": "chroot",
+        "chown": "chown",
+        "chmod": "chmod",
+        "mkdir": "mkdir",
+        "rollback": true,
+        "cp": "cp",
+        "jsonfile": null,
+        "perspace": 3,
+        "depmapfile": null,
+        "timeout": 10,
+        "listsfile": null,
+        "maxtries": 5
+    }
+}"#;
+before_parser();
+let params :Vec<String> = format_string_array(vec!["--tce-root", "/home/"]);
+let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let p :ParserTest40 = ParserTest40::new();
+let pi :Arc<RefCell<ParserTest40>> = Arc::new(RefCell::new(p));
+let _ns = parser.parse_commandline_ex(Some(params.clone()),None,Some(pi.clone()),None).unwrap();
+assert!(pi.borrow().tce_mirror == "http://repo.tinycorelinux.net");
+assert!(pi.borrow().tce_root == "/home/");
+assert!(pi.borrow().tce_listsfile == "");
+assert!(pi.borrow().tce_maxtries == 5);
+assert!(pi.borrow().tce_timeout == 10);
+return;
 }
 
 #[test]
@@ -2075,32 +2075,32 @@ fn test_a041() {
         fdir = fdir.replace("\\","\\\\");
     }
     let loads = format!(r#"        {{            "countryname|N" : "CN",
-            "statename|S" : "ZJ",
-            "localityname" : "HZ",
-            "organizationname|O" : ["BT"],
-            "organizationunitname" : "BT R&D",
-            "commonname|C" : "bingte.com",
-            "+ssl" : {{
-                "chain" : true,
-                "dir" : "{}",
-                "bits" : 4096,
-                "md" : "sha256",
-                "utf8" : true,
-                "name" : "ipxe",
-                "days" : 3650,
-                "crl-days": 365,
-                "emailaddress" : "bt@bingte.com",
-                "aia_url" : "http://bingte.com/sec/aia",
-                "crl_url" : "http://bingte.com/sec/crl",
-                "ocsp_url" : "http://bingte.com/sec/ocsp",
-                "dns_url" : ["bingte.com"],
-                "excluded_ip" : ["0.0.0.0/0.0.0.0","0:0:0:0:0:0:0:0/0:0:0:0:0:0:0:0"],
-                "password|P" : null,
-                "copy_extensions" : "none",
-                "subca" : false,
-                "comment": ""
-            }}
-        }}"#,fdir);
+        "statename|S" : "ZJ",
+        "localityname" : "HZ",
+        "organizationname|O" : ["BT"],
+        "organizationunitname" : "BT R&D",
+        "commonname|C" : "bingte.com",
+        "+ssl" : {{
+            "chain" : true,
+            "dir" : "{}",
+            "bits" : 4096,
+            "md" : "sha256",
+            "utf8" : true,
+            "name" : "ipxe",
+            "days" : 3650,
+            "crl-days": 365,
+            "emailaddress" : "bt@bingte.com",
+            "aia_url" : "http://bingte.com/sec/aia",
+            "crl_url" : "http://bingte.com/sec/crl",
+            "ocsp_url" : "http://bingte.com/sec/ocsp",
+            "dns_url" : ["bingte.com"],
+            "excluded_ip" : ["0.0.0.0/0.0.0.0","0:0:0:0:0:0:0:0/0:0:0:0:0:0:0:0"],
+            "password|P" : null,
+            "copy_extensions" : "none",
+            "subca" : false,
+            "comment": ""
+        }}
+    }}"#,fdir);
     before_parser();
 
     let ws = r#"{"emailaddress" : "unit@bingte.com","organizationname" : "BT RD","ssl" :{ "dir" : "./certs/bingte","name" : "bingte","subca" : true,"copy_extensions" : "copy","days" : 375,"crl_days" : 30,"bits" : 4096}}"#;
@@ -2119,74 +2119,74 @@ fn test_a041() {
 #[test]
 fn test_a042() {
    let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 663,
-            "ipxe" : {
-                "$" : "+"
-            }
-        }"#;
-    before_parser();
-    let params :Vec<String> = format_string_array(vec!["-vvvK", "kernel", "--initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
-    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
-    assert!(ns.get_string("subcommand") == "ipxe");
-    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
-    return;
+    "verbose|v" : "+",
+    "kernel|K" : "/boot/",
+    "initrd|I" : "/boot/",
+    "encryptfile|e" : null,
+    "encryptkey|E" : null,
+    "setupsectsoffset" : 663,
+    "ipxe" : {
+        "$" : "+"
+    }
+}"#;
+before_parser();
+let params :Vec<String> = format_string_array(vec!["-vvvK", "kernel", "--initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
+let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+assert!(ns.get_string("subcommand") == "ipxe");
+assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
+return;
 }
 
 #[test]
 fn test_a043() {
    let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 663,
-            "ipxe" : {
-                "$" : "+"
-            }
-        }"#;
-    before_parser();
-    let optstr :String = format!(r#"{{"{}": true,"{}" : "-", "{}" : "-"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
-    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
-    let params :Vec<String> = format_string_array(vec!["-K", "kernel", "-initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
-    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
-    assert!(ns.get_string("subcommand") == "ipxe");
-    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
-    return;
+    "verbose|v" : "+",
+    "kernel|K" : "/boot/",
+    "initrd|I" : "/boot/",
+    "encryptfile|e" : null,
+    "encryptkey|E" : null,
+    "setupsectsoffset" : 663,
+    "ipxe" : {
+        "$" : "+"
+    }
+}"#;
+before_parser();
+let optstr :String = format!(r#"{{"{}": true,"{}" : "-", "{}" : "-"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+let params :Vec<String> = format_string_array(vec!["-K", "kernel", "-initrd", "initrd", "cc", "dd", "-E", "encryptkey", "-e", "encryptfile", "ipxe"]);
+let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+assert!(ns.get_string("subcommand") == "ipxe");
+assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
+return;
 }
 
 #[test]
 fn test_a044() {
    let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 663,
-            "ipxe" : {
-                "$" : "+"
-            }
-        }"#;
-    before_parser();
-    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
-    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
-    let params :Vec<String> = format_string_array(vec!["+K", "kernel", "++initrd", "initrd", "cc", "dd", "+E", "encryptkey", "+e", "encryptfile", "ipxe"]);
-    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
-    extargs_load_commandline!(parser,loads).unwrap();
-    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
-    assert!(ns.get_string("subcommand") == "ipxe");
-    assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
-    return;
+    "verbose|v" : "+",
+    "kernel|K" : "/boot/",
+    "initrd|I" : "/boot/",
+    "encryptfile|e" : null,
+    "encryptkey|E" : null,
+    "setupsectsoffset" : 663,
+    "ipxe" : {
+        "$" : "+"
+    }
+}"#;
+before_parser();
+let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+let params :Vec<String> = format_string_array(vec!["+K", "kernel", "++initrd", "initrd", "cc", "dd", "+E", "encryptkey", "+e", "encryptfile", "ipxe"]);
+let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+extargs_load_commandline!(parser,loads).unwrap();
+let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+assert!(ns.get_string("subcommand") == "ipxe");
+assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["cc", "dd"])));
+return;
 }
 
 fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Vec<String>) -> Result<i32,Box<dyn Error>> {
@@ -2204,22 +2204,48 @@ fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :V
     return Ok(2);
 }
 
+fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
+    let mut cs :String = "".to_string();
+    let mut idx :i32 = 0;
+    match keycls.value() {
+        Value::Array(_a) => {
+            cs.push_str("[");
+            for curv in _a {
+                match curv {
+                    Value::String(v) => {
+                        if idx > 0 {
+                            cs.push_str(",");
+                        }
+                        cs.push_str(&(v.to_string()));
+                        idx += 1;
+                    },
+                    _ => {}
+                }
+            }
+            cs.push_str("]");
+        },
+        _ => {}
+    }
+    return format!("opthelp function set [{}] default value ({})", keycls.opt_dest(), cs);
+}
+
+
 
 #[test]
 #[extargs_map_function(actfunc=debug_set_2_args)]
 fn test_a045() {
    let loads = r#"        {
-            "verbose|v" : "+",
-            "kernel|K" : "/boot/",
-            "initrd|I" : "/boot/",
-            "pair|P!optparse=debug_set_2_args!" : [],
-            "encryptfile|e" : null,
-            "encryptkey|E" : null,
-            "setupsectsoffset" : 663,
-            "ipxe" : {
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "kernel|K" : "/boot/",
+        "initrd|I" : "/boot/",
+        "pair|P!optparse=debug_set_2_args!" : [],
+        "encryptfile|e" : null,
+        "encryptkey|E" : null,
+        "setupsectsoffset" : 663,
+        "ipxe" : {
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
     let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
@@ -2230,5 +2256,38 @@ fn test_a045() {
     assert!(ns.get_string("subcommand") == "ipxe");
     assert!(check_array_equal(ns.get_array("pair"),format_string_array(vec!["initrd", "cc"])));
     assert!(check_array_equal(ns.get_array("subnargs"),format_string_array(vec!["dd"])));
+    return;
+}
+
+#[test]
+#[extargs_map_function(actfunc=debug_set_2_args,opthelp=debug_opthelp_set)]
+fn test_a046() {
+   let loads = r#"        {
+        "verbose|v" : "+",
+        "kernel|K" : "/boot/",
+        "initrd|I" : "/boot/",
+        "pair|P!optparse=debug_set_2_args;opthelp=debug_opthelp_set!" : [],
+        "encryptfile|e" : null,
+        "encryptkey|E" : null,
+        "setupsectsoffset" : 663,
+        "ipxe" : {
+            "$" : "+"
+        }
+    }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser.clone(),"");
+    let expr = Regex::new(r#".*opthelp function set \[pair\].*"#).unwrap();
+    let mut bmatch :bool =false;
+    for l in sarr.iter() {
+        if expr.is_match(l) {
+            bmatch = true;
+            break;
+        }
+    }
+    assert!(bmatch == true);
     return;
 }

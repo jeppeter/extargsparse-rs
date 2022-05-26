@@ -1,5 +1,5 @@
 
-use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_JSONFILE,KEYWORD_COUNT,Nargs};
+use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_JSONFILE,KEYWORD_COUNT,Nargs,KEYWORD_ATTR,KeyAttr};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
 use super::logger::{extargs_debug_out};
 use super::{extargs_assert,extargs_log_warn,extargs_log_trace};
@@ -106,16 +106,19 @@ impl InnerParserCompat {
     fn get_help_info(&self,_keycls :Option<&ExtKeyParse>,mapv :ExtArgsMatchFuncMap) -> String {
         extargs_assert!(_keycls.is_some(), "must no be null");
         let keycls = _keycls.unwrap();
-        let hlp = keycls.get_keyattr("opthelp");
+        let oattr :Option<KeyAttr> = keycls.get_keyattr(KEYWORD_ATTR);
         let mut rets :String = "".to_string();
-        if hlp.is_some() {
-            let hlpfunc = hlp.unwrap().string();
-            let funchelp = mapv.get_help_func(&hlpfunc);
-            if funchelp.is_some() {
-                let callf = funchelp.unwrap();
-                return callf(keycls);
+        if oattr.is_some() {
+            let attr = oattr.unwrap();
+            let hlp = attr.get_attr("opthelp");
+            if hlp.len() > 0 {
+                let funchelp = mapv.get_help_func(&hlp);
+                if funchelp.is_some() {
+                    let callf = funchelp.unwrap();
+                    return callf(keycls);
+                }
+                extargs_log_warn!("can not find function [{}] for opthelp", hlp);
             }
-            extargs_log_warn!("can not find function [{}] for opthelp", hlpfunc);
         }
 
         if keycls.type_name() == KEYWORD_BOOL {
@@ -138,6 +141,9 @@ impl InnerParserCompat {
                     match keycls.value() {
                         Value::String(_s) => {
                             rets.push_str(&(format!("{} set default {}",keycls.opt_dest(),_s)));
+                        },
+                        Value::Null => {
+                            rets.push_str(&(format!("{} set default null",keycls.opt_dest())));
                         },
                         _ => {
                             extargs_assert!(1 != 1, "can not get value type {:?}", keycls.value());

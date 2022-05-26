@@ -1204,6 +1204,7 @@ impl InnerExtArgsParser {
 		if fnptrs1.is_some() {
 			let fnptrs = fnptrs1.unwrap();
 			for (k,v) in fnptrs.clone().iter() {
+				extargs_log_trace!("insert [{}]",k);
 				self.outfuncs.insert_map(k,v.clone());
 			}
 		}
