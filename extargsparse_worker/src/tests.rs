@@ -2516,3 +2516,35 @@ fn test_a050() {
     assert!(bmatch == true);
     return;
 }
+
+#[test]
+fn test_a051() {
+    let loads = r#"        {
+            "verbose|v" : "+",
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "usage" , 
+            "{}" : null , 
+            "{}" : "++", 
+            "{}" : "+" }}"#,
+            OPT_HELP_LONG,OPT_HELP_SHORT,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser,"");
+    let expr = Regex::new(r#"^\s+\+\+usage\|\+\?\s+to display.*"#).unwrap();
+    let mut bmatch :bool =false;
+    for l in sarr.iter() {
+        if expr.is_match(l) {
+            bmatch = true;
+            break;
+        }
+    }
+    assert!(bmatch == false);
+    return;
+}

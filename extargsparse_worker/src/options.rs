@@ -196,7 +196,7 @@ impl InnerExtArgsOptions {
 						}
 					},
 					Value::Null => {
-						rets = "null".to_string();
+						rets = "".to_string();
 					},
 					Value::Number(ref _n) => {
 						if _n.is_i64()  {
