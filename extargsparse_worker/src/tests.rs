@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
-use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -2435,5 +2435,56 @@ fn test_a048() {
     assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])));
     assert!(ns.get_string("dep_string") == "ee");
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+    return;
+}
+
+
+#[test]
+fn test_a049() {
+    let loads = r#"        {
+            "verbose|v##very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long##" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : 60 }}"#,OPT_SCREEN_WIDTH);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser,"");
+    let mut overlength : bool = false;
+    let mut idx :i32 = 0;
+    for l in sarr.iter() {
+        if l.len() > 64 &&  idx > 0 {
+            overlength = true;
+            break;
+        }
+        idx += 1;
+    }
+    assert!(overlength == false);
+    let optstr :String = format!(r#"{{ "{}" : 80 }}"#,OPT_SCREEN_WIDTH);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser,"");
+    let mut overlength : bool = false;
+    let mut idx :i32 = 0;
+    for l in sarr.iter() {
+        if l.len() > 64 &&  idx > 0 {
+            overlength = true;
+            break;
+        }
+        idx += 1;
+    }
+    assert!(overlength == true);
     return;
 }

@@ -120,6 +120,10 @@ impl InnerParserCompat {
                 extargs_log_warn!("can not find function [{}] for opthelp", hlp);
             }
         }
+        if keycls.help_info().len() > 0 {
+            /*it has some help information so do this return*/
+            return keycls.help_info();
+        }
 
         if keycls.type_name() == KEYWORD_BOOL {
             if keycls.get_bool_v(KEYWORD_VALUE) == true {
@@ -325,6 +329,11 @@ impl InnerParserCompat {
 
         ncurs = format!("{}",curs.trim_start());
         if ncurs.len() > 0 {
+            i = 0;
+            while i < indentsize as usize {
+                rets.push(' ');
+                i += 1;
+            }
             rets.push_str(&(format!("{}",curs.trim())));
         }
         rets
