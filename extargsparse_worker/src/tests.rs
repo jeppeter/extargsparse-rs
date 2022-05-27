@@ -3052,3 +3052,25 @@ fn test_a057() {
 
     return;
 }
+
+#[test]
+fn test_a058() {
+    let loads = r#"        {
+            "verbose" : "+",
+            "dep" : {
+                "$" : "*"
+            },
+            "rdep" : {
+                "$" : "*"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!("{{ }}");
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser.clone(),"");
+    let matchexpr = Regex::new(r#".*\[OPTIONS\]\s+\[SUBCOMMANDS\]\s+.*"#).unwrap();
+    assert!(matchexpr.is_match(&(sarr[0])) == true);
+    return;
+}
