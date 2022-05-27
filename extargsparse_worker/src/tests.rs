@@ -2723,3 +2723,50 @@ fn test_a053() {
 
     return;
 }
+
+#[test]
+fn test_a054() {
+    let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "jsonfile" }}"#,
+            OPT_JSON_LONG);
+    let depstrval = "newval";
+    let depliststr = r#"["depenv1","depenv2"]"#;
+    let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+    let depws = r#"{"list":["depjson1","depjson2"]}"#;
+    let depf = make_temp_file(depws);
+    let depjsonfile = format!("{}", depf.path().display());
+    set_env_var("EXTARGSPARSE_JSONFILE",&jsonfile);
+    set_env_var("DEP_JSONFILE",&depjsonfile);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let vint :Vec<i32> = vec![ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET];
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),Some(vint.clone())).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    set_env_var("DEP_STRING",depstrval);
+    set_env_var("DEP_LIST",depliststr);
+
+    let params :Vec<String> = format_string_array(vec!["--jsonfile", &jsonfile, "dep", "ww"]);
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_int("verbose") == 3);
+    assert!(ns.get_int("port") == 6000);
+    assert!(ns.get_string("subcommand") == "dep");
+    assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])));
+    assert!(ns.get_string("dep_string") == "jsonstring");
+    assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+    return;
+}
