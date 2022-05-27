@@ -1151,6 +1151,28 @@ fn get_assert_opt(opts :Vec<ExtKeyParse>, kname :&str) -> Option<ExtKeyParse> {
     return retv;
 }
 
+fn assert_get_cmd(sarr :Vec<String>,cmdname :&str) -> bool {
+    let restr :String = format!(r#"^\s+\[{}\]\s+.*"#, cmdname);
+    let matchexpr = Regex::new(&restr).unwrap();
+    for s in sarr {
+        if matchexpr.is_match(&s) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn assert_ok_cmds(sarr :Vec<String>, parser :ExtArgsParser,cmdname :&str) -> Result<(),Box<dyn Error>> {
+    let cmds = parser.get_sub_commands_ex(cmdname)?;
+    for c in cmds.iter() {
+        let ok = assert_get_cmd(sarr.clone(),c);
+        if !ok {
+            extargs_new_error!{TestCaseError,"cannot found [{}] in {:?}", c, cmds}
+        }
+    }
+    Ok(())
+}  
+
 #[test]
 fn test_a022() {
     let loads = r#"        {
@@ -3117,5 +3139,33 @@ fn test_a059() {
     assert!(ns.get_string("subcommand") == "ipxe");
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["dd"])));
     assert!(check_array_equal(ns.get_array("pair"), format_string_array(vec!["INITRD","CC"])));
+    return;
+}
+
+#[test]
+fn test_a060() {
+    let loads = r#"{
+    "dep": {
+        "$": "*",
+        "ip": {
+            "$": "*"
+        }
+    },
+    "rdep" : {
+        "$" : "*",
+        "ip" : {
+            "$" : "*"
+        }
+    }
+}"#;
+    before_parser();
+    let parser :ExtArgsParser = ExtArgsParser::new(None,None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser.clone(),"");
+    let _ = assert_ok_cmds(sarr.clone(),parser.clone(),"").unwrap();
+    let sarr = get_cmd_help(parser.clone(),"dep");
+    let _ = assert_ok_cmds(sarr.clone(),parser.clone(),"dep").unwrap();
+    let sarr = get_cmd_help(parser.clone(),"rdep");
+    let _ = assert_ok_cmds(sarr.clone(),parser.clone(),"rdep").unwrap();
     return;
 }
