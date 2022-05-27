@@ -5,7 +5,7 @@ use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
-use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
+use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr,KEYWORD_LIST,KEYWORD_STRING};
 use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION,OPT_CMD_PREFIX_ADDED};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
@@ -2025,7 +2025,7 @@ struct ParserTest40 {
 
 #[test]
 fn test_a040() {
- let loads = r#"        {
+   let loads = r#"        {
     "+tce": {
         "mirror": "http://repo.tinycorelinux.net",
         "root": "/",
@@ -2119,7 +2119,7 @@ fn test_a041() {
 
 #[test]
 fn test_a042() {
- let loads = r#"        {
+   let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2142,7 +2142,7 @@ return;
 
 #[test]
 fn test_a043() {
- let loads = r#"        {
+   let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2167,7 +2167,7 @@ return;
 
 #[test]
 fn test_a044() {
- let loads = r#"        {
+   let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2235,7 +2235,7 @@ fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
 #[test]
 #[extargs_map_function(actfunc=debug_set_2_args)]
 fn test_a045() {
- let loads = r#"        {
+   let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2263,7 +2263,7 @@ return;
 #[test]
 #[extargs_map_function(actfunc=debug_set_2_args,opthelp=debug_opthelp_set)]
 fn test_a046() {
- let loads = r#"        {
+   let loads = r#"        {
     "verbose|v" : "+",
     "kernel|K" : "/boot/",
     "initrd|I" : "/boot/",
@@ -2310,10 +2310,10 @@ fn test_a047() {
     before_parser();
     let optstr :String = format!(r#"{{"{}": true,"{}" : "++", "{}" : "+", "{}" : "?", "{}" : "usage" ,"{}" : "jsonfile"}}"#,OPT_PARSE_ALL,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG);
     let codstr =r#"
-use serde_json::Value;
-use extargsparse_worker::key::ExtKeyParse;
+    use serde_json::Value;
+    use extargsparse_worker::key::ExtKeyParse;
 
-extargs_error_class!{TestCaseError}
+    extargs_error_class!{TestCaseError}
 
     macro_rules! extargs_log_trace {
         ($($arg:tt)+) => {
@@ -2396,19 +2396,19 @@ extargs_error_class!{TestCaseError}
 #[test]
 fn test_a048() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "$port|p" : {
-                "value" : 3000,
-                "type" : "int",
-                "nargs" : 1 ,
-                "helpinfo" : "port to connect"
-            },
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : "jsonfile" }}"#,OPT_JSON_LONG);
     let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
@@ -2442,19 +2442,19 @@ fn test_a048() {
 #[test]
 fn test_a049() {
     let loads = r#"        {
-            "verbose|v##very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long##" : "+",
-            "$port|p" : {
-                "value" : 3000,
-                "type" : "int",
-                "nargs" : 1 ,
-                "helpinfo" : "port to connect"
-            },
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v##very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long##" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : 60 }}"#,OPT_SCREEN_WIDTH);
     let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
@@ -2492,13 +2492,13 @@ fn test_a049() {
 #[test]
 fn test_a050() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : "usage" , "{}" : "?" , "{}" : "++", "{}" : "+" }}"#,OPT_HELP_LONG,OPT_HELP_SHORT,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
     let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
@@ -2520,19 +2520,19 @@ fn test_a050() {
 #[test]
 fn test_a051() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : "usage" , 
-            "{}" : null , 
-            "{}" : "++", 
-            "{}" : "+" }}"#,
-            OPT_HELP_LONG,OPT_HELP_SHORT,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
+        "{}" : null , 
+        "{}" : "++", 
+        "{}" : "+" }}"#,
+        OPT_HELP_LONG,OPT_HELP_SHORT,OPT_LONG_PREFIX,OPT_SHORT_PREFIX);
     let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
     let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
     extargs_load_commandline!(parser,loads).unwrap();
@@ -2552,23 +2552,23 @@ fn test_a051() {
 #[test]
 fn test_a052() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "$port|p" : {
-                "value" : 3000,
-                "type" : "int",
-                "nargs" : 1 ,
-                "helpinfo" : "port to connect"
-            },
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : true , 
-            "{}" : true}}"#,
-            OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION);
+        "{}" : true}}"#,
+        OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION);
     let depstrval = "newval";
     let depliststr = r#"["depenv1","depenv2"]"#;
     let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
@@ -2615,27 +2615,27 @@ fn test_a052() {
 #[test]
 fn test_a053() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "$port|p" : {
-                "value" : 3000,
-                "type" : "int",
-                "nargs" : 1 ,
-                "helpinfo" : "port to connect"
-            },
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            },
-            "rdep" : {
-                "list|l" : [],
-                "string|s" : "s_rdep",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        },
+        "rdep" : {
+            "list|l" : [],
+            "string|s" : "s_rdep",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : false }}"#,
-            OPT_CMD_PREFIX_ADDED);
+        OPT_CMD_PREFIX_ADDED);
     let depstrval = "newval";
     let depliststr = r#"["depenv1","depenv2"]"#;
     let ws = r#"{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring","port":6000,"verbose":3}"#;
@@ -2727,22 +2727,22 @@ fn test_a053() {
 #[test]
 fn test_a054() {
     let loads = r#"        {
-            "verbose|v" : "+",
-            "$port|p" : {
-                "value" : 3000,
-                "type" : "int",
-                "nargs" : 1 ,
-                "helpinfo" : "port to connect"
-            },
-            "dep" : {
-                "list|l" : [],
-                "string|s" : "s_var",
-                "$" : "+"
-            }
-        }"#;
+        "verbose|v" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l" : [],
+            "string|s" : "s_var",
+            "$" : "+"
+        }
+    }"#;
     before_parser();
     let optstr :String = format!(r#"{{ "{}" : "jsonfile" }}"#,
-            OPT_JSON_LONG);
+        OPT_JSON_LONG);
     let depstrval = "newval";
     let depliststr = r#"["depenv1","depenv2"]"#;
     let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
@@ -2767,6 +2767,123 @@ fn test_a054() {
     assert!(ns.get_string("subcommand") == "dep");
     assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1", "jsonval2"])));
     assert!(ns.get_string("dep_string") == "jsonstring");
+    assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+    return;
+}
+
+#[allow(unused_assignments)]
+fn debug_2_jsonfunc(ns :NameSpaceEx, keycls :ExtKeyParse, value :Value) -> Result<(),Box<dyn Error>> {
+    let mut vs :Vec<String> = Vec::new();
+    let mut setvs :Vec<String> = Vec::new();
+    let mut idx :usize=0;
+
+    if !keycls.is_flag() || keycls.type_name() != KEYWORD_LIST {
+        extargs_new_error!{TestCaseError,"keycls [{}] not valid", keycls.string()}
+    }
+
+    match value {
+        Value::Null => {
+            vs = Vec::new();
+        },
+        Value::Array(_a) => {
+            vs = Vec::new();
+            idx = 0;
+            for _i in _a.iter() {
+                match _i {
+                    Value::String(_s) => {
+                        vs.push(format!("{}",_s));
+                    },
+                    _ => {
+                        extargs_new_error!{TestCaseError,"at [{}] not valid [{:?}]", idx,_i}
+                    }
+                }
+                idx += 1;
+            }
+        },
+        _ => { extargs_new_error!{TestCaseError,"value [{:?}] not valid" , value } }
+    }
+
+
+    if (vs.len() % 2) != 0 {
+        extargs_new_error!{TestCaseError,"{:?} not event size", vs}
+    }
+
+    setvs = Vec::new();
+    idx = 0;
+    while idx < vs.len() {
+        setvs.push(format!("{}",vs[idx]));
+        idx += 2;
+    }
+
+    return ns.set_array(&keycls.opt_dest(), setvs.clone());
+}
+
+
+fn debug_upper_jsonfunc(ns :NameSpaceEx, keycls :ExtKeyParse, value :Value) -> Result<(),Box<dyn Error>> {
+    let mut setval :String;
+
+    if !keycls.is_flag() || keycls.type_name() != KEYWORD_STRING {
+        extargs_new_error!{TestCaseError,"keycls [{}] not string type", keycls.string()}
+    }
+
+    match value {
+        Value::Null => {
+            setval = "".to_string();
+        },
+        Value::String(_a) => {
+            setval = format!("{}",_a);
+        },
+        _ => { extargs_new_error!{TestCaseError,"value [{:?}] not valid" , value } }
+    }
+
+    setval = setval.to_uppercase();
+    return ns.set_string(&keycls.opt_dest(), setval);
+}
+
+#[test]
+#[extargs_map_function(jsonfunc=debug_2_jsonfunc,jsonfunc=debug_upper_jsonfunc)]
+fn test_a055() {
+    let loads = r#"        {
+        "verbose|v" : "+",
+        "$port|p" : {
+            "value" : 3000,
+            "type" : "int",
+            "nargs" : 1 ,
+            "helpinfo" : "port to connect"
+        },
+        "dep" : {
+            "list|l!jsonfunc=debug_2_jsonfunc!" : [],
+            "string|s!jsonfunc=debug_upper_jsonfunc!" : "s_var",
+            "$" : "+"
+        }
+    }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "jsonfile" }}"#,
+        OPT_JSON_LONG);
+    let depstrval = "newval";
+    let depliststr = r#"["depenv1","depenv2"]"#;
+    let ws = r#"{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+    let depws = r#"{"list":["depjson1","depjson2"]}"#;
+    let depf = make_temp_file(depws);
+    let depjsonfile = format!("{}", depf.path().display());
+    set_env_var("EXTARGSPARSE_JSONFILE",&jsonfile);
+    set_env_var("DEP_JSONFILE",&depjsonfile);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let vint :Vec<i32> = vec![ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET];
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),Some(vint.clone())).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    set_env_var("DEP_STRING",depstrval);
+    set_env_var("DEP_LIST",depliststr);
+
+    let params :Vec<String> = format_string_array(vec!["--jsonfile", &jsonfile, "dep", "ww"]);
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_int("verbose") == 3);
+    assert!(ns.get_int("port") == 6000);
+    assert!(ns.get_string("subcommand") == "dep");
+    assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["jsonval1"])));
+    assert!(ns.get_string("dep_string") == "JSONSTRING");
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
     return;
 }
