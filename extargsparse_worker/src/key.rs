@@ -803,9 +803,9 @@ impl InnerExtKeyParse {
 				}
 			},
 			Value::Number(v) => {
-				if v.is_u64() && types == KEYWORD_INT {
+				if (v.is_u64() || v.is_i64() ) && types == KEYWORD_INT {
 					retval = true;
-				} else if !v.is_u64() && types == KEYWORD_FLOAT {
+				} else if (!v.is_u64() && !v.is_i64() ) && types == KEYWORD_FLOAT {
 					retval = true;
 				}
 			},

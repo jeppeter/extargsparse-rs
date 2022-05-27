@@ -2887,3 +2887,61 @@ fn test_a055() {
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
     return;
 }
+
+
+#[test]
+fn test_a056() {
+    let loads = r#"        {
+            "asn1parse" : {
+                "$" : 0,
+                "$inform!optparse=inform_optparse;completefunc=inform_complete!" : null,
+                "$in" : null,
+                "$out" : null,
+                "$noout" : false,
+                "$offset" : 0,
+                "$length" : -1,
+                "$dump" : false,
+                "$dlimit" : -1,
+                "$oid" : null,
+                "$strparse" : 0,
+                "$genstr" : null,
+                "$genconf" : null
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "-",
+        "{}" : "-",
+        "{}" : true,
+        "{}" : false }}"#,
+        OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_JSON_OPTION,OPT_CMD_PREFIX_ADDED);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = parser.get_sub_commands_ex("").unwrap();
+    check_array_equal(sarr.clone(), format_string_array(vec!["asn1parse"]));
+    let opts = parser.get_cmd_opts_ex("asn1parse").unwrap();
+    let optnames = format_string_array(vec!["inform", "in", "out", "noout", "offset", "length", "dump", "dlimit", "oid", "strparse", "genstr", "genconf", "help"]);
+    let mut ok :bool;
+    for opt in opts.iter() {
+        if !opt.is_flag()  || opt.type_name() == KEYWORD_ARGS {
+            continue;
+        }
+        ok = false;
+        if opt.type_name() == KEYWORD_HELP {
+            if opt.long_opt() == "-help" && opt.short_opt() == "-h" {
+                ok = true;
+            }
+        } else {
+            for c in optnames.clone() {
+                let clong = format!("-{}",c);
+                if opt.opt_dest().eq(&c) && opt.long_opt().eq(&clong) {
+                    ok = true;
+                    break;
+                }
+            }
+        }
+        assert!(ok == true);
+    }
+
+    return;
+}
