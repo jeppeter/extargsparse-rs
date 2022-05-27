@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr,KEYWORD_LIST,KEYWORD_STRING};
-use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION,OPT_CMD_PREFIX_ADDED};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION,OPT_CMD_PREFIX_ADDED,OPT_FLAG_NO_CHANGE};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -2940,6 +2940,113 @@ fn test_a056() {
                 }
             }
         }
+        assert!(ok == true);
+    }
+
+    return;
+}
+
+#[test]
+fn test_a057() {
+    let loads = r#"        {
+            "asn1parse" : {
+                "$" : 0,
+                "$inform!optparse=inform_optparse;completefunc=inform_complete!" : null,
+                "$in" : null,
+                "$out" : null,
+                "$noout" : false,
+                "$offset" : 0,
+                "$length" : -1,
+                "$dump" : false,
+                "$dlimit" : -1,
+                "$oid" : null,
+                "$strparse" : 0,
+                "$genstr" : null,
+                "$genconf" : null
+            },
+            "ca" : {
+                "$" : 0,
+                "$config" : null,
+                "$name" : null,
+                "$in" : null,
+                "$ss_cert" : null,
+                "$spkac" : null,
+                "$infiles" : null,
+                "$out" : null,
+                "$outdir" : null,
+                "$cert" : null,
+                "$keyfile" : null,
+                "$keyform!optparse=inform_optparse;completefunc=inform_complete!" : null,
+                "$key" : null,
+                "$selfsign" : false,
+                "$passin" : null,
+                "$verbose" : "+",
+                "$notext" : false,
+                "$startdate" : null,
+                "$enddate" : null,
+                "$days" : 30,
+                "$md" : null,
+                "$policy" : null,
+                "$preserveDN" : false,
+                "$msie_hack" : false,
+                "$noemailDN" : false,
+                "$batch" : false,
+                "$extensions" : null,
+                "$extfile" : null,
+                "$engine" : null,
+                "$subj" : null,
+                "$utf8" : false,
+                "$multivalue-rdn" : false,
+                "$gencrl" : false,
+                "$crldays" : 30,
+                "$crlhours" : -1,
+                "$revoke" : null,
+                "$status" : null,
+                "$updatedb" : false,
+                "$crl_reason" : null,
+                "$crl_hold" : null,
+                "$crl_compromise" : null,
+                "$crl_CA_compromise" : null,
+                "$crlexts" : null
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "-",
+        "{}" : "-",
+        "{}" : true,
+        "{}" : false ,
+        "{}" : true }}"#,
+        OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_NO_JSON_OPTION,OPT_CMD_PREFIX_ADDED,
+        OPT_FLAG_NO_CHANGE);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = parser.get_sub_commands_ex("").unwrap();
+    check_array_equal(sarr.clone(), format_string_array(vec!["asn1parse","ca"]));
+    let opts = parser.get_cmd_opts_ex("ca").unwrap();
+    let optnames = format_string_array(vec!["config", "name", "in", "ss_cert", "spkac", "infiles", "out", "outdir", "cert", "keyfile", "keyform", "key", "selfsign", "passin", "verbose", "notext", "startdate", "enddate", "days", "md", "policy", "preserveDN", "msie_hack", "noemailDN", "batch", "extensions", "extfile", "engine", "subj", "utf8", "gencrl", "crldays", "crlhours", "revoke", "status", "updatedb", "crl_reason", "crl_hold", "crl_compromise", "crl_CA_compromise", "crlexts",]);
+    let mut ok :bool;
+    for opt in opts.iter() {
+        if !opt.is_flag()  || opt.type_name() == KEYWORD_ARGS {
+            continue;
+        }
+        ok = false;
+        if opt.type_name() == KEYWORD_HELP {
+            if opt.long_opt() == "-help" && opt.short_opt() == "-h" {
+                ok = true;
+            }
+        } else if opt.long_opt() == "-multivalue-rdn" && opt.opt_dest() == "multivalue_rdn" {
+            ok = true;
+        } else {
+            for c in optnames.clone() {
+                let clong = format!("-{}",c);
+                if opt.opt_dest().eq(&c) && opt.long_opt().eq(&clong) {
+                    ok = true;
+                    break;
+                }
+            }
+        }
+
         assert!(ok == true);
     }
 

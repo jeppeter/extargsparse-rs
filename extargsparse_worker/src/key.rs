@@ -1581,9 +1581,11 @@ impl InnerExtKeyParse {
 					if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
 						extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
 					}
+					//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", _sarr[0]);
 					self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 					self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
 				} else {
+					//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", flags.as_str());
 					self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
 				}
 				flagmode = true;
@@ -1606,6 +1608,7 @@ impl InnerExtKeyParse {
 							if flags.len() <= 1 {
 								extargs_new_error!{KeyError,"({}) flag must have long opt",origkey}
 							}
+							//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", flags.as_str());
 							self.keydata.set_string(KEYWORD_FLAGNAME,flags.as_str());
 						}
 						flagmode = true;
@@ -1619,6 +1622,7 @@ impl InnerExtKeyParse {
 						},
 						Some(v) => {
 							if v == ('$' as u8) {
+								//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", KEYWORD_DOLLAR_SIGN);
 								self.keydata.set_string(KEYWORD_FLAGNAME,KEYWORD_DOLLAR_SIGN);
 								flagmode = true;
 							}
@@ -1639,10 +1643,12 @@ impl InnerExtKeyParse {
 						if _sarr.len() > 2 || _sarr[1].len() != 1 || _sarr[0].len() <= 1 {
 							extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
 						}
+						//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", _sarr[0]);
 						self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 						self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
 						flagmode= true;
 					} else {
+						//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", &(m[0]));
 						self.keydata.set_string(KEYWORD_CMDNAME,&(m[0]));
 						cmdmode = true;
 					}
@@ -1726,6 +1732,7 @@ impl InnerExtKeyParse {
 			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
 			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
 			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
+			//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", s.as_str());
 			self.keydata.set_string(KEYWORD_FLAGNAME,s.as_str());
 			self.keydata.set_string(KEYWORD_CMDNAME,KEYWORD_BLANK);
 		}
@@ -1837,7 +1844,7 @@ impl InnerExtKeyParse {
 			 __prefixexpr : compile_regex("\\+([a-zA-Z]+[a-zA-Z0-9]*)")?,
 			 __funcexpr : compile_regex("<([^<>\\$| \t!\\+]+)>")?,
 			 __flagexpr : compile_regex("^([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
-			 __mustflagexpr : compile_regex("^\\$([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
+			 __mustflagexpr : compile_regex("^\\$([a-zA-Z]+[a-zA-Z0-9_|\\?\\-]*)")?,
 			 __attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
 		};
 
