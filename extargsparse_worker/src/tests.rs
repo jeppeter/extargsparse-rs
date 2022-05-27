@@ -3211,3 +3211,64 @@ fn test_a061() {
 
     return;
 }
+
+#[test]
+fn test_a062() {
+    let loads = r#"        {
+            "dep##[cc]... dep handler used##" : {
+                "$" : "*",
+                "ip" : {
+                    "$" : "*"
+                }
+            },
+            "rdep##[dd]... rdep handler used##" : {
+                "$" : "*",
+                "ip" : {
+                    "$" : "*"
+                }
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : "cmd1" }}"#, OPT_PROG);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),None).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    let sarr = get_cmd_help(parser.clone(),"dep");
+    let ex = Regex::new(r#"\[cc\]... dep handler used"#).unwrap();
+    let ex2 = Regex::new("cmd1").unwrap();
+    let mut ok :bool =false;
+    if sarr.len() > 0 {
+        if ex.is_match(&sarr[0]) {
+            ok = true;
+        }
+    }
+    assert!(ok == true);
+    ok = false;
+    if sarr.len() > 0 {
+        if ex2.is_match(&sarr[0]) {
+            ok = true;
+        }
+    }
+    assert!(ok == true);
+
+
+    let sarr = get_cmd_help(parser.clone(),"rdep");
+    let ex = Regex::new(r#"\[dd\]... rdep handler used"#).unwrap();
+    ok = false;
+    if sarr.len() > 0 {
+        if ex.is_match(&sarr[0]) {
+            ok = true;
+        }
+    }
+    assert!(ok == true);
+
+    ok = false;
+    if sarr.len() > 0 {
+        if ex2.is_match(&sarr[0]) {
+            ok = true;
+        }
+    }
+    assert!(ok == true);
+
+    return;
+}
