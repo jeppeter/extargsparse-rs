@@ -376,6 +376,7 @@ impl InnerExtArgsParser {
 			}
 			newprefix.push_str(&(keycls.cmd_name()));
 		}
+		extargs_log_trace!("newprefix [{}]",newprefix);
 
 		return self.load_commandline_inner(newprefix,keycls.value().clone(),nextparsers);
 	}
@@ -950,7 +951,6 @@ impl InnerExtArgsParser {
 				let jsondest = prefix.to_uppercase();
 				let mut jsonfile :String = "".to_string();
 
-				extargs_log_trace!("jsondest [{}]",jsondest);
 				match env::var(&jsondest) {
 					Ok(v) => {
 						jsonfile = v.to_string();
@@ -975,6 +975,7 @@ impl InnerExtArgsParser {
 			jsonenv = jsonenv.replace(".","_");
 			jsonenv = jsonenv.to_uppercase();
 			let mut jsonfile :String = "".to_string();
+			extargs_log_trace!("jsonenv [{}]", jsonenv);
 			match env::var(&jsonenv) {
 				Ok(v) => {
 					jsonfile = v.to_string();

@@ -6,7 +6,7 @@ use super::{extargs_log_trace};
 use super::{extargs_error_class};
 use super::namespace::{NameSpaceEx};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN,Nargs,KEYWORD_COUNT,KEYWORD_JSONFILE,KEYWORD_HELP,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_ATTR,KeyAttr};
-use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION};
+use super::options::{ExtArgsOptions,OPT_PROG,OPT_ERROR_HANDLER,OPT_HELP_HANDLER,OPT_SHORT_PREFIX,OPT_LONG_PREFIX,OPT_PARSE_ALL,OPT_HELP_SHORT,OPT_HELP_LONG,OPT_JSON_LONG,OPT_SCREEN_WIDTH,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION,OPT_CMD_PREFIX_ADDED};
 use super::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -2607,6 +2607,118 @@ fn test_a052() {
     assert!(ns.get_string("subcommand") == "dep");
     assert!(check_array_equal(ns.get_array("dep_list"), format_string_array(vec!["depenv1", "depenv2"])));
     assert!(ns.get_string("dep_string") == "ee");
+    assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
+
+    return;
+}
+
+#[test]
+fn test_a053() {
+    let loads = r#"        {
+            "verbose|v" : "+",
+            "$port|p" : {
+                "value" : 3000,
+                "type" : "int",
+                "nargs" : 1 ,
+                "helpinfo" : "port to connect"
+            },
+            "dep" : {
+                "list|l" : [],
+                "string|s" : "s_var",
+                "$" : "+"
+            },
+            "rdep" : {
+                "list|l" : [],
+                "string|s" : "s_rdep",
+                "$" : "+"
+            }
+        }"#;
+    before_parser();
+    let optstr :String = format!(r#"{{ "{}" : false }}"#,
+            OPT_CMD_PREFIX_ADDED);
+    let depstrval = "newval";
+    let depliststr = r#"["depenv1","depenv2"]"#;
+    let ws = r#"{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring","port":6000,"verbose":3}"#;
+    let f = make_temp_file(ws);
+    let jsonfile = format!("{}",f.path().display());
+    let depws = r#"{"list":["depjson1","depjson2"]}"#;
+    let depf = make_temp_file(depws);
+    let depjsonfile = format!("{}", depf.path().display());
+    set_env_var("EXTARGSPARSE_JSON",&jsonfile);
+    set_env_var("DEP_JSON",&depjsonfile);
+    let optref :ExtArgsOptions = ExtArgsOptions::new(&optstr).unwrap();
+    let vint :Vec<i32> = vec![ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET];
+    let parser :ExtArgsParser = ExtArgsParser::new(Some(optref.clone()),Some(vint.clone())).unwrap();
+    extargs_load_commandline!(parser,loads).unwrap();
+    set_env_var("DEP_STRING",depstrval);
+    set_env_var("DEP_LIST",depliststr);
+    let sarr = get_cmd_help(parser.clone(),"dep");
+    let helpexpr = Regex::new(r#"^\s+--help.*"#).unwrap();
+    let jsonexpr = Regex::new(r#"^\s+--dep-json.*"#).unwrap();
+    let listexpr = Regex::new(r#"^\s+--list.*"#).unwrap();
+    let stringexpr = Regex::new(r#"^\s+--string.*"#).unwrap();
+    let mut helpok :bool =false;
+    let mut jsonok :bool = false;
+    let mut listok :bool =false;
+    let mut stringok :bool = false;
+
+    for l in sarr.iter() {
+        if helpexpr.is_match(l) {
+            helpok = true;
+        }
+        if jsonexpr.is_match(l) {
+            jsonok = true;
+        }
+
+        if listexpr.is_match(l) {
+            listok = true;
+        }
+
+        if stringexpr.is_match(l) {
+            stringok = true;
+        }
+    }
+    assert!(helpok == true);
+    assert!(jsonok == true);
+    assert!(listok == true);
+    assert!(stringok == true); 
+
+    let sarr = get_cmd_help(parser.clone(),"rdep");
+    let jsonexpr = Regex::new(r#"^\s+--rdep-json.*"#).unwrap();
+    helpok = false;
+    jsonok = false;
+    listok = false;
+    stringok = false;
+
+    for l in sarr.iter() {
+        if helpexpr.is_match(l) {
+            helpok = true;
+        }
+        if jsonexpr.is_match(l) {
+            jsonok = true;
+        }
+
+        if listexpr.is_match(l) {
+            listok = true;
+        }
+
+        if stringexpr.is_match(l) {
+            stringok = true;
+        }
+    }
+    assert!(helpok == true);
+    assert!(jsonok == true);
+    assert!(listok == true);
+    assert!(stringok == true); 
+
+
+    let params :Vec<String> = format_string_array(vec!["-p", "9000", "dep", "--string", "ee", "ww"]);
+    let ns = parser.parse_commandline_ex(Some(params.clone()),None,None,None).unwrap();
+    assert!(ns.get_int("verbose") == 3);
+    assert!(ns.get_int("port") == 9000);
+    assert!(ns.get_string("subcommand") == "dep");
+    assert!(check_array_equal(ns.get_array("list"), format_string_array(vec!["jsonval1", "jsonval2"])));
+    assert!(ns.get_string("string") == "ee");
     assert!(check_array_equal(ns.get_array("subnargs"), format_string_array(vec!["ww"])));
 
     return;
