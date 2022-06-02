@@ -1,3 +1,5 @@
+//!  variables for the COMMAND set sequence
+
 
 ///  command input set ,this is the first
 pub const COMMAND_SET                  :i32 = 10;
