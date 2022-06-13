@@ -10,6 +10,7 @@ use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root,RootBuilder,ConfigBuilder};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
+use log4rs::{Handle};
 
 
 fn _extargs_get_environ_var(envname :&str) -> String {
@@ -25,7 +26,12 @@ fn _extargs_get_environ_var(envname :&str) -> String {
 
 const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}]{m}\n";
 
-fn extargs_proc_log_init(prefix :&str) -> i32 {
+struct LogVar {
+	level :i32,
+	hdl :Handle,
+}
+
+fn extargs_proc_log_init(prefix :&str) -> LogVar {
 	let mut msgfmt :String = String::from(DEFAULT_MSG_FMT);
 	let mut getv :String;
 	let mut retv :i32 = 0;
@@ -84,17 +90,20 @@ fn extargs_proc_log_init(prefix :&str) -> i32 {
 
 	let config = cbuild.build(rbuiler.build(level)).unwrap();
 	let _handle = log4rs::init_config(config).unwrap();
-	retv	
+	return LogVar {
+		level : retv,
+		hdl :_handle,
+	};
 }
 
 lazy_static! {
-	static ref EXT_OPTIONS_LOG_LEVEL : i32 = {
+	static ref EXT_OPTIONS_LOG_LEVEL : LogVar = {
 		extargs_proc_log_init("EXTARGS")
 	};
 }
 
 pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
-	if *EXT_OPTIONS_LOG_LEVEL >= level {
+	if EXT_OPTIONS_LOG_LEVEL.level >= level {
 		if level <= 0 {
 			error!("{}",outs);
 		}  else if level <= 10 {
@@ -106,6 +115,10 @@ pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
 		}
 	}
 	return;
+}
+
+pub fn extargs_set_log_config(cfg :Config) {
+	return EXT_OPTIONS_LOG_LEVEL.hdl.set_config(cfg);
 }
 
 

@@ -2,7 +2,7 @@
 pub mod errors;
 pub mod const_value;
 pub (crate) mod util;
-pub (crate) mod logger;
+pub mod logger;
 pub mod key;
 pub mod options;
 pub mod funccall;
