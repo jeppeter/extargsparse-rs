@@ -1,6 +1,6 @@
 [package]
 name = "extargsparse_worker"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.59.0"
 author = ["jeppeter <jeppeter@gmail.com>"]
@@ -20,7 +20,7 @@ log4rs = "^0.8.3"
 log = "^0.4.8"
 lazy_static = "^1.4.0"
 extargsparse_codegen = { path = "../extargsparse_codegen"}
-# extargsparse_codegen = "^0.1.0"
+#extargsparse_codegen = "^0.1.0"
 
 [dev-dependencies]
 tempfile = "^3.3.0"
