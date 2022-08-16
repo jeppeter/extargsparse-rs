@@ -481,6 +481,7 @@ impl InnerParserCompat {
                     } else {
                         rets.push_str(&(self.get_indent_string(cmdhelp,15,self.screenwidth)));
                     }
+                    rets.push_str("\n");
                 }
             }
         }
