@@ -1,16 +1,10 @@
 
 use std::env;
+use std::io::{Write};
+use std::fs;
 
 use lazy_static::lazy_static;
-
-use log::{LevelFilter};
-use log::{error, info, trace,warn};
-use log4rs::append::console::{ConsoleAppender, Target};
-use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Root,RootBuilder,ConfigBuilder};
-use log4rs::encode::pattern::PatternEncoder;
-use log4rs::filter::threshold::ThresholdFilter;
-use log4rs::{Handle};
+use chrono::{Local,Timelike,Datelike};
 
 
 fn _extargs_get_environ_var(envname :&str) -> String {
@@ -24,28 +18,19 @@ fn _extargs_get_environ_var(envname :&str) -> String {
 	}
 }
 
-const DEFAULT_MSG_FMT :&str = "{d(%Y-%m-%d %H:%M:%S)}[{l}]{m}\n";
 
 struct LogVar {
 	level :i32,
-	hdl :Handle,
+	nostderr : bool,
+	wfile : Option<fs::File>,
 }
 
 fn extargs_proc_log_init(prefix :&str) -> LogVar {
-	let mut msgfmt :String = String::from(DEFAULT_MSG_FMT);
 	let mut getv :String;
 	let mut retv :i32 = 0;
-	let mut level :LevelFilter  = log::LevelFilter::Error;
-	let mut rbuiler :RootBuilder;
-	let mut cbuild :ConfigBuilder;
+	let mut nostderr :bool = false;
+	let mut coptfile :Option<fs::File> = None;
 	let mut key :String;
-	let wfile :String ;
-	key = format!("{}_MSGFMT", prefix);
-	getv = _extargs_get_environ_var(&key);
-	if getv.len() > 0 {
-		msgfmt = format!("{}",getv);
-	}
-	let stderr =ConsoleAppender::builder().encoder(Box::new(PatternEncoder::new(&msgfmt))).target(Target::Stderr).build();
 
 	key = format!("{}_LEVEL", prefix);
 	getv = _extargs_get_environ_var(&key);
@@ -61,38 +46,29 @@ fn extargs_proc_log_init(prefix :&str) -> LogVar {
 		}
 	}
 
-	if retv >= 40 {
-		level = log::LevelFilter::Trace;
-	} else if retv >= 30 {
-		level = log::LevelFilter::Debug;
-	} else if retv >= 20 {
-		level = log::LevelFilter::Info;
-	} else if retv >= 10 {
-		level = log::LevelFilter::Warn;
+	key = format!("{}_NOSTDERR",prefix);
+	getv = _extargs_get_environ_var(&key);
+	if getv.len() > 0 {
+		nostderr = true;
 	}
 
-	cbuild = Config::builder()
-	.appender(
-		Appender::builder()
-		.filter(Box::new(ThresholdFilter::new(level)))
-		.build("stderr", Box::new(stderr)),
-		);
-	rbuiler =  Root::builder().appender("stderr");
+
 
 	key = format!("{}_LOGFILE",prefix);
-	wfile = _extargs_get_environ_var(&key);
-	if wfile.len() > 0 {
-		let logfile = FileAppender::builder().encoder(Box::new(PatternEncoder::new(&msgfmt))).build(&wfile).unwrap();
-
-		cbuild = cbuild.appender(Appender::builder().build("logfile", Box::new(logfile)));
-		rbuiler = rbuiler.appender("logfile");
+	getv = _extargs_get_environ_var(&key);
+	if getv.len() > 0 {
+		let fo = fs::File::create(&getv);
+		if fo.is_err() {
+			eprintln!("can not open [{}]", getv);
+		} else {
+			coptfile = Some(fo.unwrap());
+		}
 	}
 
-	let config = cbuild.build(rbuiler.build(level)).unwrap();
-	let _handle = log4rs::init_config(config).unwrap();
 	return LogVar {
 		level : retv,
-		hdl :_handle,
+		nostderr : nostderr,
+		wfile : coptfile,		
 	};
 }
 
@@ -102,41 +78,42 @@ lazy_static! {
 	};
 }
 
-pub (crate)  fn extargs_debug_out(level :i32, outs :String) {
+pub (crate)  fn extargs_debug_out(level :i32, outs :&str) {
 	if EXT_OPTIONS_LOG_LEVEL.level >= level {
-		if level <= 0 {
-			error!("{}",outs);
-		}  else if level <= 10 {
-			warn!("{}",outs);
-		} else if level < 40 {
-			info!("{}",outs);
-		} else {
-			trace!("{}",outs);
+		let c = format!("{}\n",outs);
+		if !EXT_OPTIONS_LOG_LEVEL.nostderr {
+			let _ = std::io::stderr().write_all(c.as_bytes());
+		}
+
+		if EXT_OPTIONS_LOG_LEVEL.wfile.is_some() {
+			let mut wf = EXT_OPTIONS_LOG_LEVEL.wfile.as_ref().unwrap();
+			let _ = wf.write(c.as_bytes());
 		}
 	}
 	return;
 }
 
-pub fn extargs_set_log_config(cfg :Config) {
-	return EXT_OPTIONS_LOG_LEVEL.hdl.set_config(cfg);
+pub (crate) fn extargs_log_get_timestamp() -> String {
+	let now = Local::now();
+	return format!("{}/{}/{} {}:{}:{}",now.year(),now.month(),now.day(),now.hour(),now.minute(),now.second());
 }
 
 
 #[macro_export]
 macro_rules! extargs_log_error {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("<ERROR>{}[{}:{}]  ",extargs_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		extargs_debug_out(0, c);
+		extargs_debug_out(0,&c);
 	}
 }
 
 #[macro_export]
 macro_rules! extargs_log_warn {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("<WARN>{}[{}:{}]  ",extargs_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		extargs_debug_out(10, c);
+		extargs_debug_out(10,&c);
 	}
 }
 
@@ -144,18 +121,18 @@ macro_rules! extargs_log_warn {
 #[macro_export]
 macro_rules! extargs_log_info {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("<INFO>{}[{}:{}]  ",extargs_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		extargs_debug_out(20, c);
+		extargs_debug_out(20,&c);
 	}
 }
 
 #[macro_export]
 macro_rules! extargs_log_trace {
 	($($arg:tt)+) => {
-		let mut _c :String= format!("[{}:{}] ",file!(),line!());
+		let mut _c :String= format!("<TRACE>{}[{}:{}]  ",extargs_log_get_timestamp(),file!(),line!());
 		_c.push_str(&(format!($($arg)+)[..]));
-		extargs_debug_out(40, _c);
+		extargs_debug_out(40, &_c);
 	}
 }
 

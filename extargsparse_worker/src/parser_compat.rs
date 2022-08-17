@@ -1,7 +1,7 @@
 
 use super::key::{ExtKeyParse,KEYWORD_BOOL,KEYWORD_VALUE,KEYWORD_STRING,KEYWORD_HELP,KEYWORD_ARGS,KEYWORD_DICT,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_LIST,KEYWORD_JSONFILE,KEYWORD_COUNT,Nargs,KEYWORD_ATTR,KeyAttr};
 use super::options::{ExtArgsOptions,OPT_SCREEN_WIDTH,OPT_EPILOG,OPT_DESCRIPTION,OPT_PROG,OPT_USAGE,OPT_VERSION};
-use super::logger::{extargs_debug_out};
+use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 use super::{extargs_assert,extargs_log_warn,extargs_log_trace};
 use super::funccall::{ExtArgsMatchFuncMap};
 use super::helpsize::{HelpSize,CMD_NAME_SIZE,CMD_HELP_SIZE,OPT_NAME_SIZE,OPT_EXPR_SIZE,OPT_HELP_SIZE};

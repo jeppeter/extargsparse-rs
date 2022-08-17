@@ -25,7 +25,7 @@ use super::util::{check_in_array,format_array_string};
 use super::argset::{ArgSetImpl};
 use lazy_static::lazy_static;
 
-use super::logger::{extargs_debug_out};
+use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 use super::{extargs_assert,extargs_log_info,extargs_log_trace,extargs_log_warn};
 use super::namespace::{NameSpaceEx};
 use super::funccall::{ExtArgsMatchFuncMap,ExtArgsParseFunc};

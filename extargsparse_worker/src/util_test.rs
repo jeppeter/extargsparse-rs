@@ -19,7 +19,7 @@ use extargsparse_codegen::{extargs_load_commandline};
 use super::{extargs_new_error,extargs_error_class,extargs_log_trace};
 use super::parser::{ExtArgsParser};
 use super::options::{ExtArgsOptions};
-use super::logger::{extargs_debug_out};
+use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 use super::key::{ExtKeyParse,KEYWORD_HELP,KEYWORD_JSONFILE,KEYWORD_PREFIX,KEYWORD_LIST,KEYWORD_STRING,KEYWORD_INT,KEYWORD_FLOAT,KEYWORD_BOOL,KEYWORD_ARGS,KEYWORD_COUNT,KEYWORD_SUBNARGS};
 use super::const_value::{COMMAND_SET,SUB_COMMAND_JSON_SET,COMMAND_JSON_SET,ENVIRONMENT_SET,ENV_SUB_COMMAND_JSON_SET,ENV_COMMAND_JSON_SET,DEFAULT_SET};
 

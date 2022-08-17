@@ -4,7 +4,7 @@ use super::parser_compat::{ParserCompat};
 use super::options::{ExtArgsOptions,OPT_LONG_PREFIX,OPT_SHORT_PREFIX,OPT_PARSE_ALL};
 use super::key::{ExtKeyParse,KEYWORD_DOLLAR_SIGN};
 use super::{extargs_error_class,extargs_new_error,extargs_assert,extargs_log_info,extargs_log_trace};
-use super::logger::{extargs_debug_out};
+use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 
 use std::error::Error;
 use std::boxed::Box;

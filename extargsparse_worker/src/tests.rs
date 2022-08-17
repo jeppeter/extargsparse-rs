@@ -1,5 +1,5 @@
 use super::parser::{ExtArgsParser};
-use super::logger::{extargs_debug_out};
+use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 use super::argset::{ArgSetImpl};
 use super::funccall::{ExtArgsParseFunc};
 use super::{extargs_log_trace};
