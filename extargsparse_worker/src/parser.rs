@@ -673,12 +673,28 @@ impl InnerExtArgsParser {
 			if self.output_mode[ilen] == "bash" {
 				let outs = format!("cat <<EOFMM\n{}\nEOFMM\nexit 0", s);
 				let mut of = std::io::stdout();
-				of.write(outs.as_bytes()).unwrap();
+				let mut cv :usize = 0;
+
+				while cv < outs.len() {
+					let mut clen :usize = 256;
+					if clen > (outs.len() - cv) {
+						clen = outs.len() - cv;
+					}
+					of.write(&outs[cv..(cv+clen)].as_bytes()).unwrap();
+					cv += clen;
+				}
 				std::process::exit(0);
 			}
 		}
-
-		let totallen = iowriter.write(s.as_bytes())?;
+		let mut totallen :usize = 0;
+		while totallen < s.len() {
+			let mut clen :usize = 256;
+			if clen > (s.len() - totallen) {
+				clen = s.len() - totallen;
+			}
+			iowriter.write(&s[totallen..(totallen+clen)].as_bytes())?;
+			totallen += clen;
+		}
 		Ok(totallen)
 	}
 
