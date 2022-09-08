@@ -674,25 +674,27 @@ impl InnerExtArgsParser {
 				let outs = format!("cat <<EOFMM\n{}\nEOFMM\nexit 0", s);
 				let mut of = std::io::stdout();
 				let mut cv :usize = 0;
+				let code :&[u8] = outs.as_bytes();
 
-				while cv < outs.len() {
+				while cv < code.len() {
 					let mut clen :usize = 256;
-					if clen > (outs.len() - cv) {
-						clen = outs.len() - cv;
+					if clen > (code.len() - cv) {
+						clen = code.len() - cv;
 					}
-					of.write(&outs[cv..(cv+clen)].as_bytes()).unwrap();
+					of.write(&code[cv..(cv+clen)]).unwrap();
 					cv += clen;
 				}
 				std::process::exit(0);
 			}
 		}
 		let mut totallen :usize = 0;
-		while totallen < s.len() {
+		let code :&[u8] = s.as_bytes();
+		while totallen < code.len() {
 			let mut clen :usize = 256;
-			if clen > (s.len() - totallen) {
-				clen = s.len() - totallen;
+			if clen > (code.len() - totallen) {
+				clen = code.len() - totallen;
 			}
-			iowriter.write(&s[totallen..(totallen+clen)].as_bytes())?;
+			iowriter.write(&code[totallen..(totallen+clen)])?;
 			totallen += clen;
 		}
 		Ok(totallen)
