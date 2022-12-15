@@ -1713,8 +1713,11 @@ impl InnerExtArgsParser {
 				let funcname :String = cmds[ilen].get_keycls().unwrap().func_name();
 				extargs_log_trace!("[{}] funcname [{}]", cmds[ilen].get_keycls().unwrap().string(), funcname);
 				if funcname.len() > 0 {
-					let cclen :usize = self.output_mode.len() - 1;
+					let mut cclen :usize = 0;
 					let mut valid :i32 = 0;
+					if self.output_mode.len() > 0 {
+						cclen = self.output_mode.len() - 1;
+					}
 					if self.output_mode.len() == 0 {
 						valid = 1;
 					} else if self.output_mode[cclen] == "" {
