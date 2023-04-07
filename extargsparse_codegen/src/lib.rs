@@ -2,20 +2,6 @@
 //!  This crate is plugin for extargsparse it should be used
 //!  directly with extargsparse-rs
 //!  
-//!  example
-//!  
-//!  ```rust
-
-//!  ```
-//!  
-//!  
-//!  
-//!  
-//!  
-//!  
-//!  
-//!  
-//!  
 
 
 use proc_macro::TokenStream;
@@ -707,6 +693,7 @@ impl syn::parse::Parse for LoadParserAttr {
 	}
 }
 
+/// expand extargs_map_function random make functions name
 #[proc_macro]
 pub fn extargs_load_commandline(input :TokenStream) -> TokenStream {
 	let mut code :String = "".to_string();
