@@ -1,3 +1,22 @@
+//!  
+//!  This crate is plugin for extargsparse it should be used
+//!  directly with extargsparse-rs
+//!  
+//!  example
+//!  
+//!  ```rust
+
+//!  ```
+//!  
+//!  
+//!  
+//!  
+//!  
+//!  
+//!  
+//!  
+//!  
+
 
 use proc_macro::TokenStream;
 //use proc_macro2::Span;
@@ -24,7 +43,7 @@ mod errors;
 mod logger;
 mod util;
 
-use consts::{KEYWORD_U64,KEYWORD_I64,KEYWORD_F64,KEYWORD_U32,KEYWORD_I32,KEYWORD_F32,KEYWORD_TYPE_STRING,KEYWORD_TYPE_BOOL,KEYWORD_VEC_STRING,KEYWORD_LEFT_ARROW,FUNC_ACTFUNC,FUNC_OPTHELP,FUNC_JSONFUNC,FUNC_CALLBACK,KEYWORD_SUBNARGS,KEYWORD_ARGS};
+use consts::*;
 use logger::{em_debug_out,em_log_get_timestamp};
 use util::{check_in_array};
 
