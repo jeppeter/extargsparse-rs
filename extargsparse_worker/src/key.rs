@@ -185,13 +185,15 @@ impl KeyAttr {
 		let mut i:usize;
 		v.sort_by(|x,y|x.0.cmp(&y.0));
 
-		retstr = String::from("{");
+		retstr = "".to_string();
 		i = 0 ;
 		while i < v.len() {
-			retstr.push_str(&(format!("{}={}", v[i].0,v[i].1)[..]));
+			if i > 0 {
+				retstr.push_str("\n");
+			}
+			retstr.push_str(&format!("[{}]=[{}]", v[i].0,v[i].1));
 			i = i + 1;
 		}
-		retstr.push_str("}");
 		return retstr;
 	}
 
@@ -238,6 +240,13 @@ impl Clone for KeyAttr {
 		return retattr;
 	}
 }
+
+impl Debug for KeyAttr {
+	fn fmt(&self,f :&mut fmt::Formatter) -> fmt::Result {
+		write!(f,"{}",self.string())
+	}
+}
+
 
 pub const KEYWORD_STRING :&str = "string";
 pub const KEYWORD_DICT :&str = "dict";
