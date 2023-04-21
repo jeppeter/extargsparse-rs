@@ -1937,6 +1937,10 @@ impl InnerExtKeyParse {
 		return self.get_string_v(KEYWORD_LONGOPT);
 	}
 
+	pub fn long_prefix(&self) -> String {
+		return self.get_string_v(KEYWORD_LONGPREFIX);
+	}
+
 	pub fn short_opt(&self) -> String {
 		return self.get_string_v(KEYWORD_SHORTOPT);
 	}
@@ -2087,6 +2091,10 @@ impl ExtKeyParse {
 
 	pub fn long_opt(&self) -> String {
 		return self.innerrc.borrow().long_opt();
+	}
+
+	pub fn long_prefix(&self) -> String {
+		return self.innerrc.borrow().long_prefix();	
 	}
 
 	pub fn short_opt(&self) -> String {
