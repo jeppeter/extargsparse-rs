@@ -57,6 +57,8 @@ fn main() -> Result<(),Box<dyn Error>> {
     let parser :ExtArgsParser = ExtArgsParser::new(Some(options.clone()),None)?;
     extargs_load_commandline!(parser,cmdline)?;
     parser.print_help_ex(&mut f,"")?;
+    parser.print_help_ex(&mut f,"dep")?;
+    parser.print_help_ex(&mut f,"rdep")?;
 /*
 output:
 cmd1  [OPTIONS] [SUBCOMMANDS] [args...]
@@ -78,6 +80,24 @@ cmd1  [OPTIONS] [SUBCOMMANDS] [args...]
 [SUBCOMMANDS]
     [dep]   dep handler  
     [rdep]  rdep handler 
+cmd1  dep dep handler
+
+ [OPTIONS]
+    --dep-json       dep_json    json input file to get the value set 
+    --help|-h                    to display this help information     
+    --dep-list|-l    dep_list    dep_list set default []              
+    --dep-string|-s  dep_string  dep_string set default s_var         
+
+[SUBCOMMANDS]
+    [ip]   ip handler  
+cmd1  rdep rdep handler
+
+ [OPTIONS]
+    --rdep-json  rdep_json  json input file to get the value set 
+    --help|-h               to display this help information     
+
+[SUBCOMMANDS]
+    [ip]    ip handler   
 */
     Ok(())
 }
