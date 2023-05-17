@@ -1,6 +1,5 @@
 use extargsparse_codegen::{extargs_load_commandline,extargs_map_function};
 use extargsparse_worker::argset::{ArgSetImpl};
-//use extargsparse_worker::{extargs_error_class,extargs_new_error};
 use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
@@ -8,7 +7,6 @@ use extargsparse_worker::parser::ExtArgsParser;
 
 use std::error::Error;
 use lazy_static::lazy_static;
-//use regex::Regex;
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::any::Any;
@@ -47,7 +45,6 @@ fn main() -> Result<(),Box<dyn Error>> {
         }"#;
     let parser :ExtArgsParser = ExtArgsParser::new(None,None)?;
     extargs_load_commandline!(parser,cmdline)?;
-    //parser.load_commandline_string(cmdline,Some(ST_FUNCTIONS_MFHGDTXIBZ9MXQY.clone()))?;
     let ns :NameSpaceEx = parser.parse_commandline_ex(None,None,None,None)?;
     println!("ns.float1 {}", ns.get_float("float1"));
     println!("ns.float2 {}",ns.get_float("float2") );

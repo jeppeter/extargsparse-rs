@@ -1,20 +1,12 @@
 use extargsparse_codegen::{extargs_load_commandline,extargs_map_function};
-//use extargsparse_worker::argset::{ArgSetImpl};
-//use extargsparse_worker::{extargs_error_class,extargs_new_error};
-//use extargsparse_worker::{extargs_log_trace};
-//use extargsparse_worker::key::{ExtKeyParse,KEYWORD_ATTR};
 use extargsparse_worker::key::{ExtKeyParse};
 use extargsparse_worker::options::{ExtArgsOptions,OPT_NO_HELP_OPTION,OPT_NO_JSON_OPTION};
-//use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
 
 
 use std::error::Error;
 use lazy_static::lazy_static;
-//use std::sync::Arc;
-//use std::cell::RefCell;
-//use std::any::Any;
 use std::collections::HashMap;
 
 
@@ -52,19 +44,25 @@ fn main() -> Result<(),Box<dyn Error>> {
     assert!(ores.is_some());
     flag = ores.unwrap();
     name = flag.cmd_name();
-    println!("cmdname={}", name); // cmdname = main
+    println!("cmdname={}", name);
 
     let ores = parser.get_cmd_key_ex("dep")?;
     assert!(ores.is_some());
     flag = ores.unwrap();
     name = flag.cmd_name();
-    println!("cmdname={}", name); // cmdname = dep
+    println!("cmdname={}", name);
 
     let ores = parser.get_cmd_key_ex("rdep.ip")?;
     assert!(ores.is_some());
     flag = ores.unwrap();
     name = flag.cmd_name();
-    println!("cmdname={}", name);  // cmdname = ip
+    println!("cmdname={}", name);
 
     Ok(())
 }
+/*
+output:
+cmdname=main
+cmdname=dep
+cmdname=ip
+*/
