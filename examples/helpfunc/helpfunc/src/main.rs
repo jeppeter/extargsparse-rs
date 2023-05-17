@@ -1,12 +1,10 @@
 use extargsparse_codegen::{ArgSet,extargs_load_commandline,extargs_map_function};
 use extargsparse_worker::argset::{ArgSetImpl};
 use extargsparse_worker::{extargs_error_class,extargs_new_error};
-//use extargsparse_worker::options::{ExtArgsOptions,OPT_PROG};
 use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::key::ExtKeyParse;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
-
 
 use std::error::Error;
 use lazy_static::lazy_static;
@@ -15,7 +13,6 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use std::any::Any;
 use std::collections::HashMap;
-//use std::fs::{File};
 
 extargs_error_class!{HelpError}
 
@@ -112,6 +109,7 @@ fn main() -> Result<(),Box<dyn Error>> {
     let ctxpi : Arc<RefCell<SubCmdStruct>> = Arc::new(RefCell::new(ctx));
     let _ = parser.parse_commandline(None,Some(ctxpi.clone()))?;
     Ok(())
+}
 /*
 command:
 helpfunc.exe -h
@@ -128,4 +126,3 @@ helpfunc.exe  [OPTIONS] [SUBCOMMANDS] [args...]
     [dep]   dep handler  
     [rdep]  rdep handler 
 */
-}

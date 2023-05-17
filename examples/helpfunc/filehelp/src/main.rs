@@ -1,23 +1,12 @@
 use extargsparse_codegen::{extargs_load_commandline,extargs_map_function};
-//use extargsparse_worker::argset::{ArgSetImpl};
-//use extargsparse_worker::{extargs_error_class,extargs_new_error};
 use extargsparse_worker::options::{ExtArgsOptions,OPT_PROG};
-//use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
 
-
 use std::error::Error;
 use lazy_static::lazy_static;
-//use regex::Regex;
-//use std::sync::Arc;
-//use std::cell::RefCell;
-//use std::any::Any;
 use std::collections::HashMap;
 use std::fs::{File};
-//use std::io::prelude::*;
-
-
 
 #[extargs_map_function()]
 fn main() -> Result<(),Box<dyn Error>> {
@@ -59,6 +48,8 @@ fn main() -> Result<(),Box<dyn Error>> {
     parser.print_help_ex(&mut f,"")?;
     parser.print_help_ex(&mut f,"dep")?;
     parser.print_help_ex(&mut f,"rdep")?;
+    Ok(())
+}
 /*
 output:
 cmd1  [OPTIONS] [SUBCOMMANDS] [args...]
@@ -99,5 +90,3 @@ cmd1  rdep rdep handler
 [SUBCOMMANDS]
     [ip]    ip handler   
 */
-    Ok(())
-}
