@@ -16,6 +16,8 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use std::any::Any;
 use std::collections::HashMap;
+use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 
 extargs_error_class!{OptHdlError}
 
@@ -60,55 +62,46 @@ fn pair_key_handle(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Ve
 
 fn dep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _ctx : Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
 	println!("in dep_handler");
-	if _ctx.is_some() {
-		println!("some _ctx");
-		let ctx = _ctx.as_ref().unwrap().clone();
-        let mut bctx = ctx.borrow_mut();
-        match bctx.downcast_mut::<SubCmdStruct>() {
-            Some(_v) => {
-            	println!("subcommand={}", _ns.get_string("subcommand"));
-            	println!("verbose={}", _v.verbose);
-            	println!("pair={:?}", _v.pair);
-            	println!("dep_list={:?}",_v.dep.list);
-            	println!("dep_strv={}", _v.dep.strv);
-            	println!("subnargs={:?}",_v.dep.subnargs);
-            	println!("rdep_list={:?}",_v.rdep.list);
-            	println!("rdep_strv={}",_v.rdep.strv);
-            	return Ok(());
-            },
-            _ => {
-            	extargs_new_error!{OptHdlError,"can not downcast_mut to SubCmdStruct"}
-            }
-        }
+	if _args.is_some() {
+		println!("some _args");
+		let ctx = _args.as_ref().unwrap().clone();
+        let c  = ctx.as_ptr() as *const RefCell<dyn ArgSetImpl>;
+        let b = c.borrow();
+        let cc = *b as *const SubCmdStruct;
+        let bbcref :&SubCmdStruct = unsafe {cc.as_ref().unwrap()};
+        println!("verbose {}", bbcref.verbose);
+        println!("pair {:?}", bbcref.pair);
+        println!("args {:?}", bbcref.args);
+        println!("subnargs {:?}", bbcref.dep.subnargs);
+        println!("strv {}", bbcref.dep.strv);
+        println!("list {:?}",bbcref.dep.list);
 	} else {
-		println!("none of _ctx");
+		println!("none of _args");
 	}
 	Ok(())
 }
 
 fn rdep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _ctx : Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
-	println!("in rdep_handler");
-	if _ctx.is_some() {
-		let ctx = _ctx.as_ref().unwrap().clone();
-        let mut bctx = ctx.borrow_mut();
-        match bctx.downcast_mut::<SubCmdStruct>() {
-            Some(_v) => {
-            	println!("subcommand={}", _ns.get_string("subcommand"));
-            	println!("verbose={}", _v.verbose);
-            	println!("pair={:?}", _v.pair);
-            	println!("dep_list={:?}",_v.dep.list);
-            	println!("dep_strv={}", _v.dep.strv);
-            	println!("subnargs={:?}",_v.dep.subnargs);
-            	println!("rdep_list={:?}",_v.rdep.list);
-            	println!("rdep_strv={}",_v.rdep.strv);
-            	return Ok(());
-            },
-            _ => {
-            	extargs_new_error!{OptHdlError,"can not downcast_mut to SubCmdStruct"}
-            }
-        }
-	}
-	Ok(())}
+    println!("in rdep_handler");
+    if _args.is_some() {
+        println!("some _args");
+        let ctx = _args.as_ref().unwrap().clone();
+        let mut c  = ctx.as_ptr() as *mut RefCell<dyn ArgSetImpl>;
+        let b = c.borrow_mut();
+        let cc = *b as *mut SubCmdStruct;
+        let bbcref :&mut SubCmdStruct = unsafe {cc.as_mut().unwrap()};
+        println!("verbose {}", bbcref.verbose);
+        println!("pair {:?}", bbcref.pair);
+        println!("args {:?}", bbcref.args);
+        println!("subnargs {:?}", bbcref.rdep.subnargs);
+        println!("strv {}", bbcref.rdep.strv);
+        bbcref.rdep.list.push(format!("rdep"));
+        println!("list {:?}",bbcref.rdep.list);
+    } else {
+        println!("none of _args");
+    }
+    Ok(())
+}
 
 
 #[extargs_map_function(actfunc=pair_key_handle,dep_handler,rdep_handler)]
@@ -131,7 +124,6 @@ fn main() -> Result<(),Box<dyn Error>> {
     extargs_load_commandline!(parser,loads)?;
     let v :SubCmdStruct = SubCmdStruct::new();
     let argv :Arc<RefCell<SubCmdStruct>> = Arc::new(RefCell::new(v));
-    //parser.load_commandline_string(cmdline,Some(ST_FUNCTIONS_MFHGDTXIBZ9MXQY.clone()))?;
-    let _ = parser.parse_commandline(None,Some(argv.clone()))?;
+    let _ = parser.parse_commandline_ex(None,None,Some(argv.clone()),None)?;
     Ok(())
 }
