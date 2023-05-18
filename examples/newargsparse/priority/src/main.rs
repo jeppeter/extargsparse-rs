@@ -1,22 +1,13 @@
 use extargsparse_codegen::{extargs_load_commandline,extargs_map_function};
-//use extargsparse_worker::argset::{ArgSetImpl};
-//use extargsparse_worker::{extargs_error_class,extargs_new_error};
 use extargsparse_worker::options::{ExtArgsOptions,OPT_NO_JSON_OPTION,OPT_NO_HELP_OPTION};
-//use extargsparse_worker::namespace::NameSpaceEx;
-//use extargsparse_worker::key::ExtKeyParse;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
 use extargsparse_worker::const_value::{ENV_COMMAND_JSON_SET, ENVIRONMENT_SET, ENV_SUB_COMMAND_JSON_SET};
 
 use std::error::Error;
 use lazy_static::lazy_static;
-//use regex::Regex;
-//use std::sync::Arc;
-//use std::cell::RefCell;
-//use std::any::Any;
 use std::collections::HashMap;
 use std::io::{Write};
-//use std::fs::{File};
 use tempfile::{NamedTempFile};
 
 

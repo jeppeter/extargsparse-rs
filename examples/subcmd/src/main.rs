@@ -5,7 +5,6 @@ use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
 
-
 use std::error::Error;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -66,7 +65,6 @@ fn main() -> Result<(),Box<dyn Error>> {
     }"#;
     let parser :ExtArgsParser = ExtArgsParser::new(None,None)?;
     extargs_load_commandline!(parser,cmdline)?;
-    //parser.load_commandline_string(cmdline,Some(ST_FUNCTIONS_MFHGDTXIBZ9MXQY.clone()))?;
     let v :ImpArg = ImpArg::new();
     let argv :Arc<RefCell<ImpArg>> = Arc::new(RefCell::new(v));
     let args :Vec<String> = vec!["-vvvv".to_string(),

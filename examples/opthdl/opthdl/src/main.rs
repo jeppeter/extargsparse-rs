@@ -1,9 +1,7 @@
 use extargsparse_codegen::{ArgSet,extargs_load_commandline,extargs_map_function};
 use extargsparse_worker::argset::{ArgSetImpl};
 use extargsparse_worker::{extargs_error_class,extargs_new_error};
-//use extargsparse_worker::{extargs_log_trace};
 use extargsparse_worker::key::{ExtKeyParse};
-//use extargsparse_worker::options::ExtArgsOptions;
 use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
@@ -51,7 +49,6 @@ fn pair_key_handle(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Ve
     if params.len() < (validx + 2) as usize {
     	extargs_new_error!{OptHdlError,"need 2 args"}
     }
-    //println!("Attr={:?}",attr);
     let mut vc :Vec<String> = ns.get_array(&(keycls.opt_dest()));
     vc.push(format!("{}",params[validx as usize]));
     vc.push(format!("{}",params[(validx + 1) as usize]));
