@@ -4,7 +4,7 @@ use extargsparse_worker::{extargs_error_class,extargs_new_error};
 use extargsparse_worker::namespace::NameSpaceEx;
 use extargsparse_worker::funccall::ExtArgsParseFunc;
 use extargsparse_worker::parser::ExtArgsParser;
-use extargsparse_worker::key::{ExtKeyParse,KEYWORD_STRING};
+use extargsparse_worker::key::{ExtKeyParse,KEYWORD_LIST};
 
 
 use std::error::Error;
@@ -54,24 +54,33 @@ fn rdep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _
 }
 
 fn debug_upper_jsonfunc(ns :NameSpaceEx, keycls :ExtKeyParse, value :Value) -> Result<(),Box<dyn Error>> {
-    let mut setval :String;
+    let mut setval :Vec<String> = Vec::new();
 
-    if !keycls.is_flag() || keycls.type_name() != KEYWORD_STRING {
+    if !keycls.is_flag() || keycls.type_name() != KEYWORD_LIST {
         extargs_new_error!{TestCaseError,"keycls [{}] not string type", keycls.string()}
     }
 
     match value {
         Value::Null => {
-            setval = "".to_string();
         },
-        Value::String(_a) => {
-            setval = format!("{}",_a);
+        Value::Array(_v) => {
+        	let mut _idx :i32 = 0;
+            for cv in _v.iter() {
+            	match cv {
+            		Value::String(_a) => {
+            			setval.push(format!("{}",_a).to_uppercase());
+            		},
+            		_ => {
+            			extargs_new_error!{TestCaseError,"[{}] not string type",_idx}
+            		}
+            	}
+            	_idx += 1;
+            }
         },
         _ => { extargs_new_error!{TestCaseError,"value [{:?}] not valid" , value } }
     }
 
-    setval = setval.to_uppercase();
-    return ns.set_string(&keycls.opt_dest(), setval);
+    return ns.set_array(&keycls.opt_dest(), setval);
 }
 
 fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
@@ -156,6 +165,75 @@ fn main() -> Result<(),Box<dyn Error>> {
     Ok(())
 }
 /*
+command:
+cargo run --release -- -h
 output:
+multifunc.exe  [OPTIONS] [SUBCOMMANDS] [args...]
+
+ [OPTIONS]
+    --json        json     json input file to get the value set            
+    --help|-h              to display this help information                
+    --ccval|-C    ccval    opthelp function set [ccval] default value ([]) 
+    --port|-p     port     port set default 3000                           
+    --verbose|-v  verbose  count set default 0                             
+
+[SUBCOMMANDS]
+    [dep]   dep handler  
+    [rdep]  rdep handler 
+notice:
+--ccval|-C    ccval    opthelp function set [ccval] default value ([]) 
+line is formatted by debug_opthelp_set
+
+command:
+cargo run --release -- -C bbs wwww depargs dep
+output:
+validx [1]
+set [ccval] value ["bbs", "wwww"]
+ccval=["bbs", "wwww"]
+call dep_handler
+ns.verbose 0
+ns.port 3000
+subcommand dep
+rdep_list []
+rdep_string []
+subnargs ["depargs"]
+argv.verbose 0
+argv.port 3000
+argv.args []
+argv.rdep.subnargs []
+argv.rdep.list []
+argv.rdep.string "s_rdep"
+argv.ccval ["bbs", "wwww"]
+ccval ["bbs", "wwww"]
+notice:
+-C bbs wwww will give two args format debug_set_2_args
+
+file c.json:
+{
+	"ccval" : ["bb","aa"]
+}
+
+command:
+cargo run --release -- --json .\c.json depargs dep
+
+output:
+call dep_handler
+ns.verbose 0
+ns.port 3000
+subcommand dep
+rdep_list []
+rdep_string []
+subnargs ["depargs"]
+argv.verbose 0
+argv.port 3000
+argv.args []
+argv.rdep.subnargs []
+argv.rdep.list []
+argv.rdep.string "s_rdep"
+argv.ccval ["BB", "AA"]
+ccval ["BB", "AA"]
+
+notice:
+call json function debug_upper_jsonfunc to uppercase
 
 */
