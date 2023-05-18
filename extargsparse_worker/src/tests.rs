@@ -2271,7 +2271,7 @@ fn debug_opthelp_set(keycls :&ExtKeyParse) -> String {
 
 
 #[test]
-#[extargs_map_function(actfunc=debug_set_2_args)]
+#[extargs_map_function(optparse=debug_set_2_args)]
 fn test_a045() {
    let loads = r#"        {
     "verbose|v" : "+",
@@ -2299,7 +2299,7 @@ return;
 }
 
 #[test]
-#[extargs_map_function(actfunc=debug_set_2_args,opthelp=debug_opthelp_set)]
+#[extargs_map_function(optparse=debug_set_2_args,opthelp=debug_opthelp_set)]
 fn test_a046() {
    let loads = r#"        {
     "verbose|v" : "+",
@@ -2402,7 +2402,7 @@ fn test_a047() {
     }
 
     "#;
-    let mapstr = r#"actfunc=debug_set_2_args,opthelp=debug_opthelp_set"#;
+    let mapstr = r#"optparse=debug_set_2_args,opthelp=debug_opthelp_set"#;
     let mut fcomposer : FuncComposer = FuncComposer::new();
     fcomposer.add_code(codstr);
     fcomposer.add_inner(mapstr);
@@ -3114,7 +3114,7 @@ fn test_a058() {
 }
 
 #[test]
-#[extargs_map_function(actfunc=debug_set_2_args_upper)]
+#[extargs_map_function(optparse=debug_set_2_args_upper)]
 fn test_a059() {
     let loads = r#"        {
             "verbose|v" : "+",

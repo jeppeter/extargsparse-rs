@@ -82,7 +82,7 @@ fn get_random_bytes(num :u32, basevec :&[u8]) -> String {
 struct FuncAttrs {
 	helpfuncs :Vec<String>,
 	jsonfuncs :Vec<String>,
-	actfuncs : Vec<String>,
+	optparsefuncs : Vec<String>,
 	callbackfuncs : Vec<String>,
 }
 
@@ -100,7 +100,7 @@ impl FuncAttrs {
 			} else if k == FUNC_JSONFUNC {
 				self.jsonfuncs.push(format!("{}",v));
 			} else if k == FUNC_ACTFUNC {
-				self.actfuncs.push(format!("{}",v));
+				self.optparsefuncs.push(format!("{}",v));
 			} else {
 				let c = format!("we not accept [{}] keyword only accept {}|{}|{}|{}", k,
 					FUNC_ACTFUNC,FUNC_OPTHELP,FUNC_JSONFUNC,FUNC_CALLBACK);
@@ -120,7 +120,7 @@ impl FuncAttrs {
 		rets.push_str(&format_tab_space(1));
 		rets.push_str(&format!("static ref {} :HashMap<String,ExtArgsParseFunc> = {{\n",fname));
 		rets.push_str(&format_tab_space(2));
-		if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.actfuncs.len() > 0 || self.callbackfuncs.len() > 0 {
+		if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.optparsefuncs.len() > 0 || self.callbackfuncs.len() > 0 {
 			rets.push_str(&format!("let mut retv :HashMap<String,ExtArgsParseFunc> = HashMap::new();\n"));	
 		} else {
 			rets.push_str(&format!("let retv :HashMap<String,ExtArgsParseFunc> = HashMap::new();\n"));
@@ -133,8 +133,8 @@ impl FuncAttrs {
 			}
 		}
 
-		if self.actfuncs.len() > 0 {
-			for f in self.actfuncs.iter() {
+		if self.optparsefuncs.len() > 0 {
+			for f in self.optparsefuncs.iter() {
 				rets.push_str(&format_tab_space(2));
 				rets.push_str(&format!("retv.insert(format!(\"{}\"), ExtArgsParseFunc::ActionFunc({}));\n",f,f));
 			}
@@ -163,7 +163,7 @@ impl FuncAttrs {
 		rets.push_str("}\n");
 		{
 			let mut scb = EXTARGS_FUNC_MAP_NAME.lock().unwrap();
-			if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.actfuncs.len() > 0 || self.callbackfuncs.len() > 0 {
+			if self.helpfuncs.len() > 0 || self.jsonfuncs.len() > 0 || self.optparsefuncs.len() > 0 || self.callbackfuncs.len() > 0 {
 				*scb = format!("{}",fname);	
 			} else {
 				*scb = format!("");
@@ -182,7 +182,7 @@ impl syn::parse::Parse for FuncAttrs {
 		let mut retv :FuncAttrs = FuncAttrs {
 			helpfuncs : Vec::new(),
 			jsonfuncs : Vec::new(),
-			actfuncs : Vec::new(),
+			optparsefuncs : Vec::new(),
 			callbackfuncs : Vec::new(),
 		};
 		let mut k :String = "".to_string();

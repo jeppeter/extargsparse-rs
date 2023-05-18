@@ -13,7 +13,7 @@ pub (crate) const KEYWORD_TYPE_BOOL :&str = "bool";
 
 pub (crate) const FUNC_OPTHELP :&str = "opthelp";
 pub (crate) const FUNC_JSONFUNC :&str = "jsonfunc";
-pub (crate) const FUNC_ACTFUNC :&str = "actfunc";
+pub (crate) const FUNC_ACTFUNC :&str = "optparse";
 pub (crate) const FUNC_CALLBACK :&str = "callbackfunc";
 pub (crate) const KEYWORD_SUBNARGS :&str = "subnargs";
 pub (crate) const KEYWORD_ARGS :&str = "args";

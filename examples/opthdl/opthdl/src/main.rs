@@ -101,7 +101,7 @@ fn rdep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _
 }
 
 
-#[extargs_map_function(actfunc=pair_key_handle,dep_handler,rdep_handler)]
+#[extargs_map_function(optparse=pair_key_handle,dep_handler,rdep_handler)]
 fn main() -> Result<(),Box<dyn Error>> {
     let loads = r#"{
 		"verbose" : "+",

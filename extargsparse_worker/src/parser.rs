@@ -1337,8 +1337,8 @@ impl InnerExtArgsParser {
 				extargs_log_trace!("get [{}]",funcname);
 				let fo = self.outfuncs.get_action_func(&funcname);
 				if fo.is_some() {
-					let actfunc = fo.unwrap();
-					return actfunc(ns.clone(),validx,keycls.clone(),params.clone());
+					let optparsefunc = fo.unwrap();
+					return optparsefunc(ns.clone(),validx,keycls.clone(),params.clone());
 				}
 			}
 		}

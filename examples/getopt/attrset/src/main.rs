@@ -28,7 +28,7 @@ fn flag_help(_keycls :&ExtKeyParse) -> String {
 }
 
 
-#[extargs_map_function(actfunc=flag_parse,opthelp=flag_help)]
+#[extargs_map_function(optparse=flag_parse,opthelp=flag_help)]
 fn main() -> Result<(),Box<dyn Error>> {
     let loads = r#"{
     	"flag|f!optparse=flag_parse;opthelp=flag_help!" : []

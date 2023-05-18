@@ -116,7 +116,7 @@ fn debug_set_2_args(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :V
 }
 
 
-#[extargs_map_function(dep_handler,rdep_handler,jsonfunc=debug_upper_jsonfunc,opthelp=debug_opthelp_set,actfunc=debug_set_2_args)]
+#[extargs_map_function(dep_handler,rdep_handler,jsonfunc=debug_upper_jsonfunc,opthelp=debug_opthelp_set,optparse=debug_set_2_args)]
 fn main() -> Result<(),Box<dyn Error>> {
     let cmdline = r#"{
     	"verbose|v" : "+",
