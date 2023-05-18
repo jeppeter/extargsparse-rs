@@ -86,3 +86,19 @@ fn main() -> Result<(),Box<dyn Error>> {
 
     Ok(())
 }
+/*
+output:
+call rdep_handler
+ns.verbose 4
+ns.port 5000
+subcommand rdep
+rdep_list ["arg1", "arg2"]
+rdep_string []
+subnargs ["cc", "dd"]
+argv.verbose 4
+argv.port 5000
+argv.args []
+argv.rdep.subnargs ["cc", "dd"]
+argv.rdep.list ["arg1", "arg2"]
+argv.rdep.string "s_rdep"
+*/
