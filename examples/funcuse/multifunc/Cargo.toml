@@ -1,0 +1,11 @@
+[package]
+name = "multifunc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+extargsparse_codegen = {path = "../../../extargsparse_codegen"}
+extargsparse_worker = {path = "../../../extargsparse_worker"}
+lazy_static = "^1.4.0"
+regex = "1"
+serde_json = "^1.0.42"
