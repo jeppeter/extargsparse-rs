@@ -1349,8 +1349,10 @@ impl InnerExtArgsParser {
 		let oattr =  keycls.get_keyattr(KEYWORD_ATTR) ;
 		if oattr.is_some() {
 			let attr = oattr.unwrap();
+			extargs_log_trace!("attr\n{}",attr.string());
 			let funcname = attr.get_attr("optparse");
 			if funcname.len() > 0 {
+				extargs_log_trace!("call [{}] funcname", funcname);
 				return self.call_key_opt_method_func(ns,validx,keycls,params);
 			}
 		} 
