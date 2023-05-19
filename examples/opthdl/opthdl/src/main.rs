@@ -33,6 +33,11 @@ struct RdepSt {
 	list :Vec<String>,
 }
 
+/*******************************
+*  ArgSet derived only accept 
+*  i32 i64 f32 f64 Vec<String> String bool
+*  and derived ArgSet struct.
+*******************************/
 #[derive(ArgSet)]
 struct SubCmdStruct {
 	verbose :i32,
@@ -57,6 +62,7 @@ fn pair_key_handle(ns :NameSpaceEx, validx :i32, keycls :ExtKeyParse, params :Ve
 }
 
 
+/*this is the example call the mut pointer change the value*/
 fn dep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _ctx : Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
 	println!("in dep_handler");
 	if _args.is_some() {
@@ -78,6 +84,7 @@ fn dep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _c
 	Ok(())
 }
 
+/* this is the example call the const pointer */
 fn rdep_handler(_ns :NameSpaceEx, _args :Option<Arc<RefCell<dyn ArgSetImpl>>>, _ctx : Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
     println!("in rdep_handler");
     if _args.is_some() {
