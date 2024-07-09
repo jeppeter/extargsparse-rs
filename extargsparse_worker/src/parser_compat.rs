@@ -126,9 +126,12 @@ impl InnerParserCompat {
         }
 
         if keycls.type_name() == KEYWORD_BOOL {
+            extargs_log_trace!("{} KEYWORD_VALUE {:?}",keycls.string(),keycls.get_bool_v(KEYWORD_VALUE));
             if keycls.get_bool_v(KEYWORD_VALUE) == true {
+                extargs_log_trace!("set true");
                 rets.push_str(&(format!("{} set false default(True)", keycls.opt_dest())));
             } else {
+                extargs_log_trace!("set false");
                 rets.push_str(&(format!("{} set true default(False)", keycls.opt_dest())));
             }
         } else if keycls.type_name() == KEYWORD_STRING && keycls.get_string_v(KEYWORD_VALUE) == "+" {

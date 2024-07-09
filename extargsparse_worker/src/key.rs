@@ -12,7 +12,7 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 
 use super::{extargs_error_class,extargs_new_error};
-//use super::logger::{extargs_debug_out};
+//use super::logger::{extargs_debug_out,extargs_log_get_timestamp};
 //use super::{extargs_log_trace};
 
 
@@ -120,7 +120,7 @@ impl KeyAttr {
 				extargs_new_error!(KeyError,"{:?} not valid object", val)
 			},
 		}
-	
+
 		Ok(kattr)
 	}
 
@@ -580,14 +580,31 @@ impl KeyData {
 				match v {
 					KeyVal::BoolVal(kv2) => {
 						match kv2 {
-							Some(sv) => {
+							Some(sv) => {								
 								retb = *sv;
 							},
 							_ => {},
 						}						
 						
 					},
-					_ => {},
+					KeyVal::JsonVal(kv3) => {
+						match kv3 {
+							Some(kv4) => {
+								match kv4 {
+									Value::Bool(kv5) => {										
+										retb = *kv5;
+									},
+									_ => {										
+									}
+								}
+								
+							},
+							_ => {								
+							}
+						}
+					},
+					_ => {						
+					},
 				}
 			},
 			_ =>  {
@@ -865,695 +882,681 @@ impl InnerExtKeyParse {
 			  sval == KEYWORD_FLOAT ||
 			  sval == KEYWORD_STRING || sval == KEYWORD_JSONFILE {
 			  	retval = 1;
+			  }
 			}
+			return retval;
 		}
-		return retval;
-	}
 
-	fn __form_word_str(&self,key :&str) -> Result<String,Box<dyn Error>> {
-		let bval :bool;
-		let sval :String;
-		let mut retval :String = String::from("");
+		fn __form_word_str(&self,key :&str) -> Result<String,Box<dyn Error>> {
+			let bval :bool;
+			let sval :String;
+			let mut retval :String = String::from("");
 
-		if key == KEYWORD_LONGOPT {
-			if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
-			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
-			    self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_ARGS	{
-			    extargs_new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
-			}
-			retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
-			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_BOOL {
-				match self.keydata.get_jsonval_value(KEYWORD_VALUE){
-					Value::Bool(v) => {
-						bval = v;
-					},
-					_ => {
-						bval = false;
-					}
+			if key == KEYWORD_LONGOPT {
+				if !self.keydata.get_bool_value(KEYWORD_ISFLAG) ||  
+				self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK ||
+				self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_ARGS	{
+					extargs_new_error!{KeyError,"can not set ({}) longopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
 				}
-				if bval {
-					retval.push_str("no-");
-				}				
-			}
-
-			sval = self.keydata.get_string_value(KEYWORD_PREFIX);
-			if sval.len() > 0 && 
-				self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_HELP {
-				retval.push_str(&(format!("{}_",sval)[..]));
-			}
-			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
-			if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
-				retval = retval.to_lowercase();
-				retval = retval.replace("_","-");
-			}
-		} else if key == KEYWORD_SHORTOPT {
-			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
-			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
-			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    extargs_new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
-			}
-			if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
-				retval = format!("{}{}",self.keydata.get_string_value(KEYWORD_SHORTPREFIX),
-					self.keydata.get_string_value(KEYWORD_SHORTFLAG));
-			}
-		} else if key == KEYWORD_OPTDEST {
-			if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
-			    self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
-			    self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
-			    extargs_new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
-			}
-			if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
-				retval.push_str(&(format!("{}_",self.keydata.get_string_value(KEYWORD_PREFIX))[..]));
-			}
-			retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
-			if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
-				retval = retval.to_lowercase();
-			}
-			retval = retval.replace("-","_");
-		}
-		return Ok(retval);
-	}
-
-	fn __eq_name__(&self,other :&InnerExtKeyParse,name :&str) -> bool {
-		let mut ret :bool = false;
-		let sjval  :Value;
-		let ojval :Value;
-		let sjopt :Option<Value>;
-		let ojopt :Option<Value>;
-		let ssval :String;
-		let osval :String;
-		let ssopt :Option<String>;
-		let osopt :Option<String>;
-		let snval :Nargs;
-		let onval :Nargs;
-		let snopt :Option<Nargs>;
-		let onopt :Option<Nargs>;
-		let sbval :bool;
-		let obval :bool;
-		let sbopt :Option<bool>;
-		let obopt :Option<bool>;
-		let skval :KeyAttr;
-		let okval :KeyAttr;
-		let skopt :Option<KeyAttr>;
-		let okopt :Option<KeyAttr>;
-		if name == KEYWORD_VALUE {
-			sjopt = self.keydata.get_jsonval(name);
-			ojopt = other.keydata.get_jsonval(name);
-			match sjopt {
-				Some(v) => {sjval = v;},
-				None => {
-					match ojopt {
-						None => {  return true; },
+				retval = format!("{}",self.keydata.get_string_value(KEYWORD_LONGPREFIX));
+				if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_BOOL {
+					match self.keydata.get_jsonval_value(KEYWORD_VALUE){
+						Value::Bool(v) => {
+							bval = v;
+						},
 						_ => {
-							return false;
+							bval = false;
+						}
+					}
+					if bval {
+						retval.push_str("no-");
+					}				
+				}
+
+				sval = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if sval.len() > 0 && 
+				self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_HELP {
+					retval.push_str(&(format!("{}_",sval)[..]));
+				}
+				retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
+				if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
+					retval = retval.to_lowercase();
+					retval = retval.replace("_","-");
+				}
+			} else if key == KEYWORD_SHORTOPT {
+				if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
+				self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
+				self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
+					extargs_new_error!{KeyError,"can not set ({}) shortopt",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
+				}
+				if self.keydata.get_string_value(KEYWORD_SHORTFLAG).len() > 0 {
+					retval = format!("{}{}",self.keydata.get_string_value(KEYWORD_SHORTPREFIX),
+						self.keydata.get_string_value(KEYWORD_SHORTFLAG));
+				}
+			} else if key == KEYWORD_OPTDEST {
+				if ! self.keydata.get_bool_value(KEYWORD_ISFLAG) || 
+				self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_BLANK || 
+				self.keydata.get_type(KEYWORD_TYPE)  == KEYWORD_ARGS {
+					extargs_new_error!{KeyError,"can not set ({}) optdest",self.keydata.get_string_value(KEYWORD_ORIGKEY)}
+				}
+				if self.keydata.get_string_value(KEYWORD_PREFIX).len() > 0 {
+					retval.push_str(&(format!("{}_",self.keydata.get_string_value(KEYWORD_PREFIX))[..]));
+				}
+				retval.push_str(&(format!("{}",self.keydata.get_string_value(KEYWORD_FLAGNAME))[..]));
+				if !self.keydata.get_bool_value(KEYWORD_NOCHANGE) {
+					retval = retval.to_lowercase();
+				}
+				retval = retval.replace("-","_");
+			}
+			return Ok(retval);
+		}
+
+		fn __eq_name__(&self,other :&InnerExtKeyParse,name :&str) -> bool {
+			let mut ret :bool = false;
+			let sjval  :Value;
+			let ojval :Value;
+			let sjopt :Option<Value>;
+			let ojopt :Option<Value>;
+			let ssval :String;
+			let osval :String;
+			let ssopt :Option<String>;
+			let osopt :Option<String>;
+			let snval :Nargs;
+			let onval :Nargs;
+			let snopt :Option<Nargs>;
+			let onopt :Option<Nargs>;
+			let sbval :bool;
+			let obval :bool;
+			let sbopt :Option<bool>;
+			let obopt :Option<bool>;
+			let skval :KeyAttr;
+			let okval :KeyAttr;
+			let skopt :Option<KeyAttr>;
+			let okopt :Option<KeyAttr>;
+			if name == KEYWORD_VALUE {
+				sjopt = self.keydata.get_jsonval(name);
+				ojopt = other.keydata.get_jsonval(name);
+				match sjopt {
+					Some(v) => {sjval = v;},
+					None => {
+						match ojopt {
+							None => {  return true; },
+							_ => {
+								return false;
+							}
 						}
 					}
 				}
-			}
-			match ojopt {
-				Some(v) => {ojval = v;},
-				_ => {
-					return false;
+				match ojopt {
+					Some(v) => {ojval = v;},
+					_ => {
+						return false;
+					}
 				}
-			}
 
-			if ojval == sjval {
-				ret = true;
-			}
-		} else if name == KEYWORD_PREFIX || name == KEYWORD_FLAGNAME || 
+				if ojval == sjval {
+					ret = true;
+				}
+			} else if name == KEYWORD_PREFIX || name == KEYWORD_FLAGNAME || 
 			name == KEYWORD_HELPINFO || name == KEYWORD_SHORTFLAG || 
 			name == KEYWORD_VARNAME || name == KEYWORD_CMDNAME ||
 			name == KEYWORD_FUNCTION || name == KEYWORD_ORIGKEY || 
 			name == KEYWORD_LONGPREFIX || name == KEYWORD_SHORTPREFIX || name == KEYWORD_LONGOPT || 
 			name == KEYWORD_SHORTOPT || name == KEYWORD_OPTDEST {
-			ssopt = self.keydata.get_string(name);
-			osopt = other.keydata.get_string(name);
-			match ssopt {
-				Some(v) => {ssval = v;},
-				None => {
-					match osopt {
-						None => {  return true; },
-						_ => {
-							return false;
+				ssopt = self.keydata.get_string(name);
+				osopt = other.keydata.get_string(name);
+				match ssopt {
+					Some(v) => {ssval = v;},
+					None => {
+						match osopt {
+							None => {  return true; },
+							_ => {
+								return false;
+							}
 						}
 					}
 				}
-			}
-			match osopt {
-				Some(v) => {osval = v;},
-				_ => {
-					return false;
+				match osopt {
+					Some(v) => {osval = v;},
+					_ => {
+						return false;
+					}
 				}
-			}
 
-			if osval == ssval {
-				ret = true;
-			}
+				if osval == ssval {
+					ret = true;
+				}
 
-		} else if name == KEYWORD_TYPE {
-			ssval = self.keydata.get_type(name);
-			osval = self.keydata.get_type(name);
-			if osval == ssval {
-				ret = true;
-			}
+			} else if name == KEYWORD_TYPE {
+				ssval = self.keydata.get_type(name);
+				osval = self.keydata.get_type(name);
+				if osval == ssval {
+					ret = true;
+				}
 
-		}else if name == KEYWORD_NARGS {
-			snopt = self.keydata.get_nargs(name);
-			onopt = other.keydata.get_nargs(name);
-			match snopt {
-				Some(v) => {snval = v;},
-				None => {
-					match onopt {
-						None => {  return true; },
-						_ => {
-							return false;
+			}else if name == KEYWORD_NARGS {
+				snopt = self.keydata.get_nargs(name);
+				onopt = other.keydata.get_nargs(name);
+				match snopt {
+					Some(v) => {snval = v;},
+					None => {
+						match onopt {
+							None => {  return true; },
+							_ => {
+								return false;
+							}
 						}
 					}
 				}
-			}
-			match onopt {
-				Some(v) => {onval = v;},
-				_ => {
-					return false;
+				match onopt {
+					Some(v) => {onval = v;},
+					_ => {
+						return false;
+					}
 				}
-			}
 
-			if onval == snval {
-				ret = true;
-			}
-		}  else if name == KEYWORD_ISCMD || name == KEYWORD_ISFLAG {
-			sbopt = self.keydata.get_bool(name);
-			obopt = other.keydata.get_bool(name);
-			match sbopt {
-				Some(v) => {sbval = v;},
-				None => {
-					match obopt {
-						None => {  return true; },
-						_ => {
-							return false;
+				if onval == snval {
+					ret = true;
+				}
+			}  else if name == KEYWORD_ISCMD || name == KEYWORD_ISFLAG {
+				sbopt = self.keydata.get_bool(name);
+				obopt = other.keydata.get_bool(name);
+				match sbopt {
+					Some(v) => {sbval = v;},
+					None => {
+						match obopt {
+							None => {  return true; },
+							_ => {
+								return false;
+							}
 						}
 					}
 				}
-			}
-			match obopt {
-				Some(v) => {obval = v;},
-				_ => {
-					return false;
+				match obopt {
+					Some(v) => {obval = v;},
+					_ => {
+						return false;
+					}
 				}
-			}
 
-			if obval == sbval {
-				ret = true;
-			}
-		} else if name == KEYWORD_ATTR {
-			skopt = self.keydata.get_keyattr(name);
-			okopt = other.keydata.get_keyattr(name);
-			match skopt {
-				Some(v) => {skval = v;},
-				None => {
-					match okopt {
-						None => {  return true; },
-						_ => {
-							return false;
+				if obval == sbval {
+					ret = true;
+				}
+			} else if name == KEYWORD_ATTR {
+				skopt = self.keydata.get_keyattr(name);
+				okopt = other.keydata.get_keyattr(name);
+				match skopt {
+					Some(v) => {skval = v;},
+					None => {
+						match okopt {
+							None => {  return true; },
+							_ => {
+								return false;
+							}
 						}
 					}
 				}
-			}
-			match okopt {
-				Some(v) => {okval = v;},
-				_ => {
-					return false;
+				match okopt {
+					Some(v) => {okval = v;},
+					_ => {
+						return false;
+					}
+				}
+
+				if okval == skval {
+					ret = true;
 				}
 			}
 
-			if okval == skval {
-				ret = true;
-			}
+			return ret;
 		}
 
-		return ret;
-	}
+		pub fn string(&self) -> String {
+			let mut retstr :String;
+			let mut s :String;
+			retstr = String::from("{");
+			retstr.push_str(&(format!("<{}:{}>",KEYWORD_TYPE, self.keydata.get_type(KEYWORD_TYPE))[..]));
+			retstr.push_str(&(format!("<{}:{}>",KEYWORD_ORIGKEY,self.keydata.get_string_value(KEYWORD_ORIGKEY))[..]));
+			if self.keydata.get_bool_value(KEYWORD_ISCMD) {
+				retstr.push_str(&(format!("<cmdname:{}>",self.keydata.get_string_value(KEYWORD_CMDNAME))[..]));
+				s = self.keydata.get_string_value(KEYWORD_FUNCTION);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>",KEYWORD_FUNCTION,s)[..]));
+				}
 
-	pub fn string(&self) -> String {
-		let mut retstr :String;
-		let mut s :String;
-		retstr = String::from("{");
-		retstr.push_str(&(format!("<{}:{}>",KEYWORD_TYPE, self.keydata.get_type(KEYWORD_TYPE))[..]));
-		retstr.push_str(&(format!("<{}:{}>",KEYWORD_ORIGKEY,self.keydata.get_string_value(KEYWORD_ORIGKEY))[..]));
-		if self.keydata.get_bool_value(KEYWORD_ISCMD) {
-			retstr.push_str(&(format!("<cmdname:{}>",self.keydata.get_string_value(KEYWORD_CMDNAME))[..]));
-			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>",KEYWORD_FUNCTION,s)[..]));
+				s = self.keydata.get_string_value(KEYWORD_HELPINFO);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>", KEYWORD_HELPINFO,s)[..]));
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
+				}
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_HELPINFO);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>", KEYWORD_HELPINFO,s)[..]));
+			if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
+				s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>", KEYWORD_FLAGNAME,s)[..]));
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>",KEYWORD_SHORTFLAG,s)[..]));
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
+				}
+
+				match self.keydata.get_nargs(KEYWORD_NARGS) {
+					Some(v) => {
+						retstr.push_str(&(format!("<{}:{}>",KEYWORD_NARGS, v.string())[..]));
+					},
+					_ => {
+
+					},
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_VARNAME);
+				if s.len() > 0 {
+					retstr.push_str(&(format!("<{}:{}>", KEYWORD_VARNAME,s)[..]));
+				}
+
+				match self.keydata.get_jsonval(KEYWORD_VALUE) {
+					Some(v) => {
+						match v {
+							Value::Null => {
+
+							},
+							_ => {
+								retstr.push_str(&(format!("<{}:{:?}>", KEYWORD_VALUE,v)[..]));		
+							}
+						}
+
+					},
+					_ => {
+
+					},
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_LONGPREFIX);
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_LONGPREFIX,s)[..]));
+				s = self.keydata.get_string_value(KEYWORD_SHORTPREFIX);
+				retstr.push_str(&(format!("<{}:{}>", KEYWORD_SHORTPREFIX,s)[..]));
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_PREFIX);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
-			}
-		}
-
-		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
-			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>", KEYWORD_FLAGNAME,s)[..]));
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>",KEYWORD_SHORTFLAG,s)[..]));
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_PREFIX);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>", KEYWORD_PREFIX,s)[..]));
-			}
-
-			match self.keydata.get_nargs(KEYWORD_NARGS) {
+			match self.keydata.get_keyattr(KEYWORD_ATTR) {
 				Some(v) => {
-					retstr.push_str(&(format!("<{}:{}>",KEYWORD_NARGS, v.string())[..]));
+					retstr.push_str(&(format!("<{}:{}>",KEYWORD_ATTR,v.string())[..]));
 				},
 				_ => {
-
+					retstr.push_str(&(format!("<{}:>",KEYWORD_ATTR)));
 				},
+			}
+
+			return retstr;
+		}
+
+		fn __validate(&mut self) -> Result<bool,Box<dyn Error>>{
+			let mut s:String;
+			let mut s2 :String;
+			let mut bnone :bool;
+			let origkey :String = self.keydata.get_string_value(KEYWORD_ORIGKEY);
+			if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
+				assert!(!self.keydata.get_bool_value(KEYWORD_ISCMD));
+				s = self.keydata.get_string_value(KEYWORD_FUNCTION);
+				if s.len() > 0 {
+					extargs_new_error!{KeyError,"({}) can not accept function", origkey}
+				}
+
+				bnone = false;
+				match self.keydata.get_string(KEYWORD_FLAGNAME) {
+					Some(_v) => {
+					},
+					None => {
+						bnone = true;
+					}
+				}
+
+				if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && !bnone {
+					extargs_new_error!{KeyError,"({}) flag can not accept dict",origkey}
+				}
+
+				s = self.keydata.get_type(KEYWORD_TYPE);
+				if !self.__compare_value_type(&(s[..])) && s != KEYWORD_COUNT && s != KEYWORD_HELP && 
+				s != KEYWORD_JSONFILE {
+					extargs_new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
+				}
+				s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+				if s.len() == 0 {
+					s = self.keydata.get_string_value(KEYWORD_PREFIX);
+					if s.len() == 0{
+						extargs_new_error!{KeyError,"({}) should at least for prefix", origkey}
+					}
+					self.keydata.set_type(KEYWORD_TYPE,KEYWORD_PREFIX);
+					match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+						Value::Object(_v) => {},
+						_ => {
+							extargs_new_error!{KeyError,"({}) should used dict to make prefix",origkey}
+						},
+					}
+					s = self.keydata.get_string_value(KEYWORD_HELPINFO);
+					if s.len() > 0 {
+						extargs_new_error!{KeyError,"({}) should not have help info",origkey}
+					}
+					s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+					if s.len() > 0 {
+						extargs_new_error!{KeyError,"({}) should not set shortflag",origkey}
+					}
+				} else if s == KEYWORD_DOLLAR_SIGN {
+					self.keydata.set_type(KEYWORD_TYPE,KEYWORD_ARGS);
+					s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+					if s.len() > 0 {
+						extargs_new_error!{KeyError,"({}) can not set shortflag for args",origkey}
+					}
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+				if s.len() > 1 {
+					extargs_new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
+				}
+
+				s = self.keydata.get_type(KEYWORD_TYPE);
+				if s == KEYWORD_BOOL {
+					match self.keydata.get_nargs(KEYWORD_NARGS) {
+						Some(Nargs::Argnum(iv)) => {
+							if iv != 0 {
+								extargs_new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
+							}
+						},
+						_ => {},
+					}
+					self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+				} else if s == KEYWORD_HELP {
+					match self.keydata.get_nargs(KEYWORD_NARGS) {
+						Some(Nargs::Argnum(iv)) => {
+							if iv != 0 {
+								extargs_new_error!{KeyError,"help type ({}) can not accept not 0 nargs",origkey}
+							}
+						},
+						_ => {},
+					}
+					self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+				} else if s != KEYWORD_PREFIX && s != KEYWORD_COUNT && self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
+					if self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
+						match self.keydata.get_nargs(KEYWORD_NARGS) {
+							Some(Nargs::Argnum(iv)) => {
+								if iv != 1 {
+									extargs_new_error!{KeyError,"({})only $ can accept nargs option [{}]",origkey,iv}
+								}
+							},
+							_ => {},
+						}
+						self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(1)));
+					}
+				} else {
+					if self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN {
+						match self.keydata.get_nargs(KEYWORD_NARGS) {
+							None => {
+								self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argtype(String::from(KEYWORD_STAR_SIGN))));
+							},
+							_ => {},
+						}
+					}
+				}
+			} else {
+				s = self.keydata.get_string_value(KEYWORD_CMDNAME);
+				if s.len() == 0 {
+					extargs_new_error!{KeyError,"({}) not set cmdname",origkey}
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
+				if s.len() > 0 {
+					extargs_new_error!{KeyError,"({}) has shortflag ({})",origkey,s}
+				}
+
+				match self.keydata.get_nargs(KEYWORD_NARGS) {
+					None => {},
+					Some(e) => {
+						extargs_new_error!{KeyError,"({}) has nargs ({})",origkey,e.string()}
+					},
+				}
+
+				s = self.keydata.get_type(KEYWORD_TYPE);
+				if s != KEYWORD_DICT {
+					extargs_new_error!{KeyError,"({}) command must be dict",origkey}
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s.len() == 0 {
+					self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
+				}
+
+				s = self.keydata.get_string_value(KEYWORD_PREFIX);
+				if s.len() == 0 {
+					s.push_str(self.keydata.get_string_value(KEYWORD_CMDNAME).as_str());
+					self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
+				}
+
+				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COMMAND);
 			}
 
 			s = self.keydata.get_string_value(KEYWORD_VARNAME);
-			if s.len() > 0 {
-				retstr.push_str(&(format!("<{}:{}>", KEYWORD_VARNAME,s)[..]));
+			s2 = self.keydata.get_string_value(KEYWORD_FLAGNAME);
+			if self.keydata.get_bool_value(KEYWORD_ISFLAG) && s.len() == 0 && 
+			s2.len() > 0 {
+				if s2 != KEYWORD_DOLLAR_SIGN {
+					s2 = self.__form_word_str(KEYWORD_OPTDEST)?;
+					self.keydata.set_string(KEYWORD_VARNAME,s2.as_str());
+				} else {
+					s2 = self.keydata.get_string_value(KEYWORD_PREFIX);
+					if s2.len() > 0 {
+						self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_SUBNARGS);
+					} else {
+						self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_ARGS);
+					}
+				}
 			}
 
-			match self.keydata.get_jsonval(KEYWORD_VALUE) {
-				Some(v) => {
-					match v {
-						Value::Null => {
+			return Ok(true);
+		}
+
+		fn __set_flag(&mut self, prefix :&str, key :&str,value :&Value) -> Result<bool,Box<dyn Error>> {
+			let vtrue : bool = true;
+			let vfalse :bool = false;
+			let mut binvalue :bool = false;
+			let mut s :String;
+			self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
+			self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
+			self.keydata.set_string(KEYWORD_ORIGKEY,key);
+
+			match value {
+				Value::Object(v2) => {
+					match v2.get(&(format!("{}",KEYWORD_VALUE)[..])) {
+						None => {
 
 						},
-						_ => {
-							retstr.push_str(&(format!("<{}:{:?}>", KEYWORD_VALUE,v)[..]));		
+						Some(v3) => {
+							match v3 {
+								Value::String(_v4) => {
+									binvalue = true;
+								},
+								Value::Null => {
+									binvalue = true;
+								},
+								_ => {
+									binvalue =false;
+								}
+							}
 						}
 					}
-					
+				},
+				_ => {
+					binvalue = false;
+				},
+			}
+
+			if !binvalue {
+				self.keydata.set_jsonval(KEYWORD_VALUE,&(Value::Null));
+				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+			}
+
+			match value {
+				Value::Object(v2) => {
+					for (k,v) in v2 {
+						if in_array_word(k,FLAGWORDS) {
+							if k == KEYWORD_NARGS {
+								let va :Nargs;
+								match v {
+									Value::String(vs) => {
+										if vs != KEYWORD_PLUS_SIGN && vs != KEYWORD_STAR_SIGN && vs != KEYWORD_QUESTION_SIGN {
+											extargs_new_error!{KeyError,"{} not in +?*",vs}
+										}
+										va = Nargs::Argtype(vs.to_string());
+									},
+									Value::Number(vi) => {
+										if !vi.is_u64() {
+											extargs_new_error!{KeyError,"{:?} not valid u64",v}
+										}
+										match vi.as_u64() {
+											Some(v3) => {
+												va = Nargs::Argnum(v3 as i32);		
+											},
+											None => {
+												extargs_new_error!{KeyError,"{:?} not valid u64",v}
+											}
+										}
+
+									},
+									_ => {
+										extargs_new_error!{KeyError,"{:?} not for int or string", v}
+									}
+								}
+								self.keydata.set_nargs(KEYWORD_NARGS,&va);
+							} else {
+								match v {
+									Value::String(vs) => {
+										s = self.keydata.get_string_value(k);
+										if s != &(vs[..]) && s.len() > 0 {
+											extargs_new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
+										}
+										self.keydata.set_string(k,&(vs[..]));
+									},
+									_ => {
+										extargs_new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
+									},
+								}
+							}
+						} else if in_array_word(k,FLAGSPECIAL) {
+							if k == KEYWORD_PREFIX {
+								match v {
+									Value::String(vs) => {
+										self.keydata.set_string(KEYWORD_PREFIX,vs);
+									},
+									Value::Null =>  {
+										self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
+									},
+									_ => {
+										extargs_new_error!{KeyError,"({}) prefix not string or none", k}
+									}
+								}
+							} else if k == KEYWORD_VALUE {
+								let vtype :TypeClass;
+								match v {
+									Value::Object(_v3) => {
+										extargs_new_error!{KeyError,"{:?} object values",v}
+									},
+									_ => {
+
+									},
+								}
+								self.keydata.set_jsonval(KEYWORD_VALUE,v);
+								vtype = TypeClass::new(v);
+								self.keydata.set_type(KEYWORD_TYPE,&(vtype.get_type()[..]));
+							} else {
+								extargs_new_error!{KeyError,"{} not valid key", k}
+							}
+						} else if k == KEYWORD_ATTR {
+							match v {
+								Value::String(vs) => {
+									let vattr :KeyAttr = KeyAttr::new(vs)?;
+									self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
+								},
+								Value::Object(_ov) => {
+									let vattr :KeyAttr = KeyAttr::new_json(&v)?;
+									self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
+								}
+								_ => {
+
+								},
+							}
+						}
+					}
 				},
 				_ => {
 
 				},
 			}
 
-			s = self.keydata.get_string_value(KEYWORD_LONGPREFIX);
-			retstr.push_str(&(format!("<{}:{}>", KEYWORD_LONGPREFIX,s)[..]));
-			s = self.keydata.get_string_value(KEYWORD_SHORTPREFIX);
-			retstr.push_str(&(format!("<{}:{}>", KEYWORD_SHORTPREFIX,s)[..]));
+			if prefix.len() > 0 {
+				self.keydata.set_string(KEYWORD_PREFIX,prefix);
+			}
+			Ok(true)
 		}
 
-		match self.keydata.get_keyattr(KEYWORD_ATTR) {
-			Some(v) => {
-				retstr.push_str(&(format!("<{}:{}>",KEYWORD_ATTR,v.string())[..]));
-			},
-			_ => {
-				retstr.push_str(&(format!("<{}:>",KEYWORD_ATTR)));
-			},
-		}
-
-		return retstr;
-	}
-
-	fn __validate(&mut self) -> Result<bool,Box<dyn Error>>{
-		let mut s:String;
-		let mut s2 :String;
-		let mut bnone :bool;
-		let origkey :String = self.keydata.get_string_value(KEYWORD_ORIGKEY);
-		if self.keydata.get_bool_value(KEYWORD_ISFLAG) {
-			assert!(!self.keydata.get_bool_value(KEYWORD_ISCMD));
-			s = self.keydata.get_string_value(KEYWORD_FUNCTION);
-			if s.len() > 0 {
-				extargs_new_error!{KeyError,"({}) can not accept function", origkey}
-			}
-
-			bnone = false;
-			match self.keydata.get_string(KEYWORD_FLAGNAME) {
-				Some(_v) => {
-				},
-				None => {
-					bnone = true;
-				}
-			}
-
-			if self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && !bnone {
-				extargs_new_error!{KeyError,"({}) flag can not accept dict",origkey}
-			}
-
-			s = self.keydata.get_type(KEYWORD_TYPE);
-			if !self.__compare_value_type(&(s[..])) && s != KEYWORD_COUNT && s != KEYWORD_HELP && 
-				s != KEYWORD_JSONFILE {
-				extargs_new_error!{KeyError,"({}) value ({:?}) not match type ({})",origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE),s}
-			}
-			s = self.keydata.get_string_value(KEYWORD_FLAGNAME);
-			if s.len() == 0 {
-				s = self.keydata.get_string_value(KEYWORD_PREFIX);
-				if s.len() == 0{
-					extargs_new_error!{KeyError,"({}) should at least for prefix", origkey}
-				}
-				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_PREFIX);
-				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
-					Value::Object(_v) => {},
-					_ => {
-						extargs_new_error!{KeyError,"({}) should used dict to make prefix",origkey}
-					},
-				}
-				s = self.keydata.get_string_value(KEYWORD_HELPINFO);
-				if s.len() > 0 {
-					extargs_new_error!{KeyError,"({}) should not have help info",origkey}
-				}
-				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
-				if s.len() > 0 {
-					extargs_new_error!{KeyError,"({}) should not set shortflag",origkey}
-				}
-			} else if s == KEYWORD_DOLLAR_SIGN {
-				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_ARGS);
-				s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
-				if s.len() > 0 {
-					extargs_new_error!{KeyError,"({}) can not set shortflag for args",origkey}
-				}
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
-			if s.len() > 1 {
-				extargs_new_error!{KeyError,"({}) can not accept ({}) for shortflag",origkey,s}
-			}
-
-			s = self.keydata.get_type(KEYWORD_TYPE);
-			if s == KEYWORD_BOOL {
-				match self.keydata.get_nargs(KEYWORD_NARGS) {
-					Some(Nargs::Argnum(iv)) => {
-						if iv != 0 {
-							extargs_new_error!{KeyError,"bool type ({}) can not accept not 0 nargs",origkey}
-						}
-					},
-					_ => {},
-				}
-				self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
-			} else if s == KEYWORD_HELP {
-				match self.keydata.get_nargs(KEYWORD_NARGS) {
-					Some(Nargs::Argnum(iv)) => {
-						if iv != 0 {
-							extargs_new_error!{KeyError,"help type ({}) can not accept not 0 nargs",origkey}
-						}
-					},
-					_ => {},
-				}
-				self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
-			} else if s != KEYWORD_PREFIX && s != KEYWORD_COUNT && self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
-				if self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
-					match self.keydata.get_nargs(KEYWORD_NARGS) {
-						Some(Nargs::Argnum(iv)) => {
-							if iv != 1 {
-								extargs_new_error!{KeyError,"({})only $ can accept nargs option [{}]",origkey,iv}
-							}
-						},
-						_ => {},
-					}
-					self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(1)));
-				}
-			} else {
-				if self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN {
-					match self.keydata.get_nargs(KEYWORD_NARGS) {
-						None => {
-							self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argtype(String::from(KEYWORD_STAR_SIGN))));
-						},
-						_ => {},
-					}
-				}
-			}
-		} else {
-			s = self.keydata.get_string_value(KEYWORD_CMDNAME);
-			if s.len() == 0 {
-				extargs_new_error!{KeyError,"({}) not set cmdname",origkey}
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_SHORTFLAG);
-			if s.len() > 0 {
-				extargs_new_error!{KeyError,"({}) has shortflag ({})",origkey,s}
-			}
-
-			match self.keydata.get_nargs(KEYWORD_NARGS) {
-				None => {},
-				Some(e) => {
-					extargs_new_error!{KeyError,"({}) has nargs ({})",origkey,e.string()}
-				},
-			}
-
-			s = self.keydata.get_type(KEYWORD_TYPE);
-			if s != KEYWORD_DICT {
-				extargs_new_error!{KeyError,"({}) command must be dict",origkey}
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_PREFIX);
-			if s.len() == 0 {
-				self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
-			}
-
-			s = self.keydata.get_string_value(KEYWORD_PREFIX);
-			if s.len() == 0 {
-				s.push_str(self.keydata.get_string_value(KEYWORD_CMDNAME).as_str());
-				self.keydata.set_string(KEYWORD_PREFIX,s.as_str());
-			}
-			
-			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COMMAND);
-		}
-
-		s = self.keydata.get_string_value(KEYWORD_VARNAME);
-		s2 = self.keydata.get_string_value(KEYWORD_FLAGNAME);
-		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && s.len() == 0 && 
-			s2.len() > 0 {
-			if s2 != KEYWORD_DOLLAR_SIGN {
-				s2 = self.__form_word_str(KEYWORD_OPTDEST)?;
-				self.keydata.set_string(KEYWORD_VARNAME,s2.as_str());
-			} else {
-				s2 = self.keydata.get_string_value(KEYWORD_PREFIX);
-				if s2.len() > 0 {
-					self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_SUBNARGS);
-				} else {
-					self.keydata.set_string(KEYWORD_VARNAME,KEYWORD_ARGS);
-				}
-			}
-		}
-
-		return Ok(true);
-	}
-
-	fn __set_flag(&mut self, prefix :&str, key :&str,value :&Value) -> Result<bool,Box<dyn Error>> {
-		let vtrue : bool = true;
-		let vfalse :bool = false;
-		let mut binvalue :bool = false;
-		let mut s :String;
-		self.keydata.set_bool(KEYWORD_ISFLAG,&vtrue);
-		self.keydata.set_bool(KEYWORD_ISCMD,&vfalse);
-		self.keydata.set_string(KEYWORD_ORIGKEY,key);
-
-		match value {
-			Value::Object(v2) => {
-				match v2.get(&(format!("{}",KEYWORD_VALUE)[..])) {
-					None => {
-
-					},
-					Some(v3) => {
-						match v3 {
-							Value::String(_v4) => {
-								binvalue = true;
-							},
-							Value::Null => {
-								binvalue = true;
-							},
-							_ => {
-								binvalue =false;
-							}
-						}
-					}
-				}
-			},
-			_ => {
-				binvalue = false;
-			},
-		}
-
-		if !binvalue {
-			self.keydata.set_jsonval(KEYWORD_VALUE,&(Value::Null));
-			self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
-		}
-
-		match value {
-			Value::Object(v2) => {
-				for (k,v) in v2 {
-					if in_array_word(k,FLAGWORDS) {
-						if k == KEYWORD_NARGS {
-							let va :Nargs;
-							match v {
-								Value::String(vs) => {
-									if vs != KEYWORD_PLUS_SIGN && vs != KEYWORD_STAR_SIGN && vs != KEYWORD_QUESTION_SIGN {
-										extargs_new_error!{KeyError,"{} not in +?*",vs}
-									}
-									va = Nargs::Argtype(vs.to_string());
-								},
-								Value::Number(vi) => {
-									if !vi.is_u64() {
-										extargs_new_error!{KeyError,"{:?} not valid u64",v}
-									}
-									match vi.as_u64() {
-										Some(v3) => {
-											va = Nargs::Argnum(v3 as i32);		
-										},
-										None => {
-											extargs_new_error!{KeyError,"{:?} not valid u64",v}
-										}
-									}
-									
-								},
-								_ => {
-									extargs_new_error!{KeyError,"{:?} not for int or string", v}
-								}
-							}
-							self.keydata.set_nargs(KEYWORD_NARGS,&va);
-						} else {
-							match v {
-								Value::String(vs) => {
-									s = self.keydata.get_string_value(k);
-									if s != &(vs[..]) && s.len() > 0 {
-										extargs_new_error!{KeyError,"set ({}) for not equal value ({}) ({})",k,s,vs}
-									}
-									self.keydata.set_string(k,&(vs[..]));
-								},
-								_ => {
-									extargs_new_error!{KeyError,"({})({})({:?}) can not take other than int or string ({})",key,k,v,TypeClass::new(v).get_type()}
-								},
-							}
-						}
-					} else if in_array_word(k,FLAGSPECIAL) {
-						if k == KEYWORD_PREFIX {
-							match v {
-								Value::String(vs) => {
-									self.keydata.set_string(KEYWORD_PREFIX,vs);
-								},
-								Value::Null =>  {
-									self.keydata.set_string(KEYWORD_PREFIX,KEYWORD_BLANK);
-								},
-								_ => {
-									extargs_new_error!{KeyError,"({}) prefix not string or none", k}
-								}
-							}
-						} else if k == KEYWORD_VALUE {
-							let vtype :TypeClass;
-							match v {
-								Value::Object(_v3) => {
-									extargs_new_error!{KeyError,"{:?} object values",v}
-								},
-								_ => {
-
-								},
-							}
-							self.keydata.set_jsonval(KEYWORD_VALUE,v);
-							vtype = TypeClass::new(v);
-							self.keydata.set_type(KEYWORD_TYPE,&(vtype.get_type()[..]));
-						} else {
-							extargs_new_error!{KeyError,"{} not valid key", k}
-						}
-					} else if k == KEYWORD_ATTR {
-						match v {
-							Value::String(vs) => {
-								let vattr :KeyAttr = KeyAttr::new(vs)?;
-								self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
-							},
-							Value::Object(_ov) => {
-								let vattr :KeyAttr = KeyAttr::new_json(&v)?;
-								self.keydata.set_keyattr(KEYWORD_ATTR,&vattr);
-							}
-							_ => {
-
-							},
-						}
-					}
-				}
-			},
-			_ => {
-
-			},
-		}
-
-		if prefix.len() > 0 {
-			self.keydata.set_string(KEYWORD_PREFIX,prefix);
-		}
-		Ok(true)
-	}
-
-	fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
+		fn __parse(&mut self,prefix :&str, origkey :&str, value :&Value, isflag :bool,
 			ishelp :bool, isjsonfile :bool) -> Result<bool,Box<dyn Error>> {
-		let mut flagmode : bool;
-		let mut cmdmode : bool;
-		let mut flags :String;
-		let mut s :String;
-		let mut idx :usize;
-		let mut sv ;
-		let mut _splitre :Regex;
-		let mut _sarr :Vec<&str>;
-		let mut newprefix :String;
-		let vtrue :bool = true;
-		let vfalse :bool  = false;
-		let mut bmatch : bool;
+			let mut flagmode : bool;
+			let mut cmdmode : bool;
+			let mut flags :String;
+			let mut s :String;
+			let mut idx :usize;
+			let mut sv ;
+			let mut _splitre :Regex;
+			let mut _sarr :Vec<&str>;
+			let mut newprefix :String;
+			let vtrue :bool = true;
+			let vfalse :bool  = false;
+			let mut bmatch : bool;
 
-		flagmode = false;
-		cmdmode = false;
-		flags = format!("{}",KEYWORD_BLANK);
-		self.keydata.set_string(KEYWORD_ORIGKEY,origkey);
-		s = self.keydata.get_string_value(KEYWORD_ORIGKEY);
-		sv = s.chars().as_str().bytes();
-		if s.contains("$") {
-			match sv.nth(0) {
-				None => {
-					extargs_new_error!{KeyError,"{} not get $",origkey}
-				},
-				Some(v) => {
-					if v != ('$' as u8) {
-						extargs_new_error!(KeyError,"({}) not right format for ($)",origkey)		
-					}
-				},
-			}
-			idx = 0;
-			while idx < sv.len() {
-				match sv.nth(idx) {
+			flagmode = false;
+			cmdmode = false;
+			flags = format!("{}",KEYWORD_BLANK);
+			self.keydata.set_string(KEYWORD_ORIGKEY,origkey);
+			s = self.keydata.get_string_value(KEYWORD_ORIGKEY);
+			sv = s.chars().as_str().bytes();
+			if s.contains("$") {
+				match sv.nth(0) {
 					None => {
-						extargs_new_error!{KeyError,"{} can not get [{}]", origkey,idx}
+						extargs_new_error!{KeyError,"{} not get $",origkey}
 					},
 					Some(v) => {
-						if v == ('$' as u8) {
-							extargs_new_error!{KeyError,"({}) has ($) more than one",origkey}
+						if v != ('$' as u8) {
+							extargs_new_error!(KeyError,"({}) not right format for ($)",origkey)		
+						}
+					},
+				}
+				idx = 0;
+				while idx < sv.len() {
+					match sv.nth(idx) {
+						None => {
+							extargs_new_error!{KeyError,"{} can not get [{}]", origkey,idx}
+						},
+						Some(v) => {
+							if v == ('$' as u8) {
+								extargs_new_error!{KeyError,"({}) has ($) more than one",origkey}
+							}
 						}
 					}
+					idx += 1;
 				}
-				idx += 1;
-			}
-		}
-
-		if isflag || ishelp || isjsonfile {
-			match self.__flagexpr.captures(origkey) {
-				None => {
-					flags = format!("");
-				},
-				Some(v) => {
-					if v.len() > 1 {
-						flags = format!("{}",v.get(1).map_or("", |m| m.as_str()));
-					} else {
-						flags = format!("");
-					}
-				},
 			}
 
-			if flags.len() == 0 {
-				match self.__mustflagexpr.captures(origkey) {
+			if isflag || ishelp || isjsonfile {
+				match self.__flagexpr.captures(origkey) {
 					None => {
 						flags = format!("");
 					},
@@ -1563,33 +1566,47 @@ impl InnerExtKeyParse {
 						} else {
 							flags = format!("");
 						}
-					}
-				}
-			}
-
-			if flags.len() == 0  {
-				s = format!("{}", origkey);
-				sv = s.chars().as_str().bytes();
-				match sv.nth(0) {
-					None => {
-
 					},
-					Some(v) => {
-						if v == ('$' as u8) {							
-							self.keydata.set_string(KEYWORD_FLAGNAME,KEYWORD_DOLLAR_SIGN);
-							flagmode = true;
+				}
+
+				if flags.len() == 0 {
+					match self.__mustflagexpr.captures(origkey) {
+						None => {
+							flags = format!("");
+						},
+						Some(v) => {
+							if v.len() > 1 {
+								flags = format!("{}",v.get(1).map_or("", |m| m.as_str()));
+							} else {
+								flags = format!("");
+							}
 						}
 					}
 				}
-			}
 
-			if flags.len() > 0 {
-				if flags.contains("|") {
-					_splitre = compile_regex("\\|")?;
-					_sarr = _splitre.split(flags.as_str()).collect();
-					if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
-						extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+				if flags.len() == 0  {
+					s = format!("{}", origkey);
+					sv = s.chars().as_str().bytes();
+					match sv.nth(0) {
+						None => {
+
+						},
+						Some(v) => {
+							if v == ('$' as u8) {							
+								self.keydata.set_string(KEYWORD_FLAGNAME,KEYWORD_DOLLAR_SIGN);
+								flagmode = true;
+							}
+						}
 					}
+				}
+
+				if flags.len() > 0 {
+					if flags.contains("|") {
+						_splitre = compile_regex("\\|")?;
+						_sarr = _splitre.split(flags.as_str()).collect();
+						if _sarr.len() > 2 || _sarr[1].len() != 1  || _sarr[0].len() <= 1 {
+							extargs_new_error!{KeyError,"({}) ({})flag only accept (longop|l) format",origkey,flags}
+						}
 					//extargs_log_trace!("KEYWORD_FLAGNAME [{}]", _sarr[0]);
 					self.keydata.set_string(KEYWORD_FLAGNAME,_sarr[0]);
 					self.keydata.set_string(KEYWORD_SHORTFLAG,_sarr[1]);
@@ -1748,64 +1765,64 @@ impl InnerExtKeyParse {
 
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
-			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_STRING && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
-				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
-					Value::String(v) => {
-						if v == "+" {
-							let tmpv :Value = serde_json::from_str("0").unwrap();
-							self.keydata.set_jsonval(KEYWORD_VALUE,&tmpv);
-							self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COUNT);
-							self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
-						}
-					},
-					_ => {
+		self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_STRING && 
+		self.keydata.get_string_value(KEYWORD_FLAGNAME) != KEYWORD_DOLLAR_SIGN {
+			match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+				Value::String(v) => {
+					if v == "+" {
+						let tmpv :Value = serde_json::from_str("0").unwrap();
+						self.keydata.set_jsonval(KEYWORD_VALUE,&tmpv);
+						self.keydata.set_type(KEYWORD_TYPE,KEYWORD_COUNT);
+						self.keydata.set_nargs(KEYWORD_NARGS,&(Nargs::Argnum(0)));
+					}
+				},
+				_ => {
 
-					},
-				}
+				},
+			}
 		}
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN &&
-			self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_DICT {
-				let mut nval :Nargs = Nargs::Argnum(0);
-				let jval :Value = serde_json::from_str("null").unwrap();
-				bmatch = false;
-				s = self.keydata.get_type(KEYWORD_TYPE);
-				match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
-					Value::String(sval) => {
-						if sval == KEYWORD_PLUS_SIGN || sval == KEYWORD_QUESTION_SIGN || sval == KEYWORD_STAR_SIGN {
-							bmatch = true;
-							nval = Nargs::Argtype(sval);
-						}
-					},
-					Value::Number(ref ival) => {
-						bmatch = false;
-						match ival.as_i64() {
-							Some(vv) => {
-								nval = Nargs::Argnum( vv as i32 );		
-							},
-							None => {
-								nval = Nargs::Argnum( 0 as i32);
-							},
-						}						
-					},
-					_ => {
-					},
-				}
+		self.keydata.get_string_value(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN &&
+		self.keydata.get_type(KEYWORD_TYPE) != KEYWORD_DICT {
+			let mut nval :Nargs = Nargs::Argnum(0);
+			let jval :Value = serde_json::from_str("null").unwrap();
+			bmatch = false;
+			s = self.keydata.get_type(KEYWORD_TYPE);
+			match self.keydata.get_jsonval_value(KEYWORD_VALUE) {
+				Value::String(sval) => {
+					if sval == KEYWORD_PLUS_SIGN || sval == KEYWORD_QUESTION_SIGN || sval == KEYWORD_STAR_SIGN {
+						bmatch = true;
+						nval = Nargs::Argtype(sval);
+					}
+				},
+				Value::Number(ref ival) => {
+					bmatch = false;
+					match ival.as_i64() {
+						Some(vv) => {
+							nval = Nargs::Argnum( vv as i32 );		
+						},
+						None => {
+							nval = Nargs::Argnum( 0 as i32);
+						},
+					}						
+				},
+				_ => {
+				},
+			}
 
-				if !((s == KEYWORD_STRING && bmatch )|| s == KEYWORD_INT) {
-					extargs_new_error!{KeyError,"({})({})({:?}) for $ should option dict set opt or +?* specialcase or type int",prefix,origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE)}
-				} else {
-					self.keydata.set_nargs(KEYWORD_NARGS,&nval);
-					self.keydata.set_jsonval(KEYWORD_VALUE,&jval);
-					self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
-				}
+			if !((s == KEYWORD_STRING && bmatch )|| s == KEYWORD_INT) {
+				extargs_new_error!{KeyError,"({})({})({:?}) for $ should option dict set opt or +?* specialcase or type int",prefix,origkey,self.keydata.get_jsonval_value(KEYWORD_VALUE)}
+			} else {
+				self.keydata.set_nargs(KEYWORD_NARGS,&nval);
+				self.keydata.set_jsonval(KEYWORD_VALUE,&jval);
+				self.keydata.set_type(KEYWORD_TYPE,KEYWORD_STRING);
+			}
 		}
 
 		if self.keydata.get_bool_value(KEYWORD_ISFLAG) && 
-			self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && 
-			self.keydata.get_string_value(KEYWORD_FLAGNAME).len() > 0 {
+		self.keydata.get_type(KEYWORD_TYPE) == KEYWORD_DICT && 
+		self.keydata.get_string_value(KEYWORD_FLAGNAME).len() > 0 {
 			_ = self.__set_flag(prefix,origkey,value)?;
 		}
 
@@ -1847,14 +1864,14 @@ impl InnerExtKeyParse {
 		nochange :bool) -> Result<InnerExtKeyParse,Box<dyn Error>> {
 		let mut key :InnerExtKeyParse;
 		key = InnerExtKeyParse {
-			 keydata : KeyData::new(),
-			 __helpexpr : compile_regex("##([^#]+)##$")?,
-			 __cmdexpr : compile_regex("^([^#<>\\+\\$!]+)")?,
-			 __prefixexpr : compile_regex("\\+([a-zA-Z]+[a-zA-Z0-9]*)")?,
-			 __funcexpr : compile_regex("<([^<>\\$| \t!\\+]+)>")?,
-			 __flagexpr : compile_regex("^([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
-			 __mustflagexpr : compile_regex("^\\$([a-zA-Z]+[a-zA-Z0-9_|\\?\\-]*)")?,
-			 __attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
+			keydata : KeyData::new(),
+			__helpexpr : compile_regex("##([^#]+)##$")?,
+			__cmdexpr : compile_regex("^([^#<>\\+\\$!]+)")?,
+			__prefixexpr : compile_regex("\\+([a-zA-Z]+[a-zA-Z0-9]*)")?,
+			__funcexpr : compile_regex("<([^<>\\$| \t!\\+]+)>")?,
+			__flagexpr : compile_regex("^([a-zA-Z]+[a-zA-Z0-9|\\?\\-]*)")?,
+			__mustflagexpr : compile_regex("^\\$([a-zA-Z]+[a-zA-Z0-9_|\\?\\-]*)")?,
+			__attrexpr : compile_regex("!([^<>\\$!#|]+)!")?,
 		};
 
 		key.__reset();
@@ -2160,921 +2177,935 @@ mod debug_key_test_case {
 		return;
 	}
 
-    #[test]
-    fn test_a001() {
-    	let data = "\"string\"";
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
+	#[test]
+	fn test_a001() {
+		let data = "\"string\"";
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
 
-    	assert!(flags.flag_name() == "flag");
-    	assert!(flags.long_opt() == "--type-flag");
-    	assert!(flags.short_opt() == "-f");
-    	assert!(flags.opt_dest() == "type_flag");
-    	assert!(flags.get_value_v() == Value::String(String::from("string")));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
-    	return;
-    }
-
-    #[test]
-    fn test_a002() {
-    	let data = "[]";
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,true,false,false,"--","-",false).unwrap();
-
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_LIST);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
-    	return;
-    }
-
-    #[test]
-    fn test_a003() {
-    	let data = "false";
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
-
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
-    	return;
+		assert!(flags.flag_name() == "flag");
+		assert!(flags.long_opt() == "--type-flag");
+		assert!(flags.short_opt() == "-f");
+		assert!(flags.opt_dest() == "type_flag");
+		assert!(flags.get_value_v() == Value::String(String::from("string")));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+		return;
 	}
 
-    #[test]
-    fn test_a004() {
-    	let data = "{}";
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("newtype","flag<flag.main>##help for flag##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "newtype");
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
-    	__opt_fail_check(&flags);
-    	return;
+	#[test]
+	fn test_a002() {
+		let data = "[]";
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,true,false,false,"--","-",false).unwrap();
+
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_LIST);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+		return;
+	}
+
+	#[test]
+	fn test_a003() {
+		let data = "false";
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+type",&jsonv,false,false,false,"--","-",false).unwrap();
+
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_flag");
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_flag");
+		return;
+	}
+
+	#[test]
+	fn test_a004() {
+		let data = "{}";
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("newtype","flag<flag.main>##help for flag##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "newtype");
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+		__opt_fail_check(&flags);
+		return;
 	}	
 
-    #[test]
-    fn test_a005() {
-    	let data = "\"\"";
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","flag<flag.main>##help for flag##",&jsonv,true,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
-    	return;
+	#[test]
+	fn test_a005() {
+		let data = "\"\"";
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","flag<flag.main>##help for flag##",&jsonv,true,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == "help for flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
+		return;
 
 	}	
 
-    #[test]
-    fn test_a006() {
-    	let data = r#"{ "new" : false}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","flag+type<flag.main>##main",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a006() {
+		let data = r#"{ "new" : false}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","flag+type<flag.main>##main",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "type");
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    #[test]
-    fn test_a007() {
-    	let data = r#"{}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","+flag",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "flag");
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_PREFIX);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a007() {
+		let data = r#"{}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","+flag",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "flag");
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_PREFIX);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    #[test]
-    fn test_a008() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","+flag## help ##",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
+	#[test]
+	fn test_a008() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","+flag## help ##",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
-
-
-    #[test]
-    fn test_a009() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","+flag<flag.main>",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
-
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
-
-    #[test]
-    fn test_a010() {
-    	let data = r#""""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","flag|f2",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
-
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
-
-    #[test]
-    fn test_a011() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","f|f2",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
-
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
-
-    #[test]
-    fn test_a012() {
-    	let data = r#"{}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == Value::Null);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
 
-    #[test]
-    fn test_a013() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+cc<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "cc");
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--cc-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "cc_flag");
-    	return;
-    }
+	#[test]
+	fn test_a009() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","+flag<flag.main>",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a014() {
-    	let data = r#""""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","c$",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
+	#[test]
+	fn test_a010() {
+		let data = r#""""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","flag|f2",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a015() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","$$",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
+	#[test]
+	fn test_a011() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","f|f2",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a016() {
-    	let data = r#"{ "nargs" : "+" }"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_ARGS);
-    	assert!(flags.get_value_v() == Value::Null);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(format!("{}",KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	__opt_fail_check(&flags);
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    #[test]
-    fn test_a017() {
-    	let data = r#"3.3"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("type","flag+app## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "type_app");
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-app-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_app_flag");
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_app_flag");
-    	return;
-    }
-
-    #[test]
-    fn test_a018() {
-    	let data = r#"{}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","flag+app<flag.main>## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "app");
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
-    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
-    	__opt_fail_check(&flags);
-    	return ;
-    }
-
-    #[test]
-    fn test_a019() {
-    	let data = r#"{ "prefix" : "good" , "value" : false }"#;
-    	let falses = r#"false"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str(falses).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
-    	return;
-    }
-
-    #[test]
-    fn test_a020() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
-
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
-
-    #[test]
-    fn test_a021() {
-    	let data = r#"{ "nargs" : "?" , "value" : null }"#;
-    	let nulls = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str(nulls).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("command","$## self define ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "command");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "subnargs");
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_QUESTION_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " self define ");
-    	__opt_fail_check(&flags);
-    	return;
-    }
-
-    #[test]
-    fn test_a022() {
-    	let data = r#"{}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("command","+flag",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "command_flag");
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(!flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_PREFIX);
-    	__opt_fail_check(&flags);
-    	return;
-    }
-
-    #[test]
-    fn test_a023() {
-    	let data = r#"{ "prefix" : "good" , "value" : 3.9, "nargs" : 1 }"#;
-    	let floats = r#"3.9"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str(floats).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(1));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
-    	return;
-    }
-
-    #[test]
-    fn test_a024() {
-    	let data = r#"{ "prefix" : "good" , "value" : false, "nargs" : 2 }"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut ok :i32 = 0;
-    	match ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false) {
-    		Ok(_v) => {
-
-    		},
-    		Err(_e) => {
-    			ok = 1;
-    		},
-    	}
-    	assert!(ok > 0);
-    	return;
-    }
+	#[test]
+	fn test_a012() {
+		let data = r#"{}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == Value::Null);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "flag");
+		return;
+	}
 
 
-    #[test]
-    fn test_a026() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("dep","$",&jsonv,true,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from("+")));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a013() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag|f+cc<flag.main>",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "cc");
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "f");
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_STRING);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "flag.main");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--cc-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-f");
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "cc_flag");
+		return;
+	}
 
-    #[test]
-    fn test_a027() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("0").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("dep","verbose|v",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "dep_verbose");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "dep_verbose");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--dep-verbose");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
-    	return;
-    }
+	#[test]
+	fn test_a014() {
+		let data = r#""""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","c$",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a028() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("0").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","verbose|v## new help info ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " new help info ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "verbose");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "verbose");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--verbose");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    #[test]
-    fn test_a029() {
-    	let data = r#"true"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--no-rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-R");
-    	return;
-    }
+	#[test]
+	fn test_a015() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","$$",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a030() {
-    	let iv :i64 = 0xffffffff;
-    	let data = format!("{}",iv);
-    	let jsonv :Value = serde_json::from_str(&(data[..])).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","maxval|m##max value set ##",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "maxval");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "m");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_INT);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == "max value set ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(1));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "maxval");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "maxval");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--maxval");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-m");
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    #[test]
-    fn test_a032() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$<numargs>",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "numargs");
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a016() {
+		let data = r#"{ "nargs" : "+" }"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_ARGS);
+		assert!(flags.get_value_v() == Value::Null);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(format!("{}",KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    #[test]
-    fn test_a033() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_ARGS);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a017() {
+		let data = r#"3.3"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("type","flag+app## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "type_app");
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--type-app-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "type_app_flag");
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "type_app_flag");
+		return;
+	}
 
-    #[test]
-    fn test_a034() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a018() {
+		let data = r#"{}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","flag+app<flag.main>## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "app");
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COMMAND);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == "flag.main");
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+		assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_bool_v(KEYWORD_ISCMD));
+		__opt_fail_check(&flags);
+		return ;
+	}
 
-    #[test]
-    fn test_a035() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let val :i32;
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
-    	match flags.get_keyattr(KEYWORD_ATTR) {
-    		None => {
-    			val = 1;
-    		},
-    		_ => {
-    			val = 0;
-    		}
-    	}
-    	assert!(val > 0);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a019() {
+		let data = r#"{ "prefix" : "good" , "value" : false }"#;
+		let falses = r#"false"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str(falses).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
+		return;
+	}
 
-    #[test]
-    fn test_a036() {
-    	let data = r#""+""#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let val :i32;
-    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
-    	match flags.get_keyattr(KEYWORD_ATTR) {
-    		None => {
-    			val = 0;
-    		},
-    		Some(v) => {
-    			val = 1;
-    			attr = v.clone();
-    		}
-    	}
-    	assert!(val > 0);
-    	assert!(attr.get_attr("func") == "args_opt_func");
-    	assert!(attr.get_attr("wait") == "cc");
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a020() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a037() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let cmpjsonv :Value = serde_json::from_str("null").unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	let val :i32;
-    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "help");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
-    	assert!(flags.get_value_v() == cmpjsonv);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_HELP);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "h");
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_help");
-    	match flags.get_keyattr(KEYWORD_ATTR) {
-    		None => {
-    			val = 0;
-    		},
-    		Some(v) => {
-    			val = 1;
-    			attr = v.clone();
-    		}
-    	}
-    	assert!(val > 0);
-    	assert!(attr.get_attr("func") == "args_opt_func");
-    	assert!(attr.get_attr("wait") == "cc");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--help");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-h");
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_help");
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    #[test]
-    fn test_a038() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flag1 == flag2);
-    	flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	assert!(flag1 == flag2);
-    	flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
-    	assert!(flag1 != flag2);
-    	return;
-    }
+	#[test]
+	fn test_a021() {
+		let data = r#"{ "nargs" : "?" , "value" : null }"#;
+		let nulls = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str(nulls).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("command","$## self define ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "command");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "subnargs");
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_QUESTION_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " self define ");
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    #[test]
-    fn test_a039() {
-    	let mut data = r#"{ "modules" : [], "$<NARGS>" : "+" }"#;
-    	let mut jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut flags :ExtKeyParse = ExtKeyParse::new("rdep","ip",&jsonv,false,false,false,"--","-",false).unwrap();
+	#[test]
+	fn test_a022() {
+		let data = r#"{}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("command","+flag",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "command_flag");
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(!flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_PREFIX);
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "ip");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep");
+	#[test]
+	fn test_a023() {
+		let data = r#"{ "prefix" : "good" , "value" : 3.9, "nargs" : 1 }"#;
+		let floats = r#"3.9"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str(floats).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "flag");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "good");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_FLOAT);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " flag help ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(1));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--good-flag");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "good_flag");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "good_flag");
+		return;
+	}
 
-    	data = r#"[]"#;
-    	jsonv = serde_json::from_str(data).unwrap();
-    	flags = ExtKeyParse::new("rdep_ip","modules",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep_ip");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--rdep-ip-modules");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rdep_ip_modules");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rdep_ip_modules");
-    	return;
-    }
+	#[test]
+	fn test_a024() {
+		let data = r#"{ "prefix" : "good" , "value" : false, "nargs" : 2 }"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut ok :i32 = 0;
+		match ExtKeyParse::new("","$flag## flag help ##",&jsonv,false,false,false,"--","-",false) {
+			Ok(_v) => {
 
-    #[test]
-    fn test_a040() {
-    	let data = r#"null"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
-    	let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
-    	assert!(flag1 == flag2);
-    	flag1 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
-    	flag2 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
-    	assert!(flag1 == flag2);
-    	assert!(flag1.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
-    	assert!(flag1.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
-    	return;
-    }
+			},
+			Err(_e) => {
+				ok = 1;
+			},
+		}
+		assert!(ok > 0);
+		return;
+	}
 
-    #[test]
-    fn test_a041() {
-    	let data = r#"{ "nargs" : 1,"attr" : {"func" : "args_opt_func" , "wait" : "cc"} }"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("prefix","$json",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
-    	assert!(flags.get_bool_v(KEYWORD_ISFLAG));
-    	match flags.get_keyattr(KEYWORD_ATTR) {
-    		None => {
-    		},
-    		Some(v) => {
-    			attr = v.clone();
-    		}
-    	}
-    	assert!(attr.get_attr("func") == "args_opt_func");
-    	assert!(attr.get_attr("wait") == "cc");
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "json");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_json");
-    	return;
-    }
 
-    #[test]
-    fn test_a042() {
-    	let data = r#"{}"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","main",&jsonv,false,false,false,"--","-",false).unwrap();
-    	let mut ok :i32 = 0;
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == "main");
-    	assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
-    	assert!(flags.get_bool_v(KEYWORD_ISCMD));
-    	match flags.get_keyattr(KEYWORD_ATTR) {
-    		None => {
-    			ok = 1;
-    		},
-    		_ => {
+	#[test]
+	fn test_a026() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("dep","$",&jsonv,true,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from("+")));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
+		__opt_fail_check(&flags);
+		return;
+	}
 
-    		}
-    	}
-    	assert!(ok > 0);
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == "main");
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	__opt_fail_check(&flags);
-    	return;
-    }
+	#[test]
+	fn test_a027() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("0").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("dep","verbose|v",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "dep");
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "dep_verbose");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "dep_verbose");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--dep-verbose");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
+		return;
+	}
 
-    #[test]
-    fn test_a043() {
-    	let data = r#"true"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,true,false,false,"++","+",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++no-rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
-    	return;
-    }
+	#[test]
+	fn test_a028() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("0").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","verbose|v## new help info ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "verbose");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "v");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_COUNT);
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " new help info ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "verbose");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "verbose");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--verbose");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-v");
+		return;
+	}
 
-    #[test]
-    fn test_a044() {
-    	let data = r#"true"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,true,false,false,"++","+",false).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++no-rollback");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
-    	assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
-    	assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
-    	return;
-    }
+	#[test]
+	fn test_a029() {
+		let data = r#"true"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--no-rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-R");
+		return;
+	}
 
-    #[test]
-    fn test_a045() {
-    	let data = r#"false"#;
-    	let jsonv :Value = serde_json::from_str(data).unwrap();
-    	let flags :ExtKeyParse = ExtKeyParse::new("","crl_CA_compromise",&jsonv,false,false,false,"++","+",true).unwrap();
-    	assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "crl_CA_compromise");
-    	assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
-    	assert!(flags.get_value_v() == jsonv);
-    	assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
-    	assert!(flags.get_nargs_v() == Nargs::Argnum(0));
-    	assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_OPTDEST) == "crl_CA_compromise");
-    	assert!(flags.get_string_v(KEYWORD_VARNAME) == "crl_CA_compromise");
-    	assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++crl_CA_compromise");
-    	assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
-    	assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
-    	assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
-    	return;
-    }
+	#[test]
+	fn test_a030() {
+		let iv :i64 = 0xffffffff;
+		let data = format!("{}",iv);
+		let jsonv :Value = serde_json::from_str(&(data[..])).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","maxval|m##max value set ##",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "maxval");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "m");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_INT);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == "max value set ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(1));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "maxval");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "maxval");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--maxval");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-m");
+		return;
+	}
+
+	#[test]
+	fn test_a032() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$<numargs>",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "numargs");
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a033() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","$",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_ARGS);
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a034() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("prefix","$",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == KEYWORD_SUBNARGS);
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a035() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>",&jsonv,false,false,false,"--","-",false).unwrap();
+		let val :i32;
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
+		match flags.get_keyattr(KEYWORD_ATTR) {
+			None => {
+				val = 1;
+			},
+			_ => {
+				val = 0;
+			}
+		}
+		assert!(val > 0);
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a036() {
+		let data = r#""+""#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("prefix","$<newargs>!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+		let val :i32;
+		let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == KEYWORD_DOLLAR_SIGN);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_ARGS);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argtype(String::from(KEYWORD_PLUS_SIGN)));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "newargs");
+		match flags.get_keyattr(KEYWORD_ATTR) {
+			None => {
+				val = 0;
+			},
+			Some(v) => {
+				val = 1;
+				attr = v.clone();
+			}
+		}
+		assert!(val > 0);
+		assert!(attr.get_attr("func") == "args_opt_func");
+		assert!(attr.get_attr("wait") == "cc");
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a037() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let cmpjsonv :Value = serde_json::from_str("null").unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+		let val :i32;
+		let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "help");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+		assert!(flags.get_value_v() == cmpjsonv);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_HELP);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "h");
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_help");
+		match flags.get_keyattr(KEYWORD_ATTR) {
+			None => {
+				val = 0;
+			},
+			Some(v) => {
+				val = 1;
+				attr = v.clone();
+			}
+		}
+		assert!(val > 0);
+		assert!(attr.get_attr("func") == "args_opt_func");
+		assert!(attr.get_attr("wait") == "cc");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--help");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "-h");
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_help");
+		return;
+	}
+
+	#[test]
+	fn test_a038() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+		let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flag1 == flag2);
+		flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+		flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+		assert!(flag1 == flag2);
+		flag1 = ExtKeyParse::new("prefix","help|h!func=args_opt_func!",&jsonv,false,true,false,"--","-",false).unwrap();
+		flag2 = ExtKeyParse::new("prefix","help|h!func=args_opt_func;wait=cc!",&jsonv,false,true,false,"--","-",false).unwrap();
+		assert!(flag1 != flag2);
+		return;
+	}
+
+	#[test]
+	fn test_a039() {
+		let mut data = r#"{ "modules" : [], "$<NARGS>" : "+" }"#;
+		let mut jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut flags :ExtKeyParse = ExtKeyParse::new("rdep","ip",&jsonv,false,false,false,"--","-",false).unwrap();
+
+		assert!(flags.get_bool_v(KEYWORD_ISCMD));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == "ip");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep");
+
+		data = r#"[]"#;
+		jsonv = serde_json::from_str(data).unwrap();
+		flags = ExtKeyParse::new("rdep_ip","modules",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "rdep_ip");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--rdep-ip-modules");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rdep_ip_modules");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "rdep_ip_modules");
+		return;
+	}
+
+	#[test]
+	fn test_a040() {
+		let data = r#"null"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let mut flag1 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+		let mut flag2 :ExtKeyParse = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,false,"--","-",false).unwrap();
+		assert!(flag1 == flag2);
+		flag1 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+		flag2 = ExtKeyParse::new("prefix","json!func=args_opt_func;wait=cc!",&jsonv,false,false,true,"--","-",false).unwrap();
+		assert!(flag1 == flag2);
+		assert!(flag1.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
+		assert!(flag1.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
+		return;
+	}
+
+	#[test]
+	fn test_a041() {
+		let data = r#"{ "nargs" : 1,"attr" : {"func" : "args_opt_func" , "wait" : "cc"} }"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("prefix","$json",&jsonv,false,false,false,"--","-",false).unwrap();
+		let  mut attr :KeyAttr = KeyAttr::new(KEYWORD_BLANK).unwrap();
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "prefix");
+		assert!(flags.get_bool_v(KEYWORD_ISFLAG));
+		match flags.get_keyattr(KEYWORD_ATTR) {
+			None => {
+			},
+			Some(v) => {
+				attr = v.clone();
+			}
+		}
+		assert!(attr.get_attr("func") == "args_opt_func");
+		assert!(attr.get_attr("wait") == "cc");
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "json");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "--prefix-json");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "prefix_json");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "prefix_json");
+		return;
+	}
+
+	#[test]
+	fn test_a042() {
+		let data = r#"{}"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","main",&jsonv,false,false,false,"--","-",false).unwrap();
+		let mut ok :i32 = 0;
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == "main");
+		assert!(!flags.get_bool_v(KEYWORD_ISFLAG));
+		assert!(flags.get_bool_v(KEYWORD_ISCMD));
+		match flags.get_keyattr(KEYWORD_ATTR) {
+			None => {
+				ok = 1;
+			},
+			_ => {
+
+			}
+		}
+		assert!(ok > 0);
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == "main");
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		__opt_fail_check(&flags);
+		return;
+	}
+
+	#[test]
+	fn test_a043() {
+		let data = r#"true"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,true,false,false,"++","+",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++no-rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
+		return;
+	}
+
+	#[test]
+	fn test_a044() {
+		let data = r#"true"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","rollback|R## rollback not set ##",&jsonv,true,false,false,"++","+",false).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == "R");
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == " rollback not set ");
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "rollback");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++no-rollback");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == "+R");
+		assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
+		assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
+		return;
+	}
+
+	#[test]
+	fn test_a045() {
+		let data = r#"false"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","crl_CA_compromise",&jsonv,false,false,false,"++","+",true).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "crl_CA_compromise");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_string_v(KEYWORD_HELPINFO) == KEYWORD_BLANK);
+		assert!(flags.get_nargs_v() == Nargs::Argnum(0));
+		assert!(flags.get_string_v(KEYWORD_CMDNAME) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_FUNCTION) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_OPTDEST) == "crl_CA_compromise");
+		assert!(flags.get_string_v(KEYWORD_VARNAME) == "crl_CA_compromise");
+		assert!(flags.get_string_v(KEYWORD_LONGOPT) == "++crl_CA_compromise");
+		assert!(flags.get_string_v(KEYWORD_SHORTOPT) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_LONGPREFIX) == "++");
+		assert!(flags.get_string_v(KEYWORD_SHORTPREFIX) == "+");
+		return;
+	}
+
+	#[test]
+	fn test_a046() {
+		let data = r#"true"#;
+		let jsonv :Value = serde_json::from_str(data).unwrap();
+		let flags :ExtKeyParse = ExtKeyParse::new("","panicenable",&jsonv,false,false,false,"--","-",true).unwrap();
+		assert!(flags.get_string_v(KEYWORD_FLAGNAME) == "panicenable");
+		assert!(flags.get_string_v(KEYWORD_SHORTFLAG) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_PREFIX) == KEYWORD_BLANK);
+		assert!(flags.get_string_v(KEYWORD_TYPE) == KEYWORD_BOOL);
+		assert!(flags.get_value_v() == jsonv);
+		assert!(flags.get_bool_v(KEYWORD_VALUE) == true);
+		return;
+	}
 }
