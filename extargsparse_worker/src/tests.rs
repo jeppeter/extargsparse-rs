@@ -1408,6 +1408,25 @@ fn get_opt_ok(sarr :Vec<String>, opt :ExtKeyParse) -> bool {
     return false;
 }
 
+fn check_opt_bool_help(sarr :Vec<String>, optname :&str, value : bool) -> bool {
+    let mut exprstr :String = "".to_string();
+    if value {
+        exprstr.push_str(&format!("\\s+{}\\s+.*set false default\\(True\\)",optname));
+    } else {
+        exprstr.push_str(&format!("\\s+{}\\s+.*set true default\\(False\\)",optname));        
+    }
+
+    extargs_log_trace!("exprstr [{}]",exprstr);
+
+    let ex = Regex::new(&exprstr).unwrap();
+    for l in sarr.iter() {
+        if ex.is_match(l) {
+            return true;
+        }
+    }
+    return false;
+}
+
 fn check_all_opts_help(sarr : Vec<String>, opts :Vec<ExtKeyParse>) -> bool {
     for opt in opts.iter() {
         let b = get_opt_ok(sarr.clone(),opt.clone());
@@ -1448,7 +1467,9 @@ fn test_a026() {
                 "list" : [],
                 "cc" : []
             }
-        }
+        },
+        "panicenable" : true,
+        "panicbb" : false
     }"#;
     before_parser();
     let s :String = format!("{{ \"{}\" : \"cmd1\" }}", OPT_PROG);
@@ -1460,6 +1481,8 @@ fn test_a026() {
     let sarr = get_cmd_help(parser.clone(),"");
     let opts = parser.get_cmd_opts_ex("").unwrap();
     assert!(check_all_opts_help(sarr.clone(),opts.clone()) == true);
+    assert!(check_opt_bool_help(sarr.clone(),"panicenable",true) == true);
+    assert!(check_opt_bool_help(sarr.clone(),"panicbb",false) == true);
 
     let sarr = get_cmd_help(parser.clone(),"rdep");
     let opts = parser.get_cmd_opts_ex("rdep").unwrap();
