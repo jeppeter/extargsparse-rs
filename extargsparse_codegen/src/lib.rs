@@ -338,7 +338,7 @@ impl syn::parse::Parse for FuncAttrs {
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
 				em_log_trace!(",");
-				retv.set_funcnames(&k,&v,input.clone())?;
+				retv.set_funcnames(&k,&v,input)?;
 				k = "".to_string();
 				v = "".to_string();
 			} else {
@@ -349,7 +349,7 @@ impl syn::parse::Parse for FuncAttrs {
 				return Err(syn::Error::new(input.span(),&c));
 			}			
 		}
-		retv.set_funcnames(&k,&v,input.clone())?;
+		retv.set_funcnames(&k,&v,input)?;
 		k = "".to_string();
 		v = "".to_string();
 		return Ok(retv);

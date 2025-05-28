@@ -13,6 +13,7 @@ use std::cell::RefCell;
 
 extargs_error_class!{ParseStateError}
 
+#[allow(dead_code)]
 #[derive(Debug)]
 #[derive(Clone)]
 pub (crate) enum StateOptVal {

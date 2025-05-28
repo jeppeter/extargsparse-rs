@@ -73,6 +73,55 @@ struct InnerExtArgsParser {
 	outfuncs :ExtArgsMatchFuncMap,
 }
 
+macro_rules! inner_ext_drop_funcs {
+	($elem :expr) => {
+		loop {
+			let mut _idx :usize = 0;
+			let mut _ks :String = "".to_string();
+			for (_k,_) in $elem.borrow().iter() {
+				_idx += 1;
+				_ks = format!("{}",_k);
+			}
+
+			if _idx == 0 {
+				break;
+			}
+			let _ov = $elem.borrow_mut().remove(&_ks);
+			let _c = _ov.unwrap();
+			drop(_c);
+		}
+	};
+}
+
+macro_rules! inner_ext_drop_funcs_int {
+	($elem :expr) => {
+		loop {
+			let mut _idx :usize = 0;
+			let mut _kint :i32 = -1;
+			for (_k,_) in $elem.borrow().iter() {
+				_idx += 1;
+				_kint = *_k;
+			}
+
+			if _idx == 0 {
+				break;
+			}
+			let _ov = $elem.borrow_mut().remove(&_kint);
+			let _c = _ov.unwrap();
+			drop(_c);
+		}
+	};
+}
+
+
+impl Drop for InnerExtArgsParser {
+	fn drop(&mut self) {
+		inner_ext_drop_funcs!(self.loadfuncs);
+		inner_ext_drop_funcs!(self.jsonfuncs);
+		inner_ext_drop_funcs!(self.optfuncs);
+		inner_ext_drop_funcs_int!(self.setmapfuncs);
+	}
+}
 
 
 lazy_static ! {
